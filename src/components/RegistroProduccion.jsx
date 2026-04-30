@@ -5,7 +5,7 @@ import { getProductores, getLoteNextCode, createLote, createProduccion } from '.
 export default function RegistroProduccion() {
   const [productores, setProductores] = useState([])
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(null)
+  const [feedback, setFeedback] = useState(null)
   const [noProductores, setNoProductores] = useState(false)
   const [formData, setFormData] = useState({
     codigo: '',
@@ -59,67 +59,88 @@ export default function RegistroProduccion() {
       ...prev,
       productorId,
       parcela: productor?.parcela || '',
-      altitud: productor?.altitud || ''
+      altitud: productor?.altitud != null && productor.altitud !== '' ? String(productor.altitud) : ''
     }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setSuccess(null)
+    setFeedback(null)
 
-    if (!formData.productorId || !productores.find(p => p.id === formData.productorId)) {
-      setSuccess({ message: 'Debe seleccionar un productor existente antes de registrar la producción.' })
+    const sameId = (a, b) => Number(a) === Number(b)
+    if (!formData.productorId || !productores.find(p => sameId(p.id, formData.productorId))) {
+      setFeedback({ type: 'warn', message: 'Debe seleccionar un productor existente antes de registrar la producción.' })
       setLoading(false)
       return
     }
 
-    if (!formData.cantidad || !formData.humedad || !formData.temperatura || !formData.altitud) {
-      setSuccess({ message: 'Complete todos los campos obligatorios del lote antes de enviar.' })
+    if (!formData.cantidad || !formData.humedad || !formData.temperatura || formData.altitud === '' || formData.altitud == null) {
+      setFeedback({ type: 'warn', message: 'Complete todos los campos obligatorios del lote antes de enviar.' })
       setLoading(false)
       return
     }
 
     try {
+      const cantidadKg = parseFloat(String(formData.cantidad).replace(',', '.'))
+      const hm = parseFloat(String(formData.humedad).replace(',', '.'))
+      const temp = parseFloat(String(formData.temperatura).replace(',', '.'))
+      const alt = parseFloat(String(formData.altitud).replace(',', '.'))
+      if (!Number.isFinite(cantidadKg) || cantidadKg <= 0 || !Number.isFinite(hm) || !Number.isFinite(temp) || !Number.isFinite(alt)) {
+        throw new Error('Las cantidades y mediciones deben ser números válidos.')
+      }
+
       // Crear lote con todos los datos necesarios
       const nuevoLote = await createLote({
-        codigo_lote: formData.codigo,
+        codigo_lote: (formData.codigo || '').trim() || undefined,
         productor_id: formData.productorId,
         variedad_cafe: formData.tipoCafe,
         fecha_cosecha: formData.fecha,
-        cantidad_kg: parseFloat(formData.cantidad),
+        cantidad_kg: cantidadKg,
         estado: 'Produccion',
-        humedad: parseFloat(formData.humedad),
-        temperatura: parseFloat(formData.temperatura),
-        altitud: parseFloat(formData.altitud),
+        humedad: hm,
+        temperatura: temp,
+        altitud: alt,
         tipo_secado: formData.tipoSecado
       })
-      if (!nuevoLote?.id) {
+      const lotePk = Number(nuevoLote?.id ?? nuevoLote?.ID)
+      if (!lotePk) {
         throw new Error('No se pudo registrar el lote')
       }
 
-      // Crear registro de producción
-      await createProduccion({
-        lote_id: nuevoLote.id,
-        humedad: parseFloat(formData.humedad),
-        temperatura: parseFloat(formData.temperatura),
-        altitud: parseFloat(formData.altitud),
-        tipo_secado: formData.tipoSecado,
-        fecha_registro: formData.fecha
-      })
+      // Registro en tabla producción (redundante con lotes; no debe invalidar el lote si el API está desactualizado)
+      try {
+        await createProduccion({
+          lote_id: lotePk,
+          humedad: hm,
+          temperatura: temp,
+          altitud: alt,
+          tipo_secado: formData.tipoSecado,
+          fecha_registro: formData.fecha
+        })
+      } catch (prodErr) {
+        console.warn('createProduccion omitido o falló — el lote ya está guardado:', prodErr?.message || prodErr)
+      }
 
       // NO crear predicción automáticamente - solo cuando el usuario lo pida desde Módulo IA
 
-      setSuccess({
+      setFeedback({
+        type: 'ok',
         message: 'Lote registrado exitosamente',
         lote: nuevoLote.codigo_lote
       })
 
-      // Recargar próximo código de lote
-      const { nextCode } = await getLoteNextCode()
+      // Recargar próximo código (si falla, no invalidar el éxito del lote)
+      let nextCode = null
+      try {
+        const res = await getLoteNextCode()
+        nextCode = res?.nextCode
+      } catch (e) {
+        console.warn('Siguiente código de lote no disponible:', e)
+      }
       setFormData(prev => ({
         ...prev,
-        codigo: nextCode,
+        codigo: nextCode != null && nextCode !== '' ? nextCode : prev.codigo,
         productorId: '',
         parcela: '',
         cantidad: '',
@@ -131,7 +152,11 @@ export default function RegistroProduccion() {
       }))
     } catch (err) {
       console.error('Error guardando producción:', err)
-      setSuccess({ message: 'Error al registrar el lote. Intente de nuevo.' })
+      const msg =
+        typeof err?.message === 'string' && err.message.trim().length > 0
+          ? err.message
+          : 'Error al registrar el lote. Intente de nuevo.'
+      setFeedback({ type: 'err', message: msg })
     } finally {
       setLoading(false)
     }
@@ -349,21 +374,52 @@ export default function RegistroProduccion() {
           </div>
         </form>
 
-        {/* Mensaje de éxito */}
-        {success && (
-          <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4">
+        {feedback && (
+          <div
+            className={`mt-6 rounded-xl p-4 border ${
+              feedback.type === 'ok'
+                ? 'bg-green-50 border-green-200'
+                : feedback.type === 'warn'
+                  ? 'bg-amber-50 border-amber-200'
+                  : 'bg-red-50 border-red-200'
+            }`}
+          >
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+              {feedback.type === 'ok' ? (
+                <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+              ) : (
+                <AlertCircle
+                  className={`w-6 h-6 flex-shrink-0 ${
+                    feedback.type === 'warn' ? 'text-amber-600' : 'text-red-600'
+                  }`}
+                />
+              )}
               <div>
-                <h3 className="font-semibold text-green-800">{success.message}</h3>
-                <p className="text-sm text-green-700 mt-1">Lote: <span className="font-mono font-bold">{success.lote}</span></p>
-                {success.prediccion && (
+                <h3
+                  className={`font-semibold ${
+                    feedback.type === 'ok'
+                      ? 'text-green-800'
+                      : feedback.type === 'warn'
+                        ? 'text-amber-900'
+                        : 'text-red-800'
+                  }`}
+                >
+                  {feedback.message}
+                </h3>
+                {feedback.type === 'ok' && feedback.lote && (
+                  <p className="text-sm text-green-700 mt-1">
+                    Lote: <span className="font-mono font-bold">{feedback.lote}</span>
+                  </p>
+                )}
+                {feedback.type === 'ok' && feedback.prediccion && (
                   <div className="mt-3 bg-white rounded-lg p-3 border border-green-200">
                     <p className="text-sm font-semibold text-green-800">Predicción IA:</p>
                     <p className="text-sm text-green-700">
-                      Calidad estimada: <span className="font-bold">{success.prediccion.calidad_predicha}</span> ({success.prediccion.confianza}%)
+                      Calidad estimada:{' '}
+                      <span className="font-bold">{feedback.prediccion.calidad_predicha}</span> (
+                      {feedback.prediccion.confianza}%)
                     </p>
-                    <p className="text-xs text-green-600 mt-1">{success.prediccion.recomendacion}</p>
+                    <p className="text-xs text-green-600 mt-1">{feedback.prediccion.recomendacion}</p>
                   </div>
                 )}
               </div>

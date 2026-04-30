@@ -39,22 +39,16 @@ router.post('/', (req, res) => {
       if (error) {
         return res.status(500).json({ message: 'Error al guardar la producción', error: error.message })
       }
-      db.get(
-        `SELECT pr.id, pr.lote_id, l.codigo_lote AS lote_codigo,
-                COALESCE(p.nombres, p.nombre) || ' ' || COALESCE(p.apellidos, '') AS productor,
-                pr.humedad, pr.temperatura, pr.altitud, pr.tipo_secado, pr.fecha_registro
-         FROM produccion pr
-         LEFT JOIN lotes l ON pr.lote_id = l.id
-         LEFT JOIN productores p ON l.productor_id = p.id
-         WHERE pr.id = ?`,
-        [this.lastID],
-        (err, row) => {
-          if (err) {
-            return res.status(500).json({ message: 'Error al recuperar producción', error: err.message })
-          }
-          res.status(201).json(row)
-        }
-      )
+      // Respuesta solo con INSERT + lastID: evita segundo query que puede fallar (bloqueos / mismo pool).
+      res.status(201).json({
+        id: this.lastID,
+        lote_id: Number(lote_id),
+        humedad,
+        temperatura,
+        altitud,
+        tipo_secado,
+        fecha_registro
+      })
     }
   )
 })

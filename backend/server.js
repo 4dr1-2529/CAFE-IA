@@ -36,6 +36,16 @@ app.use(
 )
 app.use(express.json())
 
+// Para comprobar que corres el backend nuevo: GET http://localhost:3001/api/health
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    revision: 'produccion-20260429-insert-only',
+    port: PORT,
+    pid: process.pid
+  })
+})
+
 app.use('/api/productores', productoresRouter)
 app.use('/api/lotes', lotesRouter)
 app.use('/api/produccion', produccionRouter)

@@ -3,10 +3,23 @@ import { db } from '../database.js'
 
 const router = express.Router()
 
-function formatNextCodigo(lastCodigo) {
-  if (!lastCodigo) return 'LOTE-0001'
-  const value = parseInt(lastCodigo.replace(/^LOTE-/, ''), 10)
-  return `LOTE-${String(value + 1).padStart(4, '0')}`
+function formatNextCodigoFromMaxId(nextId) {
+  const n = Number(nextId)
+  const safe = Number.isFinite(n) && n >= 1 ? n : 1
+  return `LOTE-${String(safe).padStart(4, '0')}`
+}
+
+function fechaPrimeraEtapaISO(fechaCosecha) {
+  if (!fechaCosecha || typeof fechaCosecha !== 'string') return null
+  const trimmed = fechaCosecha.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
+  const d = new Date(trimmed)
+  if (!Number.isFinite(d.getTime())) return trimmed.slice(0, 10)
+  try {
+    return d.toISOString().split('T')[0]
+  } catch {
+    return trimmed.slice(0, 10)
+  }
 }
 
 function createTrazabilidades(loteId, fechaCosecha, ubicacion) {
@@ -19,7 +32,7 @@ function createTrazabilidades(loteId, fechaCosecha, ubicacion) {
   ]
 
   etapas.forEach(({ etapa, descripcion }, index) => {
-    const fecha = index === 0 ? new Date(fechaCosecha).toISOString().split('T')[0] : null
+    const fecha = index === 0 ? fechaPrimeraEtapaISO(fechaCosecha) : null
     const estado = index === 0 ? 'Completado' : 'Pendiente'
     db.run(
       `INSERT INTO trazabilidad (lote_id, etapa, descripcion, fecha, ubicacion, estado)
@@ -50,11 +63,13 @@ router.get('/', (req, res) => {
 })
 
 router.get('/next-code', (req, res) => {
-  db.get('SELECT codigo_lote FROM lotes ORDER BY id DESC LIMIT 1', (error, row) => {
+  db.get('SELECT COALESCE(MAX(id), 0) AS max_id FROM lotes', (error, row) => {
     if (error) {
       return res.status(500).json({ message: 'Error al obtener siguiente código de lote', error: error.message })
     }
-    res.json({ nextCode: formatNextCodigo(row?.codigo_lote) })
+    const maxId = Number(row?.max_id)
+    const nextId = Number.isFinite(maxId) ? maxId + 1 : 1
+    res.json({ nextCode: formatNextCodigoFromMaxId(nextId) })
   })
 })
 
@@ -87,6 +102,12 @@ router.post('/', (req, res) => {
       [code, productor_id, variedad_cafe, fecha_cosecha, cantidad_kg, estado || 'Produccion', humedad, temperatura, altitud, tipo_secado],
       function (error) {
         if (error) {
+          const dup =
+            typeof error.message === 'string' &&
+            (error.message.includes('UNIQUE constraint') || error.message.includes('unique constraint'))
+          if (dup) {
+            return res.status(409).json({ message: 'Ya existe un lote con ese código. Use otro código o borre el duplicado.' })
+          }
           return res.status(500).json({ message: 'Error al registrar lote', error: error.message })
         }
 
@@ -95,7 +116,11 @@ router.post('/', (req, res) => {
             console.warn('No se encontró ubicación del productor:', prodErr.message)
           }
           const ubicacion = productorRow?.parcela || productorRow?.ubicacion || ''
-          createTrazabilidades(this.lastID, fecha_cosecha, ubicacion)
+          try {
+            createTrazabilidades(this.lastID, fecha_cosecha, ubicacion)
+          } catch (te) {
+            console.error('createTrazabilidades:', te)
+          }
           db.get('SELECT * FROM lotes WHERE id = ?', [this.lastID], (err, row) => {
             if (err) {
               return res.status(500).json({ message: 'Error al recuperar lote', error: err.message })
@@ -107,14 +132,17 @@ router.post('/', (req, res) => {
     )
   }
 
-  if (codigo_lote) {
-    insertLote(codigo_lote)
+  const trimmedCodigo = typeof codigo_lote === 'string' ? codigo_lote.trim() : ''
+  if (trimmedCodigo) {
+    insertLote(trimmedCodigo)
   } else {
-    db.get('SELECT codigo_lote FROM lotes ORDER BY id DESC LIMIT 1', (error, row) => {
+    db.get('SELECT COALESCE(MAX(id), 0) AS max_id FROM lotes', (error, row) => {
       if (error) {
         return res.status(500).json({ message: 'Error al obtener siguiente código de lote', error: error.message })
       }
-      insertLote(formatNextCodigo(row?.codigo_lote))
+      const maxId = Number(row?.max_id)
+      const nextId = Number.isFinite(maxId) ? maxId + 1 : 1
+      insertLote(formatNextCodigoFromMaxId(nextId))
     })
   }
 })
