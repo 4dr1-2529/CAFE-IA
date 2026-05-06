@@ -1,78 +1,59 @@
-# TODO - Correcciones Café Sostenible AI
+# TODO - Mejoras Futuras | Café Sostenible AI
 
-## ✅ Completado
+Roadmap técnico posterior a PMV1 para evolución funcional, calidad de software y preparación productiva.
 
-### 1. App.jsx - Rutas
-- [x] Restructurar rutas con Outlet para React Router v6
+## Backend
+- [ ] Versionar endpoints (`/api/v1`) para mantener compatibilidad en futuras iteraciones.
+- [ ] Separar capa de controladores, servicios y repositorios.
+- [ ] Fortalecer validación avanzada de payloads en endpoints críticos.
+- [ ] Incorporar pruebas unitarias e integración para rutas de productores, lotes, calidad e IA.
+- [ ] Mejorar manejo centralizado de errores y logging estructurado.
 
-### 2. Layout.jsx
-- [x] Cambiar children por Outlet
+## Frontend
+- [ ] Mejorar dashboard con gráficos avanzados y filtros dinámicos por fecha/productor/lote.
+- [ ] Optimizar rendimiento de tablas y componentes con alta carga de datos.
+- [ ] Añadir estados de carga, error y vacío más robustos en todos los módulos.
+- [ ] Mejorar navegación y experiencia de usuario para flujos largos de registro.
+- [ ] Reforzar documentación técnica de componentes y arquitectura de frontend.
 
-### 3. BaseDatos.jsx
-- [x] Definir variable `tables` que falta
-- [x] Agregar manejo de errores
-- [x] Agregar botón actualizar datos
-- [x] Corregir JSX estructura para evitar pantalla en blanco
+## IA / Machine Learning
+- [ ] Entrenar modelo real con dataset histórico de producción y calidad.
+- [ ] Implementar pipeline de entrenamiento y evaluación reproducible.
+- [ ] Integrar servicio Python + Scikit-learn para inferencia y entrenamiento.
+- [ ] Medir y reportar métricas de precisión y exactitud del modelo.
+- [ ] Comparar desempeño entre motor por reglas y modelo entrenado.
 
-### 4. ControlCalidad.jsx
-- [x] Corregir cálculos con parseInt
-- [x] Corregir typo `evaludor` → `evaluador`
-- [x] Mostrar datos del lote seleccionado
-- [x] Mejorar validaciones (1-100)
-- [x] Manejo de errores sin pantalla en blanco
-- [x] Agregar selector de lote con detalles
+## Base de Datos
+- [ ] Diseñar plan de migraciones para evolución de esquema SQLite.
+- [ ] Añadir índices para consultas de reportes y trazabilidad.
+- [ ] Fortalecer reglas anti-duplicado y validación de consistencia referencial.
+- [ ] Definir estrategia de respaldo y recuperación de base de datos.
 
-### 5. Trazabilidad.jsx
-- [x] Usar `fecha_cosecha` en lugar de `fecha`
-- [x] Mostrar todos los lotes
-- [x] Línea de tiempo correcta
-- [x] Cargar datos de trazabilidad reales
-- [x] Mostrar descripcion y ubicacion en timeline
+## Reportes
+- [ ] Exportar reportes en PDF.
+- [ ] Exportar reportes en Excel.
+- [ ] Incluir métricas de calidad por periodo, productor y lote.
+- [ ] Incorporar panel de KPIs comparativos para seguimiento de desempeño.
 
-### 6. ModuloIA.jsx
-- [x] Mostrar datos reales del lote seleccionado
-- [x] Corregir historial de predicciones
-- [x] Mostrar fecha, tipo café, confianza
-- [x] Agregar selector de lote con detalles
+## Seguridad
+- [ ] Implementar autenticación real.
+- [ ] Incorporar autorización por roles (administrador, evaluador, operador).
+- [ ] Endurecer configuración de seguridad en API (CORS, límites, validación).
+- [ ] Registrar auditoría básica de operaciones sensibles.
 
-### 7. Reportes.jsx
-- [x] Mostrar datos reales
-- [x] Corregir reporte IA
-- [x] Agregar botones de exportar
+## Despliegue
+- [ ] Preparar despliegue cloud para frontend y backend.
+- [ ] Definir configuración por entorno (desarrollo, pruebas, producción).
+- [ ] Configurar pipeline CI/CD para build, test y despliegue automatizado.
+- [ ] Documentar estrategia de observabilidad y monitoreo.
 
-### 8. Dashboard.jsx
-- [x] Manejo de errores si API falla
-- [x] Calcular desde backend
+## Futuras Integraciones
+- [ ] Integrar chatbot inteligente como funcionalidad futura.
+- [ ] Integrar fuentes externas (por ejemplo clima) para enriquecer predicciones.
+- [ ] Evaluar integración con servicios de mensajería/notificaciones operativas.
 
-### 9. Backend Routes
-- [x] Corregir produccion.js (nombre → nombres)
-- [x] Corregir calidad.js endpoint POST/GET
-- [x] Corregir predicciones.js
-- [x] Agregar manejo de errores
+---
 
-### 10. API Service
-- [x] Revisar todas las funciones
-- [x] Manejo de errores consistente
-
-## 🔄 Pendiente
-
-### Arquitectura y Evidencias
-- [x] Revisar Arquitectura.jsx - OK
-- [x] Revisar EvidenciasPMV.jsx - OK
-- [x] Revisar HistoriasUsuario.jsx - OK
-
-### Testing Final
-- [x] Ejecutar pruebas completas - Backend corriendo en http://localhost:3001
-- [x] Verificar data consistency - Datos reales desde SQLite
-- [x] Actualizar README si necesario - OK
-
-## 🎉 PROYECTO COMPLETADO
-
-El sistema 'Café Sostenible AI' está funcionando correctamente:
-- ✅ Sin errores ni pantallas en blanco
-- ✅ Datos reales desde SQLite
-- ✅ Backend y frontend corriendo
-- ✅ Todas las funcionalidades implementadas
-- ✅ Manejo de errores consistente
-- ✅ UI responsiva y moderna
+**Estado actual:** PMV1 funcional y operativo.  
+**Propósito de este TODO:** priorizar mejoras sin afectar estabilidad del sistema actual.
 

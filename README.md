@@ -1,157 +1,156 @@
 # Café Sostenible AI
 
-**Sistema de trazabilidad inteligente y predicción de calidad del café sostenible basado en Machine Learning e Inteligencia Artificial**
+**Sistema de trazabilidad inteligente y predicción de calidad del café sostenible basado en Inteligencia Artificial y Machine Learning.**
 
-Plataforma full-stack para trazabilidad del café, control de calidad y predicción IA con persistencia real en SQLite.
+## Descripción
+Aplicación web full-stack para gestionar el ciclo productivo del café sostenible con trazabilidad operativa, control de calidad y predicción técnica. El sistema integra frontend y backend desacoplados mediante API REST y persistencia local en SQLite.
 
-## Problema que resuelve
+## Objetivo
+Centralizar la información productiva en una plataforma única, reduciendo errores operativos y pérdida de trazabilidad.  
+El sistema resuelve la fragmentación de datos permitiendo registrar productores y lotes, evaluar calidad, generar predicciones y consultar reportes en tiempo real.
 
-Permite registrar productores y lotes, seguir etapas de trazabilidad, evaluar calidad y ejecutar predicciones IA bajo demanda, evitando hojas de cálculo dispersas y pérdida de historial operativo.
+## Tecnologías utilizadas
 
-## Tecnologías
+### Frontend
+- React
+- Vite
+- JavaScript JSX
+- TailwindCSS / CSS
 
-- Frontend: React + Vite + TailwindCSS
-- Backend: Node.js + Express
-- Base de datos: SQLite (`backend/database.sqlite`)
-- Gráficos/UI: Recharts + Lucide React
+### Backend
+- Node.js
+- Express
 
-## Descripción de la aplicación
+### Base de datos
+- SQLite
 
-Aplicación full-stack para registrar productores y lotes, visualizar trazabilidad por etapas, ejecutar control de calidad y ejecutar predicción IA/ML bajo demanda; todo con persistencia real en SQLite.
+### IA / Machine Learning
+- Sistema predictivo basado en reglas
+- No entrenado con dataset histórico real
+- Preparado para futura integración con Python y Scikit-learn
+- Variables:
+  - humedad
+  - temperatura
+  - altitud
+  - variedad
+  - tipo de secado
+- Generación de:
+  - calidad predicha
+  - confianza
+  - recomendación técnica
 
-## Instalación backend
+## Arquitectura del Proyecto
 
+```text
+cafe-cursor/
+├── frontend/
+│   ├── src/
+│   │   ├── application/
+│   │   ├── components/
+│   │   ├── domain/
+│   │   ├── infrastructure/
+│   │   ├── services/
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── package.json
+│   └── index.html
+├── backend/
+│   ├── routes/
+│   ├── database.js
+│   ├── database.sqlite
+│   ├── server.js
+│   └── package.json
+├── README.md
+└── TODO.md
+```
+
+- **`frontend/`** contiene toda la interfaz web basada en React + Vite: componentes visuales, lógica de presentación, servicios de consumo API y configuración de build/estilos.
+- **`backend/`** contiene la API REST con Node.js + Express, reglas de negocio, rutas y persistencia de datos en SQLite.
+- Frontend y backend funcionan desacoplados: cada capa puede ejecutarse, evolucionar y desplegarse de forma independiente.
+- La comunicación entre capas se realiza mediante endpoints REST (`/api/*`), manteniendo una arquitectura modular y organizada.
+
+## Módulos del Sistema
+- Dashboard
+- Productores
+- Registro Producción
+- Trazabilidad
+- Control Calidad
+- Módulo IA
+- Base de Datos
+- Reportes
+- Evidencias PMV
+- Arquitectura
+- Historias Usuario
+
+## Instalación
+
+### Backend
 ```bash
 cd backend
 npm install
-npm run start
+npm start
 ```
 
-Backend: `http://localhost:3001` (API: `http://localhost:3001/api`).
-
-## Instalación frontend
-
+### Frontend
 ```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-Frontend: `http://localhost:5174`.
-
-## SQLite
-
-- Archivo: `backend/database.sqlite`
-- Tablas principales:
-  - `productores`
-  - `lotes`
-  - `produccion`
-  - `trazabilidad`
-  - `control_calidad`
-  - `predicciones_ia`
+## URLs
+- Backend: `http://localhost:3001`
+- Frontend: `http://localhost:5174`
 
 ## Endpoints REST principales
+- `/api/productores`
+- `/api/lotes`
+- `/api/control-calidad`
+- `/api/prediccion-ia`
+- `/api/predicciones`
+- `/api/reportes`
 
-- `GET/POST/PUT/DELETE /api/productores`
-- `GET /api/lotes`
-- `GET /api/lotes/next-code`
-- `POST /api/lotes`
-- `GET/POST /api/produccion`
-- `GET/POST /api/trazabilidad`
-- `GET/POST /api/control-calidad`
-- `GET/POST /api/predicciones`
-- `POST /api/prediccion-ia`
-- `GET /api/reportes/produccion`
-- `GET /api/reportes/calidad`
-- `GET /api/reportes/trazabilidad`
-- `GET /api/reportes/predicciones`
-
-## Módulos
-
-- Productores
-- Registro de producción/lotes
+## Funcionalidades implementadas
+- Registro de productores
+- Registro de lotes
+- Generación automática de código de lote
 - Trazabilidad
-- Control de calidad
-- Módulo IA
-- Base de datos (visualización)
+- Evaluación de calidad
+- Predicción IA/ML
 - Reportes
-- Evidencias PMV
-- Arquitectura
-- Historias de usuario
+- Validaciones anti-duplicado
 
-## Módulo IA
+## Módulo IA (PMV1)
+El módulo IA del PMV1 funciona como un sistema predictivo basado en reglas de Machine Learning. No es un modelo entrenado con dataset histórico real, pero permite validar el flujo de predicción usando variables del proceso productivo.
 
-- Carga lotes reales desde backend.
-- Ejecuta predicción solo con acción del usuario.
-- Guarda predicción real con `lote_id` válido (1 predicción por lote).
-- Muestra: `calidad_predicha`, `confianza`, `factores_influyentes`, `recomendacion`, `fecha_prediccion`, `variedad_cafe`.
+### Variables usadas
+- humedad
+- temperatura
+- altitud
+- variedad de café
+- tipo de secado
 
-**Modelo usado:** “Modelo predictivo basado en reglas de Machine Learning”.
-
-**Variables de entrada:** humedad, temperatura, altitud, tipo de secado, variedad de café y puntaje de calidad (si existe).
-
-**Salida:** calidad predicha, confianza y recomendación técnica.
+### Resultados generados
+- calidad predicha
+- confianza
+- recomendación técnica
 
 ## Reglas de negocio
+- Un lote solo puede tener una evaluación de calidad.
+- Un lote solo puede tener una predicción IA.
+- No se permiten lotes duplicados.
+- Los datos se guardan en SQLite.
 
-- Un lote solo puede tener **una evaluación** de control de calidad.
-- Un lote solo puede tener **una predicción IA**.
-- Los datos se guardan en **SQLite** (`backend/database.sqlite`) y se consumen mediante la API REST.
+## Mejoras futuras
+- Entrenar modelo real con Python y Scikit-learn.
+- Integrar chatbot como mejora futura (no implementado actualmente).
+- Exportar reportes PDF/Excel.
+- Despliegue cloud.
+- Autenticación real.
+- Métricas de precisión y exactitud.
 
-## Reportes
-
-Incluye reportes de:
-
-- Producción
-- Trazabilidad (etapas por tipo reales)
-- Control de calidad
-- Predicción IA (solo predicciones reales)
-
-Resumen mostrado:
-
-- Total lotes
-- Producción total
-- Promedio de calidad
-- Total predicciones reales
-- Lotes por estado
-- Etapas por tipo
-
-## Evidencias PMV
-
-Los módulos de evidencias, arquitectura e historias de usuario están alineados al estado funcional actual del proyecto y flujo real:
-
-`React/Vite -> src/services/api.js -> Express routes -> SQLite`.
-
-## Historias de usuario
-
-- HU01 Registrar productor
-- HU02 Registrar lote/producción
-- HU03 Consultar trazabilidad
-- HU04 Evaluar calidad
-- HU05 Ejecutar predicción IA
-- HU06 Generar reportes
-
-
-## Estructura real del proyecto
-
-```text
-cafe-cursor/
-├── backend/
-│   ├── routes/
-│   ├── database.js
-│   ├── server.js
-│   ├── package.json
-│   └── database.sqlite
-├── src/
-│   ├── application/
-│   ├── components/
-│   ├── domain/
-│   ├── infrastructure/
-│   ├── services/
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-└── README.md
-```
+## Estado del proyecto
+PMV1 funcional y operativo.
