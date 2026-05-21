@@ -8,8 +8,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-DoajZIfK.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-D6B8Aa3L.css">
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('cafe_theme');
+          if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-k-WV61RF.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/vendor-C9kzP-Hx.js">
+    <link rel="modulepreload" crossorigin href="/assets/icons-DugmX7V3.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-BoNAz1DC.css">
   </head>
   <body>
     <div id="root"></div>

@@ -1,0 +1,16 @@
+{
+  "name": "cafe-sostenible",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Sistema de Trazabilidad Inteligente para Café Sostenible",
+  "scripts": {
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "backend": "npm start --prefix backend",
+    "frontend": "npm run dev --prefix frontend",
+    "dev": "npm run backend",
+    "test": "npm test --prefix backend",
+    "db:seed": "npm run db:seed --prefix backend",
+    "db:seed:pmv2": "npm run db:seed:pmv2 --prefix backend",
+    "build": "npm run build --prefix frontend"
+  }
+}

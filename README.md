@@ -1,156 +1,235 @@
 # Café Sostenible AI
 
-**Sistema de trazabilidad inteligente y predicción de calidad del café sostenible basado en Inteligencia Artificial y Machine Learning.**
+**Sistema de Trazabilidad Inteligente para Café Sostenible** — plataforma full-stack con arquitectura hexagonal, MySQL empresarial, JWT, IA predictiva y trazabilidad con QR.
 
-## Descripción
-Aplicación web full-stack para gestionar el ciclo productivo del café sostenible con trazabilidad operativa, control de calidad y predicción técnica. El sistema integra frontend y backend desacoplados mediante API REST y persistencia local en SQLite.
+[![Node](https://img.shields.io/badge/Node-18+-green)]()
+[![React](https://img.shields.io/badge/React-18-blue)]()
+[![MySQL](https://img.shields.io/badge/MySQL-8-orange)]()
+[![Arquitectura](https://img.shields.io/badge/Arquitectura-Hexagonal-purple)]()
 
-## Objetivo
-Centralizar la información productiva en una plataforma única, reduciendo errores operativos y pérdida de trazabilidad.  
-El sistema resuelve la fragmentación de datos permitiendo registrar productores y lotes, evaluar calidad, generar predicciones y consultar reportes en tiempo real.
+---
 
-## Tecnologías utilizadas
+## Características
 
-### Frontend
-- React
-- Vite
-- JavaScript JSX
-- TailwindCSS / CSS
+- Trazabilidad completa de lotes (5 etapas + línea de tiempo + QR)
+- Control de calidad sensorial
+- Predicción IA v2 (confianza, riesgo %, alertas, recomendaciones)
+- Dashboard analítico con KPIs y gráficos
+- Reportes PDF y Excel
+- Autenticación JWT (Admin, Supervisor, Productor)
+- MySQL 35+ tablas · Dark mode · PMV1/2/3
 
-### Backend
-- Node.js
-- Express
+---
 
-### Base de datos
-- SQLite
+## Estructura del proyecto
 
-### IA / Machine Learning
-- Sistema predictivo basado en reglas
-- No entrenado con dataset histórico real
-- Preparado para futura integración con Python y Scikit-learn
-- Variables:
-  - humedad
-  - temperatura
-  - altitud
-  - variedad
-  - tipo de secado
-- Generación de:
-  - calidad predicha
-  - confianza
-  - recomendación técnica
-
-## Arquitectura del Proyecto
+Ver [docs/ESTRUCTURA_PROYECTO.md](docs/ESTRUCTURA_PROYECTO.md)
 
 ```text
 cafe-cursor/
-├── frontend/
-│   ├── src/
-│   │   ├── application/
-│   │   ├── components/
-│   │   ├── domain/
-│   │   ├── infrastructure/
-│   │   ├── services/
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── package.json
-│   └── index.html
+├── .github/workflows/ci.yml
 ├── backend/
-│   ├── routes/
-│   ├── database.js
-│   ├── database.sqlite
-│   ├── server.js
-│   └── package.json
-├── README.md
-└── TODO.md
+│   ├── sql/              # schema.sql (39 tablas), views.sql, seeds.sql
+│   ├── src/              # hexagonal: domain · application · infrastructure · interfaces
+│   └── tests/            # Jest + Supertest (~18 casos)
+├── frontend/src/
+│   ├── pages/            # dashboard, productores, ia, sistema (evidencias, arquitectura…)
+│   ├── layouts/ · routes/ · context/ · components/ui
+│   └── services/api/     # Cliente REST + JWT
+├── ml/                   # train_model.py + dataset (Scikit-learn)
+├── docs/                 # ESTRUCTURA_PROYECTO.md, PMV2.md, matriz HU…
+└── INICIAR.bat
 ```
 
-- **`frontend/`** contiene toda la interfaz web basada en React + Vite: componentes visuales, lógica de presentación, servicios de consumo API y configuración de build/estilos.
-- **`backend/`** contiene la API REST con Node.js + Express, reglas de negocio, rutas y persistencia de datos en SQLite.
-- Frontend y backend funcionan desacoplados: cada capa puede ejecutarse, evolucionar y desplegarse de forma independiente.
-- La comunicación entre capas se realiza mediante endpoints REST (`/api/*`), manteniendo una arquitectura modular y organizada.
+Árbol detallado: [docs/ESTRUCTURA_PROYECTO.md](docs/ESTRUCTURA_PROYECTO.md) o pantalla **Arquitectura** en la app.
 
-## Módulos del Sistema
-- Dashboard
-- Productores
-- Registro Producción
-- Trazabilidad
-- Control Calidad
-- Módulo IA
-- Base de Datos
-- Reportes
-- Evidencias PMV
-- Arquitectura
-- Historias Usuario
+---
 
-## Instalación
+## Requisitos
 
-### Backend
+| Herramienta | Versión |
+|-------------|---------|
+| Node.js | 18+ |
+| MySQL | 8+ (XAMPP recomendado) |
+| npm | 9+ |
+
+---
+
+## PMV2 — datos de demostración (25 lotes)
+
+```bash
+# Primera vez o regenerar dataset completo
+cd backend
+set SEED_PMV2_FORCE=1
+npm run db:seed:pmv2
+```
+
+Incluye 5 productores, 25 lotes, trazabilidad, calidad y predicciones IA. Ver [docs/PMV2.md](docs/PMV2.md).
+
+---
+
+## Instalación rápida
+
+### 1. Clonar e instalar
+
+```bash
+cd cafe-cursor
+npm run install:all
+```
+
+### 2. Configurar MySQL
+
 ```bash
 cd backend
-npm install
-npm start
+copy .env.example .env
+# Editar DB_PASSWORD si aplica
 ```
 
-### Frontend
+Iniciar MySQL en XAMPP (botón **Start** en MySQL).
+
+### 3. Iniciar servicios
+
+**Opción A — Windows**
+
+Doble clic en `INICIAR.bat`
+
+**Opción B — Manual**
+
 ```bash
-cd frontend
-npm install
-npm run dev
+# Terminal 1
+cd backend && npm start
+
+# Terminal 2
+cd frontend && npm run dev
 ```
 
-## URLs
-- Backend: `http://localhost:3001`
-- Frontend: `http://localhost:5174`
+| Servicio | URL |
+|----------|-----|
+| Frontend | http://localhost:5174 |
+| Backend API | http://localhost:3029/api |
+| Health | http://localhost:3029/api/health |
 
-## Endpoints REST principales
-- `/api/productores`
-- `/api/lotes`
-- `/api/control-calidad`
-- `/api/prediccion-ia`
-- `/api/predicciones`
-- `/api/reportes`
+### Credenciales demo
 
-## Funcionalidades implementadas
-- Registro de productores
-- Registro de lotes
-- Generación automática de código de lote
-- Trazabilidad
-- Evaluación de calidad
-- Predicción IA/ML
-- Reportes
-- Validaciones anti-duplicado
+```
+Email:    admin@cafeai.com
+Password: admin123
+```
 
-## Módulo IA (PMV1)
-El módulo IA del PMV1 funciona como un sistema predictivo basado en reglas de Machine Learning. No es un modelo entrenado con dataset histórico real, pero permite validar el flujo de predicción usando variables del proceso productivo.
+---
 
-### Variables usadas
-- humedad
-- temperatura
-- altitud
-- variedad de café
-- tipo de secado
+## Variables de entorno
 
-### Resultados generados
-- calidad predicha
-- confianza
-- recomendación técnica
+### Backend (`backend/.env`)
 
-## Reglas de negocio
-- Un lote solo puede tener una evaluación de calidad.
-- Un lote solo puede tener una predicción IA.
-- No se permiten lotes duplicados.
-- Los datos se guardan en SQLite.
+```env
+PORT=3029
+DB_HOST=127.0.0.1
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=cafe_sostenible
+JWT_SECRET=tu_secreto_minimo_32_caracteres
+CORS_ORIGINS=http://localhost:5174
+```
 
-## Mejoras futuras
-- Entrenar modelo real con Python y Scikit-learn.
-- Integrar chatbot como mejora futura (no implementado actualmente).
-- Exportar reportes PDF/Excel.
-- Despliegue cloud.
-- Autenticación real.
-- Métricas de precisión y exactitud.
+### Frontend (`frontend/.env`)
 
-## Estado del proyecto
-PMV1 funcional y operativo.
+```env
+VITE_API_BASE_URL=http://localhost:3029
+```
+
+---
+
+## API REST
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Login JWT |
+| GET | `/api/dashboard/metrics` | KPIs dashboard |
+| GET/POST | `/api/productores` | Productores |
+| GET/POST | `/api/lotes` | Lotes |
+| GET | `/api/lotes/:id` | Detalle + trazabilidad |
+| POST | `/api/prediccion-ia` | Ejecutar predicción |
+| GET | `/api/reportes/export/:tipo/pdf` | Exportar PDF |
+
+Documentación ampliada: [docs/DOCUMENTACION_TECNICA.md](docs/DOCUMENTACION_TECNICA.md)
+
+---
+
+## Arquitectura
+
+**Hexagonal (backend)**
+
+```text
+Routes → Controllers → Services → Domain / Repositories → MySQL
+```
+
+Controllers: Productores, Lotes, Calidad, Trazabilidad, Predicciones, Dashboard.
+
+**Frontend**
+
+```text
+Pages → Services (API) → Backend
+Context: Auth + Theme
+```
+
+---
+
+## Base de datos
+
+- Motor: **MySQL 8**
+- Base: `cafe_sostenible`
+- Tablas: **35+** (seguridad, productores, lotes, calidad, IA, reportes, auditoría)
+- Script: `backend/sql/schema.sql`
+- Migración automática al iniciar el backend
+
+---
+
+## Tests (13 casos)
+
+```bash
+cd backend
+npm test
+```
+
+| Suite | Cobertura |
+|-------|-----------|
+| Health + API errors | Endpoints y validación HTTP |
+| Validators | DTOs lote, calidad, productor, trazabilidad |
+| CalidadService | Puntaje sensorial 0–100 |
+| PredictionEngine | IA v2, riesgo y alertas |
+
+---
+
+## ML (evidencia universitaria)
+
+```bash
+cd ml
+pip install -r requirements.txt
+python train_model.py
+```
+
+---
+
+## Deploy
+
+| Plataforma | Componente |
+|------------|--------------|
+| Render / Railway | Backend + MySQL |
+| Vercel | Frontend (`vercel.json` incluido) |
+
+---
+
+## PMV
+
+| PMV | Alcance |
+|-----|---------|
+| PMV1 | CRUD, trazabilidad, calidad, IA reglas |
+| PMV2 | MySQL, JWT, reportes, hexagonal |
+| PMV3 | IA v2, QR, dashboard, ML Python, dark mode |
+
+---
+
+## Licencia
+
+MIT — Proyecto académico Café Sostenible AI.

@@ -1,0 +1,30 @@
+name: CI Café Sostenible
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --prefix backend || npm install --prefix backend
+      - run: npm test --prefix backend
+        env:
+          SKIP_INTEGRATION: '1'
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci --prefix frontend || npm install --prefix frontend
+      - run: npm run build --prefix frontend

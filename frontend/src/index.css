@@ -2,78 +2,347 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --color-cafe-oscuro: #513b27;
-  --color-cafe-medio: #7c5739;
-  --color-verde: #3d7d5c;
-  --color-crema: #f7ede0;
+/* ═══════════════════════════════════════════════════════════
+   TEMA GLOBAL — contraste legible en claro y oscuro
+   Las utilidades Tailwind text-cafe-* se sobreescriben aquí
+   ═══════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #64748b;
+    --surface: #ffffff;
+    --surface-muted: #f8fafc;
+  }
+  html.dark {
+    color-scheme: dark;
+    --text-primary: #f8fafc;
+    --text-secondary: #e2e8f0;
+    --text-muted: #94a3b8;
+    --surface: #1e293b;
+    --surface-muted: #0f172a;
+  }
+  body {
+    @apply font-sans antialiased;
+    background-color: var(--surface-muted);
+    color: var(--text-primary);
+  }
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Overrides DESPUÉS de utilities — mayor prioridad con !important */
+@layer utilities {
+  /* ─── MODO CLARO: textos café demasiado pálidos en contenido principal ─── */
+  html:not(.dark) main .text-cafe-900,
+  html:not(.dark) main .text-cafe-800,
+  html:not(.dark) main .text-cafe-700 {
+    color: #1e293b !important;
+  }
+  html:not(.dark) main .text-cafe-600,
+  html:not(.dark) main .text-cafe-500 {
+    color: #475569 !important;
+  }
+  html:not(.dark) main .text-cafe-400,
+  html:not(.dark) main .text-cafe-300 {
+    color: #64748b !important;
+  }
+  /* En claro, cafe-100/200 solo en sidebar; en main forzar legible */
+  html:not(.dark) main .text-cafe-200,
+  html:not(.dark) main .text-cafe-100 {
+    color: #475569 !important;
+  }
+  html:not(.dark) main .text-gray-600,
+  html:not(.dark) main .text-gray-500,
+  html:not(.dark) main .text-gray-700 {
+    color: #475569 !important;
+  }
+
+  /* ─── MODO OSCURO: textos café oscuros ilegibles ─── */
+  html.dark main .text-cafe-900,
+  html.dark main .text-cafe-800,
+  html.dark main .text-cafe-700,
+  html.dark main .text-cafe-600 {
+    color: #f1f5f9 !important;
+  }
+  html.dark main .text-cafe-500,
+  html.dark main .text-cafe-400 {
+    color: #cbd5e1 !important;
+  }
+  html.dark main .text-cafe-300,
+  html.dark main .text-cafe-200,
+  html.dark main .text-cafe-100 {
+    color: #e2e8f0 !important;
+  }
+  html.dark main .text-gray-600,
+  html.dark main .text-gray-500,
+  html.dark main .text-gray-700,
+  html.dark main .text-gray-800 {
+    color: #cbd5e1 !important;
+  }
+
+  /* Verde café en contenido */
+  html:not(.dark) main .text-cafeVerde-600,
+  html:not(.dark) main .text-cafeVerde-700,
+  html:not(.dark) main .text-cafeVerde-800 {
+    color: #166534 !important;
+  }
+  html.dark main .text-cafeVerde-600,
+  html.dark main .text-cafeVerde-700,
+  html.dark main .text-cafeVerde-800,
+  html.dark main .text-cafeVerde-900 {
+    color: #86efac !important;
+  }
+
+  /* Estados semánticos */
+  html.dark main .text-red-600,
+  html.dark main .text-red-700,
+  html.dark main .text-red-800 {
+    color: #fca5a5 !important;
+  }
+  html:not(.dark) main .text-red-600,
+  html:not(.dark) main .text-red-700 {
+    color: #b91c1c !important;
+  }
+  html.dark main .text-green-600,
+  html.dark main .text-green-700,
+  html.dark main .text-green-800 {
+    color: #86efac !important;
+  }
+  html:not(.dark) main .text-green-600,
+  html:not(.dark) main .text-green-700 {
+    color: #15803d !important;
+  }
+  html.dark main .text-yellow-600,
+  html.dark main .text-yellow-700,
+  html.dark main .text-amber-800 {
+    color: #fde047 !important;
+  }
+  html:not(.dark) main .text-yellow-600,
+  html:not(.dark) main .text-yellow-700 {
+    color: #a16207 !important;
+  }
+  html.dark main .text-orange-700,
+  html.dark main .text-orange-800 {
+    color: #fdba74 !important;
+  }
+
+  /* Fondos en main */
+  html.dark main .bg-white {
+    background-color: #1e293b !important;
+  }
+  html.dark main .bg-cafe-50 {
+    background-color: rgba(51, 65, 85, 0.6) !important;
+  }
+  html.dark main .bg-cafe-100 {
+    background-color: rgba(51, 65, 85, 0.8) !important;
+  }
+  html.dark main .bg-cafeVerde-50 {
+    background-color: rgba(20, 83, 45, 0.25) !important;
+  }
+  html.dark main .bg-cafeVerde-100 {
+    background-color: rgba(20, 83, 45, 0.35) !important;
+  }
+  html.dark main .bg-amber-50 {
+    background-color: rgba(120, 53, 15, 0.25) !important;
+  }
+  html.dark main .bg-green-50 {
+    background-color: rgba(20, 83, 45, 0.2) !important;
+  }
+  html.dark main .bg-red-50 {
+    background-color: rgba(127, 29, 29, 0.25) !important;
+  }
+  html.dark main .bg-orange-50 {
+    background-color: rgba(124, 45, 18, 0.25) !important;
+  }
+  html:not(.dark) main .bg-cafe-50 {
+    background-color: #faf8f5 !important;
+  }
+
+  /* Bordes */
+  html.dark main .border-cafe-100,
+  html.dark main .border-cafe-200,
+  html.dark main .border-cafeVerde-200,
+  html.dark main .border-amber-200,
+  html.dark main .border-green-200 {
+    border-color: #475569 !important;
+  }
+
+  /* Tablas */
+  html.dark main thead,
+  html.dark main thead th {
+    color: #f1f5f9 !important;
+  }
+  html.dark main tbody td {
+    color: #e2e8f0 !important;
+  }
+  html:not(.dark) main thead th {
+    color: #1e293b !important;
+  }
+  html.dark main tr.hover\:bg-cafe-50:hover,
+  html.dark main .hover\:bg-cafe-50:hover {
+    background-color: #334155 !important;
+  }
+  html.dark main .bg-gray-50 {
+    background-color: rgba(51, 65, 85, 0.5) !important;
+  }
+  html.dark main .bg-gray-100 {
+    background-color: rgba(51, 65, 85, 0.7) !important;
+  }
+  html.dark main .border-gray-200 {
+    border-color: #475569 !important;
+  }
+
+  /* Iconos / estados vacíos con opacidad baja */
+  html:not(.dark) main .opacity-50 {
+    opacity: 0.65 !important;
+    color: #64748b !important;
+  }
+  html.dark main .opacity-50 {
+    opacity: 0.75 !important;
+    color: #94a3b8 !important;
+  }
+
+  /* Inputs y selects en main */
+  html.dark main input,
+  html.dark main select,
+  html.dark main textarea {
+    color: #f8fafc !important;
+    background-color: #0f172a !important;
+    border-color: #64748b !important;
+  }
+  html:not(.dark) main input,
+  html:not(.dark) main select,
+  html:not(.dark) main textarea {
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+  }
+  html.dark main input::placeholder,
+  html.dark main textarea::placeholder {
+    color: #94a3b8 !important;
+  }
+
+  /* Badges / pills con texto café */
+  html.dark main .bg-cafe-100.text-cafe-700,
+  html.dark main span.bg-cafe-100 {
+    color: #f1f5f9 !important;
+  }
+
+  /* Recharts */
+  html.dark .recharts-cartesian-grid-horizontal line,
+  html.dark .recharts-cartesian-grid-vertical line {
+    stroke: #475569 !important;
+  }
+  html.dark .recharts-text {
+    fill: #e2e8f0 !important;
+  }
+  html:not(.dark) .recharts-text {
+    fill: #475569 !important;
+  }
+
+  /* Login (fuera de <main>) */
+  html.dark .login-card {
+    background-color: rgba(30, 41, 59, 0.96) !important;
+  }
+  html.dark .login-card .text-cafe-900,
+  html.dark .login-card .text-cafe-700,
+  html.dark .login-card label {
+    color: #f1f5f9 !important;
+  }
+  html.dark .login-card input {
+    color: #f8fafc !important;
+    background-color: #0f172a !important;
+    border-color: #64748b !important;
+  }
+  html:not(.dark) .login-hero .text-cafe-200,
+  html:not(.dark) .login-hero .text-cafe-300 {
+    color: #e7e5e4 !important;
+  }
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  background-color: #fdf8f3;
-  color: #333;
-}
-
-/* Scrollbar personalizado */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #f7ede0;
+  @apply bg-slate-200 dark:bg-slate-800;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #9a6f46;
-  border-radius: 4px;
+  @apply bg-cafe-600 dark:bg-slate-500 rounded;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #7c5739;
-}
-
-/* Animaciones */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-.animate-slideIn {
-  animation: slideIn 0.4s ease-out forwards;
-}
-
-.animate-pulse-slow {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-/* Estilos para gráficos */
-.recharts-cartesian-grid-horizontal line,
-.recharts-cartesian-grid-vertical line {
-  stroke: #edd9c4;
-}
-
-.recharts-tooltip-wrapper {
-  outline: none;
+@layer components {
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-xl border
+      border-slate-300 dark:border-slate-500
+      bg-white dark:bg-slate-900
+      text-slate-900 dark:text-slate-50
+      placeholder:text-slate-500 dark:placeholder:text-slate-400
+      focus:ring-2 focus:ring-amber-500/60 focus:border-amber-500 transition-shadow;
+  }
+  .input-field-error {
+    @apply border-red-500 dark:border-red-400 focus:ring-red-400/50;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold
+      bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900
+      hover:from-amber-400 hover:to-amber-500 shadow-md hover:shadow-lg transition-all disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium
+      border border-slate-300 dark:border-slate-500
+      text-slate-800 dark:text-slate-100
+      bg-white dark:bg-slate-800
+      hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+  }
+  .card-panel {
+    @apply bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm p-6;
+  }
+  .label-field {
+    @apply block text-sm font-semibold text-slate-800 dark:text-slate-100 mb-1.5;
+  }
+  .text-muted {
+    @apply text-slate-600 dark:text-slate-300;
+  }
+  .text-error {
+    @apply text-sm font-medium text-red-700 dark:text-red-300 mt-1;
+  }
+  .text-heading {
+    @apply text-slate-900 dark:text-slate-50 font-semibold;
+  }
+  .text-body {
+    @apply text-slate-700 dark:text-slate-200;
+  }
+  .text-subtle {
+    @apply text-slate-600 dark:text-slate-400;
+  }
+  .table-shell {
+    @apply w-full text-sm text-left;
+  }
+  .table-shell thead {
+    @apply bg-slate-100 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100;
+  }
+  .table-shell th {
+    @apply px-4 py-3 font-semibold;
+  }
+  .table-shell td {
+    @apply px-4 py-3 text-slate-800 dark:text-slate-200 border-t border-slate-100 dark:border-slate-700;
+  }
+  .table-shell tbody tr:hover {
+    @apply bg-slate-50 dark:bg-slate-700/50;
+  }
 }
