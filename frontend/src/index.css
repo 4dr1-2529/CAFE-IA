@@ -3,8 +3,7 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════
-   TEMA GLOBAL — contraste legible en claro y oscuro
-   Las utilidades Tailwind text-cafe-* se sobreescriben aquí
+   CAFÉ SOSTENIBLE AI — Design tokens (claro / oscuro)
    ═══════════════════════════════════════════════════════════ */
 
 @layer base {
@@ -13,27 +12,87 @@
     --text-primary: #0f172a;
     --text-secondary: #334155;
     --text-muted: #64748b;
-    --surface: #ffffff;
+    --bg-page: #f1f5f9;
+    --bg-card: #ffffff;
+    --border-card: #e2e8f0;
+    --accent-orange: #d97706;
+    --accent-orange-hover: #b45309;
+    --success: #15803d;
+    --warning: #a16207;
+    --danger: #b91c1c;
+    --chart-axis: #475569;
+    --chart-grid: #cbd5e1;
     --surface-muted: #f8fafc;
   }
+
   html.dark {
     color-scheme: dark;
     --text-primary: #f8fafc;
     --text-secondary: #e2e8f0;
     --text-muted: #94a3b8;
-    --surface: #1e293b;
+    --bg-page: #0f172a;
+    --bg-card: #1e293b;
+    --border-card: #475569;
+    --accent-orange: #fbbf24;
+    --accent-orange-hover: #f59e0b;
+    --success: #86efac;
+    --warning: #fde047;
+    --danger: #fca5a5;
+    --chart-axis: #cbd5e1;
+    --chart-grid: #475569;
     --surface-muted: #0f172a;
   }
+
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease !important;
+  }
+
   body {
     @apply font-sans antialiased;
-    background-color: var(--surface-muted);
+    background-color: var(--bg-page);
     color: var(--text-primary);
   }
 }
 
-/* Overrides DESPUÉS de utilities — mayor prioridad con !important */
+/* Semantic utilities */
 @layer utilities {
-  /* ─── MODO CLARO: textos café demasiado pálidos en contenido principal ─── */
+  .text-primary {
+    color: var(--text-primary) !important;
+  }
+  .text-secondary {
+    color: var(--text-secondary) !important;
+  }
+  .text-muted {
+    color: var(--text-muted) !important;
+  }
+  .bg-page {
+    background-color: var(--bg-page) !important;
+  }
+  .bg-card {
+    background-color: var(--bg-card) !important;
+  }
+  .border-card {
+    border-color: var(--border-card) !important;
+  }
+  .text-accent {
+    color: var(--accent-orange) !important;
+  }
+  .text-success {
+    color: var(--success) !important;
+  }
+  .text-warning {
+    color: var(--warning) !important;
+  }
+  .text-danger {
+    color: var(--danger) !important;
+  }
+}
+
+/* Contraste legacy text-cafe-* en main */
+@layer utilities {
   html:not(.dark) main .text-cafe-900,
   html:not(.dark) main .text-cafe-800,
   html:not(.dark) main .text-cafe-700 {
@@ -44,13 +103,10 @@
     color: #475569 !important;
   }
   html:not(.dark) main .text-cafe-400,
-  html:not(.dark) main .text-cafe-300 {
-    color: #64748b !important;
-  }
-  /* En claro, cafe-100/200 solo en sidebar; en main forzar legible */
+  html:not(.dark) main .text-cafe-300,
   html:not(.dark) main .text-cafe-200,
   html:not(.dark) main .text-cafe-100 {
-    color: #475569 !important;
+    color: #64748b !important;
   }
   html:not(.dark) main .text-gray-600,
   html:not(.dark) main .text-gray-500,
@@ -58,7 +114,6 @@
     color: #475569 !important;
   }
 
-  /* ─── MODO OSCURO: textos café oscuros ilegibles ─── */
   html.dark main .text-cafe-900,
   html.dark main .text-cafe-800,
   html.dark main .text-cafe-700,
@@ -81,7 +136,6 @@
     color: #cbd5e1 !important;
   }
 
-  /* Verde café en contenido */
   html:not(.dark) main .text-cafeVerde-600,
   html:not(.dark) main .text-cafeVerde-700,
   html:not(.dark) main .text-cafeVerde-800 {
@@ -94,7 +148,6 @@
     color: #86efac !important;
   }
 
-  /* Estados semánticos */
   html.dark main .text-red-600,
   html.dark main .text-red-700,
   html.dark main .text-red-800 {
@@ -127,15 +180,14 @@
     color: #fdba74 !important;
   }
 
-  /* Fondos en main */
   html.dark main .bg-white {
-    background-color: #1e293b !important;
+    background-color: var(--bg-card) !important;
   }
   html.dark main .bg-cafe-50 {
-    background-color: rgba(51, 65, 85, 0.6) !important;
+    background-color: rgba(51, 65, 85, 0.55) !important;
   }
   html.dark main .bg-cafe-100 {
-    background-color: rgba(51, 65, 85, 0.8) !important;
+    background-color: rgba(51, 65, 85, 0.75) !important;
   }
   html.dark main .bg-cafeVerde-50 {
     background-color: rgba(20, 83, 45, 0.25) !important;
@@ -159,16 +211,14 @@
     background-color: #faf8f5 !important;
   }
 
-  /* Bordes */
   html.dark main .border-cafe-100,
   html.dark main .border-cafe-200,
   html.dark main .border-cafeVerde-200,
   html.dark main .border-amber-200,
   html.dark main .border-green-200 {
-    border-color: #475569 !important;
+    border-color: var(--border-card) !important;
   }
 
-  /* Tablas */
   html.dark main thead,
   html.dark main thead th {
     color: #f1f5f9 !important;
@@ -190,10 +240,9 @@
     background-color: rgba(51, 65, 85, 0.7) !important;
   }
   html.dark main .border-gray-200 {
-    border-color: #475569 !important;
+    border-color: var(--border-card) !important;
   }
 
-  /* Iconos / estados vacíos con opacidad baja */
   html:not(.dark) main .opacity-50 {
     opacity: 0.65 !important;
     color: #64748b !important;
@@ -203,7 +252,6 @@
     color: #94a3b8 !important;
   }
 
-  /* Inputs y selects en main */
   html.dark main input,
   html.dark main select,
   html.dark main textarea {
@@ -221,26 +269,29 @@
   html.dark main textarea::placeholder {
     color: #94a3b8 !important;
   }
+  html:not(.dark) main input::placeholder,
+  html:not(.dark) main textarea::placeholder {
+    color: #64748b !important;
+  }
 
-  /* Badges / pills con texto café */
   html.dark main .bg-cafe-100.text-cafe-700,
   html.dark main span.bg-cafe-100 {
     color: #f1f5f9 !important;
   }
 
-  /* Recharts */
   html.dark .recharts-cartesian-grid-horizontal line,
   html.dark .recharts-cartesian-grid-vertical line {
-    stroke: #475569 !important;
+    stroke: var(--chart-grid) !important;
   }
-  html.dark .recharts-text {
-    fill: #e2e8f0 !important;
+  html.dark .recharts-text,
+  html.dark .recharts-legend-item-text {
+    fill: var(--chart-axis) !important;
   }
-  html:not(.dark) .recharts-text {
-    fill: #475569 !important;
+  html:not(.dark) .recharts-text,
+  html:not(.dark) .recharts-legend-item-text {
+    fill: var(--chart-axis) !important;
   }
 
-  /* Login (fuera de <main>) */
   html.dark .login-card {
     background-color: rgba(30, 41, 59, 0.96) !important;
   }
@@ -268,7 +319,7 @@
   @apply bg-slate-200 dark:bg-slate-800;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-cafe-600 dark:bg-slate-500 rounded;
+  @apply bg-cafe-600 dark:bg-slate-500 rounded-full;
 }
 
 @keyframes fadeIn {
@@ -285,64 +336,143 @@
   animation: fadeIn 0.4s ease-out forwards;
 }
 
+.page-enter {
+  animation: fadeIn 0.45s ease-out forwards;
+}
+
 @layer components {
   .input-field {
-    @apply w-full px-4 py-2.5 rounded-xl border
-      border-slate-300 dark:border-slate-500
-      bg-white dark:bg-slate-900
-      text-slate-900 dark:text-slate-50
-      placeholder:text-slate-500 dark:placeholder:text-slate-400
-      focus:ring-2 focus:ring-amber-500/60 focus:border-amber-500 transition-shadow;
+    @apply w-full px-4 py-2.5 rounded-xl border border-card
+      bg-card text-primary
+      placeholder:text-muted
+      focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500
+      transition-shadow duration-200;
   }
   .input-field-error {
-    @apply border-red-500 dark:border-red-400 focus:ring-red-400/50;
+    @apply border-red-500 dark:border-red-400 focus:ring-red-400/40;
   }
+
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold
       bg-gradient-to-r from-amber-500 to-amber-600 text-slate-900
-      hover:from-amber-400 hover:to-amber-500 shadow-md hover:shadow-lg transition-all disabled:opacity-50;
+      hover:from-amber-400 hover:to-amber-500
+      shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]
+      transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none disabled:scale-100;
   }
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium
-      border border-slate-300 dark:border-slate-500
-      text-slate-800 dark:text-slate-100
-      bg-white dark:bg-slate-800
-      hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors;
+      border border-card text-secondary bg-card
+      hover:bg-slate-100 dark:hover:bg-slate-700/80
+      hover:scale-[1.01] active:scale-[0.99]
+      transition-all duration-200;
   }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium
+      bg-red-600 text-white hover:bg-red-700
+      transition-all duration-200 disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium
+      text-secondary hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors;
+  }
+
   .card-panel {
-    @apply bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm p-6;
+    @apply bg-card rounded-2xl border border-card p-6 transition-all duration-300;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
   }
+  html.dark .card-panel {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  .card-panel:hover {
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.1), 0 8px 24px rgba(15, 23, 42, 0.06);
+  }
+  .card-panel-interactive {
+    @apply card-panel hover:scale-[1.01] cursor-default;
+  }
+  .card-panel-flat {
+    @apply bg-card rounded-xl border border-card p-4 transition-shadow duration-200;
+  }
+
   .label-field {
-    @apply block text-sm font-semibold text-slate-800 dark:text-slate-100 mb-1.5;
-  }
-  .text-muted {
-    @apply text-slate-600 dark:text-slate-300;
+    @apply block text-sm font-semibold text-primary mb-1.5;
   }
   .text-error {
-    @apply text-sm font-medium text-red-700 dark:text-red-300 mt-1;
+    @apply text-sm font-medium text-danger mt-1;
   }
-  .text-heading {
-    @apply text-slate-900 dark:text-slate-50 font-semibold;
-  }
-  .text-body {
-    @apply text-slate-700 dark:text-slate-200;
-  }
-  .text-subtle {
-    @apply text-slate-600 dark:text-slate-400;
-  }
+
   .table-shell {
-    @apply w-full text-sm text-left;
+    @apply w-full text-sm text-left border-collapse;
   }
   .table-shell thead {
-    @apply bg-slate-100 dark:bg-slate-700/80 text-slate-900 dark:text-slate-100;
+    @apply bg-slate-100 dark:bg-slate-700/90 text-primary;
   }
   .table-shell th {
-    @apply px-4 py-3 font-semibold;
+    @apply px-4 py-3.5 font-semibold text-xs uppercase tracking-wide border-b border-card;
   }
   .table-shell td {
-    @apply px-4 py-3 text-slate-800 dark:text-slate-200 border-t border-slate-100 dark:border-slate-700;
+    @apply px-4 py-3 text-secondary border-t border-card;
+  }
+  .table-shell tbody tr {
+    @apply transition-colors duration-150;
   }
   .table-shell tbody tr:hover {
-    @apply bg-slate-50 dark:bg-slate-700/50;
+    @apply bg-slate-50 dark:bg-slate-700/40;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-success {
+    @apply badge bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200;
+  }
+  .badge-warning {
+    @apply badge bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200;
+  }
+  .badge-danger {
+    @apply badge bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200;
+  }
+  .badge-info {
+    @apply badge bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200;
+  }
+  .badge-neutral {
+    @apply badge bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200;
+  }
+
+  .chart-container {
+    color: var(--chart-axis);
+  }
+  .chart-empty {
+    @apply flex flex-col items-center justify-center py-12 px-4 text-center text-muted text-sm;
+  }
+
+  /* Chatbot */
+  .chat-bubble-user {
+    @apply px-4 py-3 rounded-2xl rounded-br-md shadow-sm text-sm
+      bg-gradient-to-br from-amber-500 to-amber-600 text-slate-900;
+  }
+  .chat-bubble-bot {
+    @apply px-4 py-3 rounded-2xl rounded-bl-md shadow-sm text-sm
+      bg-card border border-card text-primary;
+  }
+  .chat-panel {
+    @apply bg-card rounded-2xl border border-card overflow-hidden;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+  }
+  html.dark .chat-panel {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  .chat-scroll {
+    @apply h-[420px] overflow-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50;
+  }
+
+  .skeleton-shimmer {
+    @apply animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.15),
+      transparent
+    );
+    background-size: 200% 100%;
   }
 }

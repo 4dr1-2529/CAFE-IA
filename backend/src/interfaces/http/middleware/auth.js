@@ -1,4 +1,5 @@
 import { AuthService } from '../../../application/services/AuthService.js'
+import { RoleHelper } from '../../../shared/RoleHelper.js'
 
 export function authenticate(req, res, next) {
   const header = req.headers.authorization
@@ -27,7 +28,8 @@ export function optionalAuth(req, res, next) {
 export function authorize(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ message: 'No autenticado' })
-    if (roles.length && !roles.includes(req.user.rol)) {
+    const rol = RoleHelper.normalizeRol(req.user.rol)
+    if (roles.length && !roles.includes(rol)) {
       return res.status(403).json({ message: 'No tiene permisos para esta acción' })
     }
     next()

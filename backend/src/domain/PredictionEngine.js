@@ -96,6 +96,7 @@ export class PredictionEngine {
 
     const confianza = Math.min(99, Math.max(52, Math.round(score)))
     const porcentaje_riesgo = Math.min(95, Math.max(5, Math.round(100 - confianza + (humedad > 14 ? 15 : 0))))
+    const nivel_riesgo = porcentaje_riesgo < 30 ? 'bajo' : porcentaje_riesgo < 50 ? 'medio' : 'alto'
 
     let calidad_predicha = 'Media'
     let recomendacion = 'Controlar procesos y validar con prueba sensorial.'
@@ -128,6 +129,7 @@ export class PredictionEngine {
       calidad_predicha,
       confianza,
       porcentaje_riesgo,
+      nivel_riesgo,
       recomendacion,
       recomendaciones,
       factores,

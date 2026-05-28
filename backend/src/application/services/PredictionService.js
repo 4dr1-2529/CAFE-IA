@@ -2,10 +2,10 @@ import { PredictionEngine } from '../../domain/PredictionEngine.js'
 import { query, queryOne, execute } from '../../infrastructure/database/pool.js'
 
 export class PredictionService {
-  static async executeForLote(loteId) {
+  static async executeForLote(loteId, userId = null) {
     const lote = await queryOne(
-      `SELECT l.id AS lote_id, l.codigo_lote, l.variedad_cafe, l.humedad, l.temperatura, l.altitud,
-              l.tipo_secado, l.tiempo_almacenamiento_dias, l.calidad_grano,
+      `SELECT l.id AS lote_id, l.user_id, l.codigo_lote, l.variedad_cafe, l.humedad, l.temperatura, l.altitud,
+              l.tipo_secado, l.tiempo_almacenamiento_dias, l.calidad_grano, l.estado AS estado_lote,
               CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor
        FROM lotes l
        LEFT JOIN productores p ON l.productor_id = p.id
@@ -43,16 +43,28 @@ export class PredictionService {
 
     const fecha = new Date().toISOString().split('T')[0]
     const ins = await execute(
-      `INSERT INTO predicciones_ia (lote_id, humedad, temperatura, altitud, tipo_secado, variedad_cafe,
+      `INSERT INTO predicciones_ia (lote_id, user_id, humedad, temperatura, altitud, tipo_secado, variedad_cafe,
         tiempo_almacenamiento_dias, calidad_grano, calidad_predicha, confianza, porcentaje_riesgo,
         recomendacion, factores_influyentes, fecha_prediccion, modelo, origen, version_modelo)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'usuario', ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'usuario', ?)`,
       [
-        loteId, humedad, temperatura, altitud, tipo_secado, variedad_cafe,
-        tiempo_almacenamiento_dias || 0, calidad_grano || 'Buena',
-        result.calidad_predicha, result.confianza, result.porcentaje_riesgo,
-        result.recomendacion, JSON.stringify(result.factores), fecha,
-        result.modelo, result.version_modelo
+        loteId,
+        userId ?? lote.user_id,
+        humedad,
+        temperatura,
+        altitud,
+        tipo_secado,
+        variedad_cafe,
+        tiempo_almacenamiento_dias || 0,
+        calidad_grano || 'Buena',
+        result.calidad_predicha,
+        result.confianza,
+        result.porcentaje_riesgo,
+        result.recomendacion,
+        JSON.stringify(result.factores),
+        fecha,
+        result.modelo,
+        result.version_modelo,
       ]
     )
     const predId = ins.insertId
@@ -89,6 +101,7 @@ export class PredictionService {
       calidad_predicha: result.calidad_predicha,
       confianza: result.confianza,
       porcentaje_riesgo: result.porcentaje_riesgo,
+      nivel_riesgo: result.nivel_riesgo,
       factores_influyentes: result.factores,
       factores: result.factores,
       recomendacion: result.recomendacion,

@@ -1,10 +1,12 @@
-import { test, describe, before } from 'node:test'
+import { test, describe, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { createApp } from '../src/app.js'
+import { closePool } from '../src/infrastructure/database/pool.js'
 
 let token = null
 let app
 let baseUrl
+let server
 
 async function api(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...options.headers }
@@ -17,13 +19,21 @@ async function api(path, options = {}) {
 
 describe('Integración API PMV2', { skip: process.env.SKIP_INTEGRATION === '1' }, () => {
   before(async () => {
+    const { applyMultiusuarioMigrations } = await import('../src/infrastructure/database/apply-migrations.js')
+    await applyMultiusuarioMigrations()
     app = createApp()
     await new Promise((resolve) => {
-      const server = app.listen(0, () => {
+      server = app.listen(0, () => {
         baseUrl = `http://127.0.0.1:${server.address().port}/api`
         resolve(server)
       })
     })
+  })
+
+  after(async () => {
+    if (!server) return
+    await new Promise((resolve) => server.close(resolve))
+    await closePool()
   })
 
   test('login admin', async () => {
@@ -59,5 +69,7 @@ describe('Integración API PMV2', { skip: process.env.SKIP_INTEGRATION === '1' }
     const { res, data } = await api('/dashboard/metrics')
     assert.equal(res.status, 200)
     assert.ok(data.kpis)
+    assert.equal(data.rol, 'ADMIN')
+    assert.ok(Number(data.cards?.totalClientes ?? data.totalClientes) >= 0)
   })
 })

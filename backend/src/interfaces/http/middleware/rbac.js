@@ -1,7 +1,19 @@
 import { authenticate, authorize } from './auth.js'
+import { ROLES } from '../../../shared/RoleHelper.js'
 
-/** Lectura: cualquier usuario autenticado */
+/** Cualquier usuario autenticado (ADMIN o CLIENTE) */
 export const readGuard = [authenticate]
 
-/** Escritura: admin y supervisor */
-export const writeGuard = [authenticate, authorize('admin', 'supervisor')]
+/** Operaciones PMV1: ADMIN y CLIENTE */
+export const writeGuard = [authenticate, authorize(ROLES.ADMIN, ROLES.CLIENTE)]
+
+/** Solo ADMIN */
+export const adminGuard = [authenticate, authorize(ROLES.ADMIN)]
+
+/** Alias compatibilidad */
+export const loteWriteGuard = writeGuard
+
+/** Nombres alternativos solicitados en documentación */
+export { authenticate as authenticateToken } from './auth.js'
+export const requireAdmin = adminGuard
+export const requireClienteOrAdmin = writeGuard

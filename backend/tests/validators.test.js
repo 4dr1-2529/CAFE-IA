@@ -21,6 +21,7 @@ describe('Validators', () => {
       temperatura: 22,
       altitud: 1500,
       tipo_secado: 'Honey',
+      estado: 'Produccion',
     })
     assert.equal(errors.length, 0)
   })

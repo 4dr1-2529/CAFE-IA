@@ -62,9 +62,9 @@ const evidencias = [
     color: 'from-amber-500 to-orange-600',
     items: [
       'Controllers → Services → Repositories → MySQL pool',
-      'JWT + RBAC: readGuard / writeGuard (admin, supervisor)',
+      'JWT + RBAC: ADMIN y CLIENTE (readGuard / writeGuard / adminGuard)',
       'Helmet + rate-limit + validadores DTO',
-      'Auth demo: admin@cafeai.com / admin123',
+      'Login sin credenciales demo en producción',
     ],
   },
   {

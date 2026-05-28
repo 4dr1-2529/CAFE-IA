@@ -1,18 +1,26 @@
 import { query, execute } from '../database/pool.js'
 
 export class ProduccionRepository {
-  static async findAll() {
+  static async findAll(userId = null) {
+    const scope = userId ? ' AND l.user_id = ? ' : ''
+    const params = userId ? [userId] : []
     return query(
-      `SELECT p.*, l.codigo_lote FROM produccion p JOIN lotes l ON p.lote_id=l.id ORDER BY p.id DESC`
+      `SELECT p.*, l.codigo_lote
+       FROM produccion p
+       JOIN lotes l ON p.lote_id = l.id AND l.deleted_at IS NULL
+       WHERE 1=1 ${scope}
+       ORDER BY p.id DESC`,
+      params
     )
   }
 
   static async create(data) {
     const r = await execute(
-      `INSERT INTO produccion (lote_id, fecha_registro, cantidad_kg, humedad, temperatura, tipo_proceso, observaciones)
-       VALUES (?,?,?,?,?,?,?)`,
+      `INSERT INTO produccion (lote_id, user_id, fecha_registro, cantidad_kg, humedad, temperatura, tipo_proceso, observaciones)
+       VALUES (?,?,?,?,?,?,?,?)`,
       [
         data.lote_id,
+        data.user_id ?? null,
         data.fecha_registro,
         data.cantidad_kg,
         data.humedad,

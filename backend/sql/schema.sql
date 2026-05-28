@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS auditoria_logs (
 -- ═══════════════════════════════════════
 CREATE TABLE IF NOT EXISTS productores (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NULL,
   distrito_id INT UNSIGNED NULL,
   codigo_productor VARCHAR(20) NOT NULL UNIQUE,
   nombres VARCHAR(100) NOT NULL,
@@ -144,7 +145,9 @@ CREATE TABLE IF NOT EXISTS productores (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at TIMESTAMP NULL,
   CONSTRAINT fk_productores_distrito FOREIGN KEY (distrito_id) REFERENCES distritos(id),
+  CONSTRAINT fk_productores_usuario FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL,
   INDEX idx_productores_codigo (codigo_productor),
+  INDEX idx_productores_user (user_id),
   INDEX idx_productores_estado (estado)
 ) ENGINE=InnoDB;
 
@@ -212,6 +215,7 @@ CREATE TABLE IF NOT EXISTS lotes (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   codigo_lote VARCHAR(30) NOT NULL UNIQUE,
   productor_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NOT NULL,
   finca_id INT UNSIGNED NULL,
   variedad_id INT UNSIGNED NULL,
   tipo_cultivo_id INT UNSIGNED NULL,
@@ -232,13 +236,16 @@ CREATE TABLE IF NOT EXISTS lotes (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at TIMESTAMP NULL,
   CONSTRAINT fk_lotes_productor FOREIGN KEY (productor_id) REFERENCES productores(id),
+  CONSTRAINT fk_lotes_usuario FOREIGN KEY (user_id) REFERENCES usuarios(id),
   CONSTRAINT fk_lotes_finca FOREIGN KEY (finca_id) REFERENCES fincas(id),
   CONSTRAINT fk_lotes_variedad FOREIGN KEY (variedad_id) REFERENCES variedades_cafe(id),
   CONSTRAINT fk_lotes_tipo_cultivo FOREIGN KEY (tipo_cultivo_id) REFERENCES tipos_cultivo(id),
   CONSTRAINT fk_lotes_proceso_secado FOREIGN KEY (proceso_secado_id) REFERENCES procesos_secado(id),
   CONSTRAINT fk_lotes_estado FOREIGN KEY (estado_lote_id) REFERENCES estados_lote(id),
   INDEX idx_lotes_productor (productor_id),
+  INDEX idx_lotes_user_id (user_id),
   INDEX idx_lotes_codigo (codigo_lote),
+  INDEX idx_lotes_created_at (created_at),
   INDEX idx_lotes_estado (estado)
 ) ENGINE=InnoDB;
 

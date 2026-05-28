@@ -12,13 +12,18 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     const root = document.documentElement
+    root.classList.add('theme-transition')
     root.classList.toggle('dark', dark)
     root.style.colorScheme = dark ? 'dark' : 'light'
     localStorage.setItem(STORAGE_KEYS.THEME, dark ? 'dark' : 'light')
+    const t = setTimeout(() => root.classList.remove('theme-transition'), 350)
+    return () => clearTimeout(t)
   }, [dark])
 
+  const toggle = () => setDark((d) => !d)
+
   return (
-    <ThemeContext.Provider value={{ dark, toggle: () => setDark(d => !d) }}>
+    <ThemeContext.Provider value={{ dark, toggle }}>
       {children}
     </ThemeContext.Provider>
   )

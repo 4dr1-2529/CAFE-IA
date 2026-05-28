@@ -1,13 +1,17 @@
 import { query, queryOne, execute } from '../database/pool.js'
 
 export class CalidadRepository {
-  static async findAll() {
+  static async findAll(userId = null) {
+    const scope = userId ? ' AND l.user_id = ? ' : ''
+    const params = userId ? [userId] : []
     return query(
       `SELECT c.*, l.codigo_lote, CONCAT(p.nombres,' ',COALESCE(p.apellidos,'')) AS productor
        FROM control_calidad c
-       JOIN lotes l ON c.lote_id=l.id
-       LEFT JOIN productores p ON l.productor_id=p.id
-       ORDER BY c.id DESC`
+       JOIN lotes l ON c.lote_id = l.id AND l.deleted_at IS NULL
+       LEFT JOIN productores p ON l.productor_id = p.id
+       WHERE 1=1 ${scope}
+       ORDER BY c.id DESC`,
+      params
     )
   }
 
@@ -17,10 +21,12 @@ export class CalidadRepository {
 
   static async create(data) {
     const r = await execute(
-      `INSERT INTO control_calidad (lote_id, aroma, sabor, cuerpo, acidez, dulzor, balance, puntaje_taza, calidad_final, estado, observaciones, fecha_evaluacion)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO control_calidad (lote_id, user_id, evaluador_id, aroma, sabor, cuerpo, acidez, dulzor, balance, puntaje_taza, calidad_final, estado, observaciones, fecha_evaluacion)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         data.lote_id,
+        data.user_id ?? null,
+        data.evaluador_id ?? data.user_id ?? null,
         data.aroma,
         data.sabor,
         data.cuerpo,

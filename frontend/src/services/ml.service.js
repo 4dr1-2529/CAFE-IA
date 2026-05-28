@@ -1,23 +1,29 @@
 const CARACTERISTICAS = [
   'Humedad (%)',
-  'Temperatura (°C)',
   'Altitud (msnm)',
-  'Tipo de secado',
+  'Cantidad (kg)',
   'Variedad de café',
-  'Puntaje sensorial',
-  'Tiempo almacenamiento',
-  'Calidad de grano',
+  'Proceso de secado',
+  'Puntaje de calidad',
+  'Estado del lote',
+  'Temperatura (°C)',
 ]
 
 export function getInfoModelo() {
   return {
-    nombre: 'Modelo predictivo heurístico avanzado',
+    nombre: 'Modelo predictivo de Machine Learning — calidad y riesgo',
     version: 'v2.0-heuristic',
-    tipo: 'Reglas ML + ponderación multivariable',
+    tipo: 'Machine Learning predictivo (reglas ponderadas multivariable)',
     precision: '≥ 85% (validación heurística)',
     caracteristicas: CARACTERISTICAS,
     variables: CARACTERISTICAS,
-    salidas: ['Calidad predicha', 'Confianza %', 'Riesgo %', 'Factores', 'Alertas', 'Recomendaciones'],
+    salidas: [
+      'Calidad estimada',
+      'Nivel de riesgo (bajo / medio / alto)',
+      'Confianza estimada',
+      'Recomendación inteligente',
+      'Factores influyentes',
+    ],
     estado: 'Operativo',
     evidencia: 'Pruebas unitarias en backend/tests/prediction.test.js',
   }

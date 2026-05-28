@@ -6,8 +6,11 @@ export const ROUTES = {
   TRAZABILIDAD: '/trazabilidad',
   CALIDAD: '/calidad',
   IA: '/ia',
+  CHATBOT_IA: '/chatbot-ia',
   BASE_DATOS: '/basedatos',
   REPORTES: '/reportes',
+  AUDITORIA: '/auditoria',
+  USUARIOS: '/usuarios',
   EVIDENCIAS: '/evidencias',
   ARQUITECTURA: '/arquitectura',
   HISTORIAS: '/historias'

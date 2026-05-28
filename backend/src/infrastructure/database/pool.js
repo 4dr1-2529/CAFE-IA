@@ -15,8 +15,11 @@ export function getPool() {
       connectionLimit: env.db.poolMax,
       queueLimit: 0,
       enableKeepAlive: true,
-      charset: 'utf8mb4',
+      charset: 'utf8mb4_unicode_ci',
       dateStrings: true
+    })
+    pool.on('connection', (conn) => {
+      conn.query("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'")
     })
   }
   return pool

@@ -15,6 +15,13 @@ export function isPositiveNumber(value, label) {
   return []
 }
 
+/** @returns {string[]} — exige valor estrictamente mayor a 0 */
+export function isStrictPositiveNumber(value, label) {
+  const n = Number(value)
+  if (Number.isNaN(n) || n <= 0) return [`${label} debe ser mayor a 0`]
+  return []
+}
+
 /** @returns {string[]} */
 export function inRange(value, min, max, label) {
   const n = Number(value)

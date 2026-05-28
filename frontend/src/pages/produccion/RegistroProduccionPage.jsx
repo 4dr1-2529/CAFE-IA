@@ -1,14 +1,29 @@
-import { useState, useEffect } from 'react'
-import { Package, Save, AlertCircle, CheckCircle } from 'lucide-react'
-import { getProductores, getLoteNextCode, createLote, createProduccion } from '../../services/api/index.js'
+import { useState, useEffect, useCallback } from 'react'
+import { Package, Save, AlertCircle, CheckCircle, Info } from 'lucide-react'
+import {
+  getProductores,
+  getLoteNextCode,
+  createLote,
+  createProduccion,
+  getUsuariosActivos,
+} from '../../services/api/index.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { isAdminUser } from '../../utils/role.js'
+import { parseLoteCodigo } from '../../utils/loteDisplay.js'
 
 export default function RegistroProduccion() {
+  const { user } = useAuth()
+  const isAdmin = isAdminUser(user)
+  const [loadingProductores, setLoadingProductores] = useState(false)
+
   const [productores, setProductores] = useState([])
+  const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState(null)
   const [noProductores, setNoProductores] = useState(false)
+  const [preview, setPreview] = useState(null)
   const [formData, setFormData] = useState({
-    codigo: '',
+    responsableUserId: '',
     productorId: '',
     parcela: '',
     fecha: new Date().toISOString().split('T')[0],
@@ -17,38 +32,96 @@ export default function RegistroProduccion() {
     temperatura: '',
     altitud: '',
     tipoCafe: 'Arabica',
-    tipoSecado: 'Natural'
+    tipoSecado: 'Natural',
   })
 
-  useEffect(() => {
-    const loadProductores = async () => {
-      try {
-        const prod = await getProductores()
-        setProductores(prod)
-        setNoProductores(!prod || prod.length === 0)
-      } catch (err) {
-        console.error('Error cargando productores', err)
-        setProductores([])
-        setNoProductores(true)
-      }
-    }
+  const previewUserId = isAdmin && formData.responsableUserId
+    ? formData.responsableUserId
+    : user?.id
 
-    const loadCodigo = async () => {
-      try {
-        const { nextCode } = await getLoteNextCode()
-        setFormData(prev => ({ ...prev, codigo: nextCode }))
-      } catch (err) {
-        setFormData(prev => ({ ...prev, codigo: 'LOTE-0001' }))
-      }
+  const loadPreviewCode = useCallback(async (uid, productorId) => {
+    if (!uid || !productorId) {
+      setPreview(null)
+      return
     }
-
-    loadProductores()
-    loadCodigo()
+    try {
+      const data = await getLoteNextCode(uid, productorId)
+      setPreview(data || null)
+    } catch {
+      setPreview(null)
+    }
   }, [])
+
+  const loadProductoresForUser = useCallback(async (userId) => {
+    if (!userId) {
+      setProductores([])
+      setNoProductores(false)
+      return
+    }
+    setLoadingProductores(true)
+    try {
+      const prod = await getProductores(userId)
+      setProductores(prod || [])
+      setNoProductores(!prod || prod.length === 0)
+    } catch (err) {
+      console.error('Error cargando productores', err)
+      setProductores([])
+      setNoProductores(true)
+    } finally {
+      setLoadingProductores(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const loadUsuarios = async () => {
+      if (!isAdmin) return
+      try {
+        const list = await getUsuariosActivos()
+        setUsuarios(list || [])
+      } catch {
+        setUsuarios([])
+      }
+    }
+    loadUsuarios()
+  }, [isAdmin])
+
+  useEffect(() => {
+    if (!user?.id) return
+    if (isAdmin) {
+      if (formData.responsableUserId) {
+        loadProductoresForUser(formData.responsableUserId)
+      } else {
+        setProductores([])
+        setNoProductores(false)
+      }
+    } else {
+      loadProductoresForUser(user.id)
+    }
+  }, [isAdmin, user?.id, formData.responsableUserId, loadProductoresForUser])
+
+  useEffect(() => {
+    if (user?.id && formData.productorId) {
+      loadPreviewCode(previewUserId || user.id, formData.productorId)
+    } else {
+      setPreview(null)
+    }
+  }, [user?.id, previewUserId, formData.productorId, loadPreviewCode])
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleResponsableChange = (e) => {
+    const responsableUserId = e.target.value
+    setFormData((prev) => ({
+      ...prev,
+      responsableUserId,
+      productorId: '',
+      parcela: '',
+      altitud: '',
+    }))
+    setPreview(null)
   }
 
   const handleProductorChange = (e) => {
@@ -59,9 +132,22 @@ export default function RegistroProduccion() {
       ...prev,
       productorId,
       parcela: productor?.parcela || '',
-      altitud: productor?.altitud != null && productor.altitud !== '' ? String(productor.altitud) : ''
+      altitud: productor?.altitud != null && productor.altitud !== '' ? String(productor.altitud) : '',
     }))
+
+    const uid = (isAdmin && formData.responsableUserId) ? formData.responsableUserId : user?.id
+    if (uid && productorId) loadPreviewCode(uid, productorId)
+    else setPreview(null)
   }
+
+  const productorSeleccionado = productores.find((p) => Number(p.id) === Number(formData.productorId))
+  const clienteLabel = isAdmin && formData.responsableUserId
+    ? (() => {
+        const u = usuarios.find((x) => Number(x.id) === Number(formData.responsableUserId))
+        return u ? `${u.nombres} ${u.apellidos || ''}`.trim() : 'Cliente seleccionado'
+      })()
+    : `${user?.nombre || user?.nombres || ''}`.trim() || user?.email || 'Mi cuenta'
+  const previewParsed = preview?.nextCode ? parseLoteCodigo(preview.nextCode) : null
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -69,6 +155,12 @@ export default function RegistroProduccion() {
     setFeedback(null)
 
     const sameId = (a, b) => Number(a) === Number(b)
+    if (isAdmin && !formData.responsableUserId) {
+      setFeedback({ type: 'warn', message: 'Debe seleccionar el cliente responsable antes de registrar el lote.' })
+      setLoading(false)
+      return
+    }
+
     if (!formData.productorId || !productores.find(p => sameId(p.id, formData.productorId))) {
       setFeedback({ type: 'warn', message: 'Debe seleccionar un productor existente antes de registrar la producción.' })
       setLoading(false)
@@ -90,9 +182,7 @@ export default function RegistroProduccion() {
         throw new Error('Las cantidades y mediciones deben ser números válidos.')
       }
 
-      // Crear lote con todos los datos necesarios
-      const nuevoLote = await createLote({
-        codigo_lote: (formData.codigo || '').trim() || undefined,
+      const payload = {
         productor_id: formData.productorId,
         variedad_cafe: formData.tipoCafe,
         fecha_cosecha: formData.fecha,
@@ -101,14 +191,18 @@ export default function RegistroProduccion() {
         humedad: hm,
         temperatura: temp,
         altitud: alt,
-        tipo_secado: formData.tipoSecado
-      })
+        tipo_secado: formData.tipoSecado,
+      }
+      if (isAdmin && formData.responsableUserId) {
+        payload.responsable_user_id = Number(formData.responsableUserId)
+      }
+
+      const nuevoLote = await createLote(payload)
       const lotePk = Number(nuevoLote?.id ?? nuevoLote?.ID)
       if (!lotePk) {
         throw new Error('No se pudo registrar el lote')
       }
 
-      // Registro en tabla producción (redundante con lotes; no debe invalidar el lote si el API está desactualizado)
       try {
         await createProduccion({
           lote_id: lotePk,
@@ -116,31 +210,23 @@ export default function RegistroProduccion() {
           temperatura: temp,
           altitud: alt,
           tipo_secado: formData.tipoSecado,
-          fecha_registro: formData.fecha
+          fecha_registro: formData.fecha,
         })
       } catch (prodErr) {
         console.warn('createProduccion omitido o falló — el lote ya está guardado:', prodErr?.message || prodErr)
       }
 
-      // NO crear predicción automáticamente - solo cuando el usuario lo pida desde Módulo IA
-
       setFeedback({
         type: 'ok',
         message: 'Lote registrado exitosamente',
-        lote: nuevoLote.codigo_lote
+        lote: nuevoLote.codigo_lote,
       })
 
-      // Recargar próximo código (si falla, no invalidar el éxito del lote)
-      let nextCode = null
-      try {
-        const res = await getLoteNextCode()
-        nextCode = res?.nextCode
-      } catch (e) {
-        console.warn('Siguiente código de lote no disponible:', e)
-      }
+      const uid = isAdmin && formData.responsableUserId ? formData.responsableUserId : user?.id
+      if (uid) await loadPreviewCode(uid)
+
       setFormData(prev => ({
         ...prev,
-        codigo: nextCode != null && nextCode !== '' ? nextCode : prev.codigo,
         productorId: '',
         parcela: '',
         cantidad: '',
@@ -148,7 +234,7 @@ export default function RegistroProduccion() {
         temperatura: '',
         altitud: '',
         tipoCafe: 'Arabica',
-        tipoSecado: 'Natural'
+        tipoSecado: 'Natural',
       }))
     } catch (err) {
       console.error('Error guardando producción:', err)
@@ -164,7 +250,6 @@ export default function RegistroProduccion() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
@@ -177,39 +262,84 @@ export default function RegistroProduccion() {
         </div>
       </div>
 
-      {noProductores && (
-        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
-          <p className="font-semibold text-amber-800">Primero registre un productor</p>
-          <p className="text-amber-700 text-sm">Debe registrar al menos un productor en la sección de Productores antes de registrar un lote.</p>
+      {isAdmin && !formData.responsableUserId && (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
+          <p className="font-semibold text-blue-900">Seleccione un cliente</p>
+          <p className="text-blue-800 text-sm">Elija el cliente responsable para ver sus productores y registrar el lote.</p>
         </div>
       )}
 
-      {/* Formulario */}
+      {noProductores && (isAdmin ? formData.responsableUserId : true) && (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+          <p className="font-semibold text-amber-800">Sin productores disponibles</p>
+          <p className="text-amber-700 text-sm">
+            {isAdmin
+              ? 'Este cliente aún no tiene productores registrados. Regístrelos en la sección Productores.'
+              : 'Debe registrar al menos un productor en la sección de Productores antes de registrar un lote.'}
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Código y Productor */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-cafe-700 mb-2">Código de Lote *</label>
-              <input
-                type="text"
-                name="codigo"
-                value={formData.codigo}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-cafe-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                required
-              />
+          <div className="bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-slate-600 rounded-lg p-4 flex gap-3">
+            <Info className="w-5 h-5 text-blue-700 dark:text-blue-300 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-950 dark:text-slate-100 space-y-1">
+              <p className="font-medium">El sistema asignará automáticamente el número de lote al guardar.</p>
+              <p><span className="text-blue-800 dark:text-slate-300">Cliente:</span> {clienteLabel}</p>
+              {productorSeleccionado && (
+                <p><span className="text-blue-800 dark:text-slate-300">Productor seleccionado:</span> {productorSeleccionado.nombres} {productorSeleccionado.apellidos || ''}</p>
+              )}
+              {previewParsed && (
+                <>
+                  <p><span className="text-blue-800 dark:text-slate-300">Próximo lote del cliente:</span> Lote N° {previewParsed.numero}</p>
+                  <p><span className="text-blue-800 dark:text-slate-300">Código interno estimado:</span> <span className="font-mono text-xs">{preview.nextCode}</span></p>
+                  <p className="text-xs text-blue-800/90 dark:text-slate-400 italic">El código final se confirmará al guardar.</p>
+                </>
+              )}
+              {!formData.productorId && (
+                <p className="text-xs text-blue-800 dark:text-slate-400">Seleccione un productor para ver la estimación del próximo lote.</p>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-cafe-700 mb-2">Productor *</label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {isAdmin && (
+              <div>
+                <label className="label-field">Cliente responsable *</label>
+                <select
+                  name="responsableUserId"
+                  value={formData.responsableUserId}
+                  onChange={handleResponsableChange}
+                  className="input-field"
+                  required
+                >
+                  <option value="">Seleccione un cliente</option>
+                  {usuarios.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.nombres} {u.apellidos} — {u.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className={isAdmin ? '' : 'md:col-span-2'}>
+              <label className="label-field">Productor *</label>
               <select
                 name="productorId"
                 value={formData.productorId}
                 onChange={handleProductorChange}
-                className="w-full px-4 py-3 border border-cafe-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                className="input-field"
                 required
+                disabled={isAdmin && !formData.responsableUserId}
               >
-                <option value="">Seleccionar productor</option>
+                <option value="">
+                  {isAdmin && !formData.responsableUserId
+                    ? 'Seleccione un cliente para ver sus productores'
+                    : loadingProductores
+                      ? 'Cargando productores...'
+                      : 'Seleccionar productor'}
+                </option>
                 {productores.map(p => (
                   <option key={p.id} value={p.id}>{p.nombres} {p.apellidos} - {p.parcela}</option>
                 ))}
@@ -217,7 +347,6 @@ export default function RegistroProduccion() {
             </div>
           </div>
 
-          {/* Parcela y Fecha */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-cafe-700 mb-2">Parcela</label>
@@ -243,7 +372,6 @@ export default function RegistroProduccion() {
             </div>
           </div>
 
-          {/* Cantidad */}
           <div>
             <label className="block text-sm font-medium text-cafe-700 mb-2">Cantidad (kg) *</label>
             <input
@@ -259,7 +387,6 @@ export default function RegistroProduccion() {
             />
           </div>
 
-          {/* Datos del proceso - Sección importante para IA */}
           <div className="bg-cafe-50 rounded-xl p-5 border border-cafe-200">
             <h3 className="font-semibold text-cafe-900 mb-4 flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-amber-600" />
@@ -317,7 +444,6 @@ export default function RegistroProduccion() {
             </div>
           </div>
 
-          {/* Tipo de Café y Secado */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-cafe-700 mb-2">Tipo de Café *</label>
@@ -352,7 +478,6 @@ export default function RegistroProduccion() {
             </div>
           </div>
 
-          {/* Botón de envío */}
           <div className="flex justify-end">
             <button
               type="submit"
@@ -410,17 +535,6 @@ export default function RegistroProduccion() {
                   <p className="text-sm text-green-700 mt-1">
                     Lote: <span className="font-mono font-bold">{feedback.lote}</span>
                   </p>
-                )}
-                {feedback.type === 'ok' && feedback.prediccion && (
-                  <div className="mt-3 bg-white rounded-lg p-3 border border-green-200">
-                    <p className="text-sm font-semibold text-green-800">Predicción IA:</p>
-                    <p className="text-sm text-green-700">
-                      Calidad estimada:{' '}
-                      <span className="font-bold">{feedback.prediccion.calidad_predicha}</span> (
-                      {feedback.prediccion.confianza}%)
-                    </p>
-                    <p className="text-xs text-green-600 mt-1">{feedback.prediccion.recomendacion}</p>
-                  </div>
                 )}
               </div>
             </div>

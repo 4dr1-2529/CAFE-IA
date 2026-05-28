@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import { Coffee, Eye, EyeOff } from 'lucide-react'
+import Input from '../../components/ui/Input.jsx'
+import Button from '../../components/ui/Button.jsx'
+
+const showDemoCreds = import.meta.env.VITE_SHOW_DEMO_CREDENTIALS === 'true'
+
 export default function LoginPage({ onLogin }) {
-  const [email, setEmail] = useState('admin@cafeai.com')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -13,10 +18,8 @@ export default function LoginPage({ onLogin }) {
     setLoading(true)
     try {
       const ok = await onLogin(email, password)
-      if (ok) {
-        /* AuthContext actualiza sesión */
-      } else {
-        setError('Credenciales inválidas. Use: admin@cafeai.com / admin123')
+      if (!ok) {
+        setError('Credenciales inválidas. Verifique su correo y contraseña.')
       }
     } catch {
       setError('No se pudo conectar al servidor. Verifique que MySQL y el backend estén activos.')
@@ -27,56 +30,66 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cafe-900 via-cafe-800 to-cafeVerde-900 flex items-center justify-center p-4">
-      {/* Fondo con patrón */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo y título */}
+      <div className="relative w-full max-w-md animate-fadeInUp">
         <div className="text-center mb-8 login-hero">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-500 rounded-full mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-amber-500 rounded-2xl mb-4 shadow-xl transition-transform hover:scale-105">
             <Coffee className="w-10 h-10 text-cafe-900" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">Café Sostenible AI</h1>
-          <p className="text-cafe-200 text-lg">Sistema de trazabilidad inteligente y predicción de calidad del café sostenible</p>
-          <p className="text-cafe-300 text-sm mt-2">Región Junín - Perú</p>
+          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Café Sostenible AI</h1>
+          <p className="text-stone-200 text-lg leading-relaxed">
+            Sistema de trazabilidad inteligente y predicción de calidad del café sostenible
+          </p>
+          <p className="text-stone-300/90 text-sm mt-2">Región Junín - Perú</p>
         </div>
 
-        {/* Tarjeta de login */}
-        <div className="login-card bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 text-center">Iniciar Sesión</h2>
-          
+        <div className="login-card bg-card/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20 dark:border-slate-600">
+          <h2 className="text-2xl font-bold text-primary mb-6 text-center">Iniciar sesión</h2>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="label-field">Correo electrónico</label>
-              <input
+              <label className="label-field" htmlFor="login-email">
+                Correo electrónico
+              </label>
+              <Input
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input-field"
                 placeholder="correo@ejemplo.com"
+                autoComplete="username"
                 required
               />
             </div>
 
             <div>
-              <label className="label-field">Contraseña</label>
+              <label className="label-field" htmlFor="login-password">
+                Contraseña
+              </label>
               <div className="relative">
-                <input
+                <Input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-field pr-12"
-                  placeholder="••••••••"
+                  className="pr-12"
+                  placeholder="Ingrese su contraseña"
+                  autoComplete="current-password"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-primary transition-colors p-1"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -84,50 +97,34 @@ export default function LoginPage({ onLogin }) {
             </div>
 
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-lg text-sm">
+              <div
+                className="bg-red-50 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-200 px-4 py-3 rounded-xl text-sm font-medium"
+                role="alert"
+              >
                 {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-cafe-900 font-semibold py-3 px-4 rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button type="submit" disabled={loading} className="w-full !py-3">
               {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-cafe-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-5 h-5 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spinSlow" />
                   Verificando...
                 </span>
               ) : (
-                'Iniciar Sesión'
+                'Iniciar sesión'
               )}
-            </button>
+            </Button>
           </form>
 
-          {/* Credenciales de demo */}
-          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-600">
-            <p className="text-xs text-subtle text-center mb-2">Credenciales de demostración</p>
-            <div className="bg-slate-100 dark:bg-slate-900/60 rounded-lg p-3 text-sm">
-              <div className="flex justify-between mb-1">
-                <span className="text-muted">Usuario:</span>
-                <span className="font-mono text-slate-900 dark:text-slate-100">admin@cafeai.com</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted">Contraseña:</span>
-                <span className="font-mono text-slate-900 dark:text-slate-100">admin123</span>
-              </div>
-            </div>
-          </div>
+          {showDemoCreds && (
+            <p className="mt-4 text-center text-xs text-muted border-t border-card pt-4">
+              Solo desarrollo: use las credenciales configuradas por el administrador del entorno.
+            </p>
+          )}
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-cafe-300 text-sm mt-8">
-          © 2026 Café Sostenible AI - Proyecto Académico
-        </p>
+        <p className="text-center text-stone-400 text-sm mt-8">© 2026 Café Sostenible AI - Proyecto Académico</p>
       </div>
     </div>
   )

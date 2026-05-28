@@ -4,6 +4,7 @@ import { getInfoModelo } from '../../services/ml.service.js'
 import { getLotes, getPredicciones, ejecutarPrediccionIA } from '../../services/api/index.js'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import { useToast } from '../../hooks/useToast.js'
+import { tituloLote } from '../../utils/loteDisplay.js'
 
 export default function ModuloIA() {
   const [lotes, setLotes] = useState([])
@@ -97,9 +98,9 @@ export default function ModuloIA() {
   return (
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
-        badge="PMV2 · HU05 · IA heurística v2"
-        title="Predicción inteligente de calidad"
-        subtitle="Motor heurístico con riesgo %, alertas y recomendaciones. Evidencia ML offline en carpeta /ml."
+        badge="PMV2 · Machine Learning"
+        title="Modelo Predictivo de Machine Learning"
+        subtitle="Analiza los datos del lote para estimar calidad, riesgo y recomendaciones del café."
       />
 
       {/* Info del Modelo */}
@@ -134,9 +135,9 @@ export default function ModuloIA() {
             </div>
           </div>
           <div className="mt-4 bg-cafeVerde-50 border border-cafeVerde-200 rounded-lg p-4 text-sm text-cafe-800">
-            <p><strong>Modelo usado:</strong> Modelo predictivo basado en reglas de Machine Learning</p>
-            <p><strong>Variables de entrada:</strong> humedad, temperatura, altitud, tipo de secado, variedad de café y puntaje de calidad (si existe).</p>
-            <p><strong>Salida:</strong> calidad predicha, confianza y recomendación técnica.</p>
+            <p><strong>Modelo predictivo:</strong> Machine Learning que analiza variables del lote y estima calidad y riesgo.</p>
+            <p><strong>Variables:</strong> humedad, altitud, cantidad, variedad, proceso de secado, puntaje de calidad y estado del lote.</p>
+            <p><strong>Resultado:</strong> calidad estimada, nivel de riesgo (bajo / medio / alto), confianza estimada y recomendación.</p>
           </div>
         </div>
       )}
@@ -170,48 +171,44 @@ export default function ModuloIA() {
                 <option value="">Seleccionar lote</option>
                 {lotesPendientes.map(lote => (
                   <option key={lote.id} value={lote.id}>
-                    {lote.codigo_lote} - Productor: {lote.productor} - Variedad: {lote.variedad_cafe}
+                    {tituloLote(lote.codigo_lote)} — {lote.productor} — {lote.variedad_cafe}
                   </option>
                 ))}
               </select>
             </div>
             {lotesPendientes.length === 0 && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-green-700">
-                Todos los lotes ya tienen predicción IA.
+              <div className="bg-amber-50 dark:bg-slate-700/50 border border-amber-200 dark:border-slate-600 rounded-lg p-4 text-amber-900 dark:text-slate-200">
+                Selecciona un lote con datos de producción para ejecutar la predicción. Si todos tienen IA, registre un lote nuevo en Producción.
               </div>
             )}
 
             {/* Detalles del lote */}
             {loteSeleccionado && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <h3 className="font-semibold text-amber-800 mb-3">Detalles del Lote Seleccionado</h3>
+                <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-3">Lote seleccionado — datos para la predicción</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-amber-600 font-medium">Productor</p>
-                    <p className="text-amber-900">{loteSeleccionado.productor || '-'}</p>
+                    <p className="text-amber-700 dark:text-amber-300 font-medium">Lote</p>
+                    <p className="text-amber-950 dark:text-slate-100 font-semibold">{tituloLote(loteSeleccionado.codigo_lote)}</p>
                   </div>
                   <div>
-                    <p className="text-amber-600 font-medium">Código de Lote</p>
-                    <p className="text-amber-900">{loteSeleccionado.codigo_lote || '-'}</p>
+                    <p className="text-amber-700 dark:text-amber-300 font-medium">Productor</p>
+                    <p className="text-amber-950 dark:text-slate-100">{loteSeleccionado.productor || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-amber-600 font-medium">Variedad de Café</p>
-                    <p className="text-amber-900">{loteSeleccionado.variedad_cafe || loteSeleccionado.tipo_cafe || '-'}</p>
+                    <p className="text-amber-700 dark:text-amber-300 font-medium">Cantidad (kg)</p>
+                    <p className="text-amber-950 dark:text-slate-100">{loteSeleccionado.cantidad_kg ?? '—'}</p>
                   </div>
                   <div>
-                    <p className="text-amber-600 font-medium">Humedad</p>
-                    <p className="text-amber-900">{loteSeleccionado.humedad}%</p>
+                    <p className="text-amber-700 dark:text-amber-300 font-medium">Humedad</p>
+                    <p className="text-amber-950 dark:text-slate-100">{loteSeleccionado.humedad}%</p>
                   </div>
                   <div>
-                    <p className="text-amber-600 font-medium">Temperatura</p>
-                    <p className="text-amber-900">{loteSeleccionado.temperatura}°C</p>
+                    <p className="text-amber-700 dark:text-amber-300 font-medium">Altitud</p>
+                    <p className="text-amber-950 dark:text-slate-100">{loteSeleccionado.altitud} msnm</p>
                   </div>
                   <div>
-                    <p className="text-amber-600 font-medium">Altitud</p>
-                    <p className="text-amber-900">{loteSeleccionado.altitud} msnm</p>
-                  </div>
-                  <div>
-                    <p className="text-amber-600 font-medium">Tipo de Secado</p>
+                    <p className="text-amber-700 dark:text-amber-300 font-medium">Proceso secado</p>
                     <p className="text-amber-900">{loteSeleccionado.tipo_secado || '-'}</p>
                   </div>
                   <div>

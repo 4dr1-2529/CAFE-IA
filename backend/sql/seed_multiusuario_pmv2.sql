@@ -1,0 +1,10 @@
+-- Referencia: el seed multiusuario PMV2 se ejecuta con Node (bcrypt + orden FK).
+-- No ejecutar este archivo directamente salvo que adapte los INSERT manualmente.
+--
+--   cd backend
+--   npm run db:seed:multiusuario
+--
+-- Con regeneración forzada:
+--   SEED_MULTIUSUARIO_FORCE=1 npm run db:seed:multiusuario
+--
+-- Ver documentación: docs/DATOS_PRUEBA_PMV2.md

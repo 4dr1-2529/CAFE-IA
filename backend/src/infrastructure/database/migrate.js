@@ -69,6 +69,8 @@ export async function initDatabase() {
   }
 
   await testConnection()
+  const { applyMultiusuarioMigrations } = await import('./apply-migrations.js')
+  await applyMultiusuarioMigrations()
   await seedCatalogsAndAdmin()
   const { seedPMV2Data } = await import('./seed-pmv2.js')
   const pmv2 = await seedPMV2Data(process.env.SEED_PMV2_FORCE === '1')
@@ -90,8 +92,10 @@ async function testConnection() {
 async function seedCatalogsAndAdmin() {
   const hash = await bcrypt.hash('admin123', 10)
   await execute(
-    `INSERT INTO roles (codigo, nombre, descripcion) VALUES ('admin','Administrador','Acceso total'), ('supervisor','Supervisor','Operaciones'), ('productor','Productor','Consulta')
-     ON DUPLICATE KEY UPDATE nombre=VALUES(nombre)`
+    `INSERT INTO roles (codigo, nombre, descripcion) VALUES
+     ('admin','Administrador','Control total del sistema'),
+     ('cliente','Cliente','Gestiona sus productores y lotes')
+     ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), descripcion=VALUES(descripcion)`
   ).catch(() => {})
 
   const [roles] = await getPool().execute(`SELECT id, codigo FROM roles`)
@@ -178,8 +182,8 @@ async function ensureDemoLotes() {
   ]
   for (const l of lotes) {
     const ins = await execute(
-      `INSERT INTO lotes (codigo_lote, productor_id, variedad_cafe, fecha_cosecha, cantidad_kg, estado, humedad, temperatura, altitud, tipo_secado)
-       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO lotes (codigo_lote, productor_id, user_id, variedad_cafe, fecha_cosecha, cantidad_kg, estado, humedad, temperatura, altitud, tipo_secado)
+       VALUES (?,?,1,?,?,?,?,?,?,?,?)`,
       l
     ).catch(() => null)
     if (!ins?.insertId) continue

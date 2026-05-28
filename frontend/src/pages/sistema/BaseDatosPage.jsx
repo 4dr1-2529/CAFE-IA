@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Database, Table, Users, Package, Award, Brain, Activity, Route, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
-import { getProductores, getLotes, getProduccion, getTrazabilidad, getControlCalidad, getPredicciones } from '../../services/api/index.js'
+import { getProductores, getLotes, getProduccion, getTrazabilidad, getControlCalidad, getPredicciones, getBaseDatos } from '../../services/api/index.js'
+import { useAuth } from '../../context/AuthContext.jsx'
+import { isAdminUser } from '../../utils/role.js'
 
 export default function BaseDatos() {
+  const { user } = useAuth()
+  const isAdmin = isAdminUser(user)
   const [activeTable, setActiveTable] = useState('productores')
   const [productores, setProductores] = useState([])
   const [lotes, setLotes] = useState([])
@@ -16,7 +20,7 @@ export default function BaseDatos() {
   const tables = [
     { id: 'productores', label: 'Productores', icon: Users, count: productores.length },
     { id: 'lotes', label: 'Lotes', icon: Package, count: lotes.length },
-    { id: 'produccion', label: 'Producción', icon: Activity, count: produccion.length },
+    { id: 'produccion', label: 'ProducciÃ³n', icon: Activity, count: produccion.length },
     { id: 'trazabilidad', label: 'Trazabilidad', icon: Route, count: trazabilidad.length },
     { id: 'evaluaciones', label: 'Control Calidad', icon: Award, count: evaluaciones.length },
     { id: 'predicciones', label: 'Predicciones IA', icon: Brain, count: predicciones.length }
@@ -39,7 +43,7 @@ export default function BaseDatos() {
       setProduccion(Array.isArray(pro) ? pro : [])
       setTrazabilidad(Array.isArray(traz) ? traz : [])
       const evalsArr = Array.isArray(evals) ? evals : []
-      // Únicas por lote_id (mantener última por id)
+      // Ãšnicas por lote_id (mantener Ãºltima por id)
       const evalsByLote = new Map()
       evalsArr.forEach((e) => {
         const loteId = Number(e?.lote_id)
@@ -53,7 +57,10 @@ export default function BaseDatos() {
       setPredicciones(prediccionesValidas)
     } catch (err) {
       console.error('Error cargando datos:', err)
-      setError('Error al cargar datos del backend. Verifica que el servidor esté activo en http://localhost:3029')
+      const hint = err?.status === 401
+        ? 'SesiÃ³n expirada. Cierra sesiÃ³n e inicia de nuevo.'
+        : 'Verifica que MySQL (XAMPP) y el backend estÃ©n activos. Ejecuta INICIAR.bat o: cd backend && npm start'
+      setError(`Error al cargar datos del backend. ${hint}`)
     } finally {
       setLoading(false)
     }
@@ -61,6 +68,7 @@ export default function BaseDatos() {
 
   useEffect(() => {
     loadData()
+    getBaseDatos().catch(() => {})
   }, [])
 
   const getLoteForProduccion = (loteId) => lotes.find(l => l.id === loteId)
@@ -75,10 +83,10 @@ export default function BaseDatos() {
               <thead>
                 <tr className="bg-cafe-50">
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Código</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">CÃ³digo</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Nombre</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Email</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Teléfono</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">TelÃ©fono</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Parcela</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Altitud</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Estado</th>
@@ -118,8 +126,11 @@ export default function BaseDatos() {
               <thead>
                 <tr className="bg-cafe-50">
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Código</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">CÃ³digo</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Productor</th>
+                  {isAdmin && (
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Registrado por</th>
+                  )}
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Parcela</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Variedad</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Cantidad</th>
@@ -130,7 +141,7 @@ export default function BaseDatos() {
               <tbody className="divide-y divide-cafe-100">
                 {!Array.isArray(lotes) || lotes.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-4 py-8 text-center text-cafe-400">No hay lotes registrados</td>
+                    <td colSpan={isAdmin ? 9 : 8} className="px-4 py-8 text-center text-cafe-400">No hay lotes registrados</td>
                   </tr>
                 ) : (
                   lotes.map(l => (
@@ -138,8 +149,16 @@ export default function BaseDatos() {
                       <td className="px-4 py-3 text-sm font-mono text-cafe-700">{l.id}</td>
                       <td className="px-4 py-3 text-sm font-mono text-cafe-900">{l.codigo_lote}</td>
                       <td className="px-4 py-3 text-sm text-cafe-700">{l.productor || '-'}</td>
+                      {isAdmin && (
+                        <td className="px-4 py-3 text-sm text-cafe-700">
+                          {l.nombre_usuario || '-'}
+                          {l.email_usuario ? (
+                            <span className="block text-xs text-cafe-500">{l.email_usuario}</span>
+                          ) : null}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm text-cafe-700">{l.parcela || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-cafe-700">{l.variedad_cafe || l.tipo_cafe || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-cafe-700">{l.variedad_cafe || l.variedad || l.tipo_cafe || '-'}</td>
                       <td className="px-4 py-3 text-sm text-cafe-700">{l.cantidad_kg} kg</td>
                       <td className="px-4 py-3 text-sm text-cafe-700">{l.fecha_cosecha}</td>
                       <td className="px-4 py-3">
@@ -173,7 +192,7 @@ export default function BaseDatos() {
               <tbody className="divide-y divide-cafe-100">
                 {produccion.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-4 py-8 text-center text-cafe-400">No hay registros de producción</td>
+                    <td colSpan="8" className="px-4 py-8 text-center text-cafe-400">No hay registros de producciÃ³n</td>
                   </tr>
                 ) : (
                   produccion.map(p => {
@@ -186,7 +205,7 @@ export default function BaseDatos() {
                         <td className="px-4 py-3 text-sm text-cafe-700">{p.fecha_registro}</td>
                         <td className="px-4 py-3 text-sm text-cafe-700">{p.cantidad_kg} kg</td>
                         <td className="px-4 py-3 text-sm text-cafe-700">{p.humedad}%</td>
-                        <td className="px-4 py-3 text-sm text-cafe-700">{p.temperatura}°C</td>
+                        <td className="px-4 py-3 text-sm text-cafe-700">{p.temperatura}Â°C</td>
                         <td className="px-4 py-3 text-sm text-cafe-700">{p.tipo_secado}</td>
                       </tr>
                     )
@@ -206,9 +225,9 @@ export default function BaseDatos() {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Lote</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Productor</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Etapa</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Descripción</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">DescripciÃ³n</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Fecha</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Ubicación</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">UbicaciÃ³n</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Estado</th>
                 </tr>
               </thead>
@@ -300,7 +319,7 @@ export default function BaseDatos() {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Humedad</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Temp.</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Altitud</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Predicción</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">PredicciÃ³n</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Confianza</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-cafe-900">Fecha</th>
                 </tr>
@@ -318,7 +337,7 @@ export default function BaseDatos() {
                       <td className="px-4 py-3 text-sm text-cafe-700">{p.productor || '-'}</td>
                       <td className="px-4 py-3 text-sm text-cafe-700">{p.variedad_cafe}</td>
                       <td className="px-4 py-3 text-sm text-cafe-700">{p.humedad}%</td>
-                      <td className="px-4 py-3 text-sm text-cafe-700">{p.temperatura}°C</td>
+                      <td className="px-4 py-3 text-sm text-cafe-700">{p.temperatura}Â°C</td>
                       <td className="px-4 py-3 text-sm text-cafe-700">{p.altitud} msnm</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${p.calidad_predicha === 'Alta' ? 'bg-green-100 text-green-700' : p.calidad_predicha === 'Media' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
@@ -359,13 +378,17 @@ export default function BaseDatos() {
               <Database className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-cafe-900">Base de Datos</h1>
-              <p className="text-cafe-600">Visualización de tablas del sistema</p>
+              <h1 className="text-2xl font-bold text-cafe-900">{isAdmin ? 'Base de Datos General' : 'Mi Base de Datos'}</h1>
+              <p className="text-cafe-600">
+                {isAdmin
+                  ? 'VisualizaciÃ³n global de las tablas del sistema'
+                  : 'VisualizaciÃ³n de tus productores, lotes y resultados registrados'}
+              </p>
             </div>
           </div>
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
             <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-lg font-semibold text-red-700 mb-2">Error de conexión</h2>
+            <h2 className="text-lg font-semibold text-red-700 mb-2">Error de conexiÃ³n</h2>
             <p className="text-red-600 mb-4">{error}</p>
             <button
               onClick={loadData}
@@ -389,8 +412,12 @@ export default function BaseDatos() {
               <Database className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-cafe-900">Base de Datos</h1>
-              <p className="text-cafe-600">Visualización de tablas del sistema</p>
+              <h1 className="text-2xl font-bold text-cafe-900">{isAdmin ? 'Base de Datos General' : 'Mi Base de Datos'}</h1>
+              <p className="text-cafe-600">
+                {isAdmin
+                  ? 'VisualizaciÃ³n global de las tablas del sistema'
+                  : 'VisualizaciÃ³n de tus productores, lotes y resultados registrados'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">

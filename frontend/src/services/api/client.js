@@ -1,11 +1,23 @@
-﻿const DEFAULT_BASE_URLS = [
-  import.meta.env.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/api` : 'http://localhost:3029/api',
-]
+﻿/** En dev usa /api (proxy Vite) para evitar CORS al abrir por IP de red (192.168.x). */
+function resolveApiBaseUrls() {
+  if (import.meta.env.DEV) return ['/api']
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3029').replace(/\/$/, '')
+  return [`${base}/api`]
+}
+
+const DEFAULT_BASE_URLS = resolveApiBaseUrls()
+
+function resolveApiOrigin() {
+  if (import.meta.env.DEV && typeof window !== 'undefined') return window.location.origin
+  const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3029'
+  return base.replace(/\/$/, '')
+}
 const TIMEOUT = 8000
 import { STORAGE_KEYS } from '../../constants/storage.js'
 
 const TOKEN_KEY = STORAGE_KEYS.TOKEN
 const SESSION_KEY = STORAGE_KEYS.SESSION
+const REFRESH_KEY = STORAGE_KEYS.REFRESH
 
 class ApiError extends Error {
   constructor(message, status = null) {
@@ -13,6 +25,12 @@ class ApiError extends Error {
     this.name = 'ApiError'
     this.status = status
   }
+}
+
+let unauthorizedHandler = null
+
+export function setUnauthorizedHandler(fn) {
+  unauthorizedHandler = typeof fn === 'function' ? fn : null
 }
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY)
@@ -23,6 +41,30 @@ export const setToken = (token) => {
 export const clearAuth = () => {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(SESSION_KEY)
+  localStorage.removeItem(REFRESH_KEY)
+}
+
+function parseJsonSafe(text) {
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+/** Soporta { ok, data } y payloads legacy (arrays/objetos directos). */
+export function unwrapApiPayload(data) {
+  if (!data || typeof data !== 'object') return data
+  if (data.ok === false) {
+    throw new ApiError(data.message || 'Error en la solicitud', data.status || null)
+  }
+  if (data.ok === true) {
+    if (Object.prototype.hasOwnProperty.call(data, 'data')) return data.data
+    const { ok: _ok, ...rest } = data
+    return rest
+  }
+  return data
 }
 
 const request = async (path, options = {}) => {
@@ -38,18 +80,22 @@ const request = async (path, options = {}) => {
       const response = await fetch(`${baseUrl}${path}`, {
         headers,
         signal: controller.signal,
-        ...options
+        ...options,
       })
       clearTimeout(timeoutId)
-      const bodyText = await response.text()
-      const data = bodyText ? JSON.parse(bodyText) : null
+      const data = parseJsonSafe(await response.text())
+
       if (response.status === 401 && path !== '/auth/login') {
         clearAuth()
+        unauthorizedHandler?.()
       }
+
       if (!response.ok) {
-        throw new ApiError(data?.message || `Error del servidor: ${response.status}`, response.status)
+        const msg = data?.message || data?.error || `Error del servidor: ${response.status}`
+        throw new ApiError(msg, response.status)
       }
-      return data
+
+      return unwrapApiPayload(data)
     } catch (error) {
       clearTimeout(timeoutId)
       if (error instanceof ApiError) throw error
@@ -59,12 +105,15 @@ const request = async (path, options = {}) => {
   throw new ApiError(`No se pudo conectar al backend. ${errorMessages.join(' / ')}`, 'NETWORK')
 }
 
-const safeGetArray = async (path) => {
+const safeGetArray = async (path, { throwOnError = false } = {}) => {
   try {
     const data = await request(path)
-    return Array.isArray(data) ? data : []
+    if (Array.isArray(data)) return data
+    if (Array.isArray(data?.rows)) return data.rows
+    return []
   } catch (err) {
     console.error(`API GET ${path}:`, err)
+    if (throwOnError) throw err
     return []
   }
 }
@@ -75,35 +124,78 @@ const safeAction = async (path, options) => request(path, options)
 export const loginApi = async (email, password) => {
   const data = await request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })
   if (data.accessToken) setToken(data.accessToken)
+  if (data.refreshToken) localStorage.setItem(REFRESH_KEY, data.refreshToken)
   if (data.user) localStorage.setItem(SESSION_KEY, JSON.stringify(data.user))
   return data
 }
 
-export const logoutApi = async (refreshToken) => {
+export const getMeApi = async () => {
+  const data = await request('/auth/me')
+  return data?.user || data
+}
+
+export const logoutApi = async () => {
+  const refreshToken = localStorage.getItem(REFRESH_KEY)
   try {
-    await request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) })
+    await request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken: refreshToken || undefined }) })
   } finally {
     clearAuth()
   }
 }
 
 export const registerApi = (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) })
+export const getUsuariosActivos = () => safeGetArray('/usuarios/activos')
+export const getUsuarios = () => safeGetArray('/usuarios', { throwOnError: true })
+export const getUsuarioById = (id) => safeAction(`/usuarios/${id}`)
+export const createUsuario = (data) => safeAction('/usuarios', { method: 'POST', body: JSON.stringify(data) })
+export const updateUsuario = (id, data) => safeAction(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+export const setUsuarioEstado = (id, activo) =>
+  safeAction(`/usuarios/${id}/estado`, { method: 'PATCH', body: JSON.stringify({ activo }) })
+export const setUsuarioRol = (id, rol) =>
+  safeAction(`/usuarios/${id}/rol`, { method: 'PATCH', body: JSON.stringify({ rol }) })
+export const resetUsuarioPassword = (id, password) =>
+  safeAction(`/usuarios/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ password }) })
 
 // Dashboard
+export const getDashboard = async () => {
+  try {
+    return await request('/dashboard')
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) {
+      return request('/dashboard/metrics')
+    }
+    throw e
+  }
+}
 export const getDashboardMetrics = () => request('/dashboard/metrics')
 
 // CRUD
-export const getProductores = () => safeGetArray('/productores')
+export const getProductores = (userId) => {
+  const qs =
+    userId != null && userId !== ''
+      ? `?user_id=${encodeURIComponent(String(userId))}`
+      : ''
+  return safeGetArray(`/productores${qs}`, { throwOnError: true })
+}
 export const createProductor = (data) => safeAction('/productores', { method: 'POST', body: JSON.stringify(data) })
 export const updateProductor = (id, data) => safeAction(`/productores/${id}`, { method: 'PUT', body: JSON.stringify(data) })
 export const deleteProductor = (id) => safeAction(`/productores/${id}`, { method: 'DELETE' })
 export const getLotes = () => safeGetArray('/lotes')
-export const getLoteNextCode = () => safeAction('/lotes/next-code')
+export const getLoteNextCode = (userId, productorId) => {
+  const params = new URLSearchParams()
+  if (userId != null && userId !== '') params.set('user_id', String(userId))
+  if (productorId != null && productorId !== '') params.set('productor_id', String(productorId))
+  const qs = params.toString() ? `?${params.toString()}` : ''
+  return safeAction(`/lotes/next-code${qs}`)
+}
 export const getLoteById = (id) => safeAction(`/lotes/${id}`)
 export const createLote = (data) => safeAction('/lotes', { method: 'POST', body: JSON.stringify(data) })
 export const getProduccion = () => safeGetArray('/produccion')
 export const createProduccion = (data) => safeAction('/produccion', { method: 'POST', body: JSON.stringify(data) })
-export const getTrazabilidad = (loteId) => safeAction(`/trazabilidad${loteId ? `?lote_id=${loteId}` : ''}`)
+export const getTrazabilidad = (loteId) => {
+  const path = `/trazabilidad${loteId ? `?lote_id=${loteId}` : ''}`
+  return loteId ? safeAction(path) : safeGetArray(path)
+}
 export const createTrazabilidad = (data) => safeAction('/trazabilidad', { method: 'POST', body: JSON.stringify(data) })
 export const getControlCalidad = () => safeGetArray('/control-calidad')
 export const createControlCalidad = (data) => safeAction('/control-calidad', { method: 'POST', body: JSON.stringify(data) })
@@ -117,15 +209,27 @@ export const getReporteCalidad = () => safeAction('/reportes/calidad')
 export const getReportePredicciones = () => safeAction('/reportes/predicciones')
 export const getReporteTrazabilidad = () => safeAction('/reportes/trazabilidad')
 
+export const getBaseDatos = () => safeAction('/base-datos')
+export const getBaseDatosTabla = (tabla) => safeAction(`/base-datos/${tabla}`)
+
 export const downloadReporte = async (tipo, formato = 'pdf') => {
   const token = getToken()
-  const base = DEFAULT_BASE_URLS[0].replace('/api', '')
+  const base = resolveApiOrigin()
   const url = `${base}/api/reportes/export/${tipo}/${formato}`
   const res = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {}
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
-  if (!res.ok) throw new ApiError('Error al exportar reporte', res.status)
+  if (res.status === 401) {
+    clearAuth()
+    unauthorizedHandler?.()
+    throw new ApiError('Sesión expirada. Inicie sesión nuevamente.', 401)
+  }
+  if (!res.ok) {
+    const errBody = parseJsonSafe(await res.text())
+    throw new ApiError(errBody?.message || 'Error al exportar reporte', res.status)
+  }
   const blob = await res.blob()
+  if (!blob.size) throw new ApiError('El reporte exportado está vacío', 400)
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = `reporte-${tipo}.${formato === 'excel' ? 'xlsx' : 'pdf'}`
@@ -135,3 +239,17 @@ export const downloadReporte = async (tipo, formato = 'pdf') => {
 
 export const createEvaluacion = createControlCalidad
 export const predictIA = ejecutarPrediccionIA
+export const askChatbotIA = (message) => {
+  const text = String(message || '').trim()
+  if (!text) return Promise.reject(new ApiError('Escriba una consulta antes de enviar.', 400))
+  return safeAction('/chatbot', { method: 'POST', body: JSON.stringify({ message: text }) })
+}
+export const getAuditoria = (params = {}) => {
+  const qs = new URLSearchParams()
+  Object.entries(params).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && String(v).trim() !== '') qs.set(k, String(v).trim())
+  })
+  return safeAction(`/auditoria${qs.toString() ? `?${qs.toString()}` : ''}`)
+}
+
+export { ApiError, request }

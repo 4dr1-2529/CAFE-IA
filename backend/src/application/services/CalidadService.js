@@ -1,10 +1,11 @@
 import { CalidadRepository } from '../../infrastructure/repositories/CalidadRepository.js'
 import { AppError } from '../../shared/AppError.js'
+import { RoleHelper } from '../../shared/RoleHelper.js'
+import { ActionLogService } from './ActionLogService.js'
 
 const ATTRS = ['aroma', 'sabor', 'cuerpo', 'acidez', 'dulzor', 'balance']
 
 export class CalidadService {
-  /** Puntaje 0–100 y etiqueta de calidad */
   static computeScores(body) {
     const attrs = ATTRS.map((k) => Number(body[k]))
     const puntaje_taza = Math.round((attrs.reduce((a, v) => a + v, 0) / 6) * 10)
@@ -15,11 +16,14 @@ export class CalidadService {
     return { puntaje_taza, calidad_final }
   }
 
-  static async list() {
-    return CalidadRepository.findAll()
+  static async list(meta = {}) {
+    RoleHelper.requireAuth(meta.user)
+    return CalidadRepository.findAll(RoleHelper.scopeUserId(meta.user))
   }
 
-  static async create(body) {
+  static async create(body, meta = {}) {
+    RoleHelper.requireAuth(meta.user)
+    const lote = await RoleHelper.assertLoteAccess(body.lote_id, meta.user)
     const exists = await CalidadRepository.existsForLote(body.lote_id)
     if (exists) throw new AppError('Este lote ya tiene evaluación de calidad', 409)
 
@@ -29,6 +33,8 @@ export class CalidadService {
     try {
       const row = await CalidadRepository.create({
         lote_id: body.lote_id,
+        user_id: lote.user_id,
+        evaluador_id: meta.user.sub,
         aroma: body.aroma,
         sabor: body.sabor,
         cuerpo: body.cuerpo,
@@ -42,6 +48,16 @@ export class CalidadService {
         fecha_evaluacion: fecha,
       })
       await CalidadRepository.markLoteCalidad(body.lote_id)
+      await ActionLogService.log({
+        usuarioId: meta.user.sub,
+        accion: 'REGISTRAR_CONTROL_CALIDAD',
+        modulo: 'calidad',
+        descripcion: `${RoleHelper.isAdmin(meta.user) ? 'ADMIN' : 'CLIENTE'} registró control de calidad lote ${body.lote_id}`,
+        entidad: 'control_calidad',
+        entidadId: row?.id || null,
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      })
       return row
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') throw new AppError('Este lote ya tiene evaluación', 409)

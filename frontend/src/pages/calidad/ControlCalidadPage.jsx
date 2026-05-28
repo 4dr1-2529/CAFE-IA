@@ -45,13 +45,17 @@ export default function ControlCalidad() {
   const lotesPendientes = (lotes || []).filter(l => !evaluadosSet.has(Number(l.id)))
 
   const handleLoteChange = (e) => {
-    const loteId = parseInt(e.target.value)
-    const lote = lotesPendientes.find(l => l.id === loteId)
-    
-    setFormData(prev => ({
+    const raw = e.target.value
+    if (!raw) {
+      setFormData((prev) => ({ ...prev, loteId: '', loteCodigo: '' }))
+      return
+    }
+    const loteId = Number(raw)
+    const lote = lotesPendientes.find((l) => Number(l.id) === loteId)
+    setFormData((prev) => ({
       ...prev,
-      loteId: loteId,
-      loteCodigo: lote?.codigo_lote || ''
+      loteId,
+      loteCodigo: lote?.codigo_lote || '',
     }))
   }
 
@@ -102,6 +106,18 @@ export default function ControlCalidad() {
     setLoading(true)
     setSuccess(null)
 
+    const loteIdNum = Number(formData.loteId)
+    if (!loteIdNum || Number.isNaN(loteIdNum)) {
+      setSuccess({
+        evaluacion: null,
+        puntaje: 0,
+        calificacion: 'Error',
+        recomendacion: 'Seleccione un lote válido antes de guardar.',
+      })
+      setLoading(false)
+      return
+    }
+
     try {
       const aroma = Number(formData.aroma)
       const acidez = Number(formData.acidez)
@@ -125,7 +141,7 @@ export default function ControlCalidad() {
       const calificacion = getCalificacion(puntaje)
 
       const evaluacionGuardada = await createEvaluacion({
-        lote_id: formData.loteId,
+        lote_id: loteIdNum,
         lote_codigo: formData.loteCodigo,
         aroma: aroma,
         acidez: acidez,

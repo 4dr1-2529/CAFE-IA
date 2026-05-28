@@ -22,6 +22,7 @@ export const env = {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d'
   },
-  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5174,http://127.0.0.1:5174').split(',').map(s => s.trim()),
-  requireAuth: process.env.REQUIRE_AUTH === 'true'
+  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5174,http://127.0.0.1:5174').split(',').map(s => s.trim()).filter(Boolean),
+  requireAuth: process.env.REQUIRE_AUTH === 'true',
+  allowPublicRegister: process.env.ALLOW_PUBLIC_REGISTER === 'true',
 }

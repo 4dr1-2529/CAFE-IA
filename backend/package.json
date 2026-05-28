@@ -8,6 +8,9 @@
     "dev": "node --watch server.js",
     "db:seed": "node scripts/seed-demo.js",
     "db:seed:pmv2": "node scripts/seed-pmv2.js",
+    "db:seed:multiusuario": "node scripts/seedMultiusuarioPMV2.js",
+    "db:seed:pendientes": "node scripts/seedPendientesPMV2.js",
+    "db:verify:dashboard": "node scripts/verifyDashboardData.js",
     "test": "node --test tests/**/*.test.js"
   },
   "dependencies": {
