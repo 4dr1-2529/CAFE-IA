@@ -10,7 +10,8 @@
 | Potential SQL injection via string-based query | Crítica | `ReportesRepository.js` | Consultas 100 % estáticas en `reportesSql.js` + `trazabilidadSql.js`; ejecución con `scopedQuery.js` y placeholders `?` | Corregido |
 | Potential leakage of sensitive environment variables | Crítica | `vite.config.js` | `loadEnv(..., 'VITE_')` únicamente; sin `define` de `process.env`; frontend usa `import.meta.env.VITE_API_URL` | Corregido |
 | uuid vulnerable (GHSA-w5hq-g745-h8pq) | Media | `package.json` / lockfiles | `overrides`: `uuid@^11.1.1` | Corregido |
-| joblib vulnerable | Baja | `ml/requirements.txt` | `joblib>=1.5.0` | Corregido |
+| joblib vulnerable (AIKIDO-2025-10962 DoS) | Baja | `ml/requirements.txt` | `joblib>=1.5.3` | Corregido |
+| GitHub Actions sin SHA fijo | Alta | `.github/workflows/ci.yml` | Pin por commit SHA (`checkout`, `setup-node`, `sonarcloud`) | Corregido |
 | tmp path traversal (transitiva exceljs) | Alta | `backend/package.json` | `overrides`: `tmp@^0.2.6` | Corregido |
 
 ---
@@ -57,7 +58,17 @@ En `backend/package.json` y `package.json` (raíz).
 
 ## 4. joblib
 
-`ml/requirements.txt`: `joblib>=1.5.0` (usado por scikit-learn en entrenamiento ML).
+`ml/requirements.txt`: `joblib>=1.5.3` (parche DoS AIKIDO-2025-10962; usado por scikit-learn).
+
+## 5. GitHub Actions (Aikido — supply chain)
+
+`.github/workflows/ci.yml`: acciones de terceros fijadas por SHA completo:
+
+| Acción | SHA | Versión ref. |
+|--------|-----|--------------|
+| `actions/checkout` | `11bd71901bbe5b1630ceea73d27597364c9af683` | v4.2.2 |
+| `actions/setup-node` | `39370e3970a6d050c480ffad4ff0ed4d3fdee5af` | v4.1.0 |
+| `SonarSource/sonarcloud-github-action` | `e44258b109568baa0df60ed515909fc6c72cba92` | v2.3.0 |
 
 ---
 
