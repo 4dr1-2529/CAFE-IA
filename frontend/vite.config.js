@@ -1,26 +1,19 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const RAILWAY_API_DEFAULT = 'https://cafe-sostenible-api-production-03ad.up.railway.app'
-
-/** Solo variables públicas VITE_* (nunca secretos de servidor). */
-function readPublicApiUrl(mode) {
-  const env = loadEnv(mode, process.cwd(), 'VITE_')
-  return (
-    env.VITE_API_URL ||
-    env.VITE_API_BASE_URL ||
-    (mode === 'production' ? RAILWAY_API_DEFAULT : 'http://localhost:3029')
-  ).replace(/\/$/, '')
-}
-
+/**
+ * Solo variables públicas VITE_*.
+ * No cargar MYSQL*, JWT_SECRET ni otras credenciales de servidor.
+ * El frontend usa import.meta.env.VITE_API_URL (ver frontend/src/config/api.js).
+ */
 export default defineConfig(({ mode }) => {
-  const apiUrl = readPublicApiUrl(mode)
+  loadEnv(mode, process.cwd(), 'VITE_')
 
   return {
     plugins: [react()],
     envPrefix: ['VITE_'],
     define: {
-      'import.meta.env.VITE_API_URL': JSON.stringify(apiUrl),
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.3'),
     },
     server: {
       port: 5174,

@@ -1,13 +1,14 @@
 import PDFDocument from 'pdfkit'
 import ExcelJS from 'exceljs'
-import { query, queryOne } from '../../infrastructure/database/pool.js'
-import { assertReportType, loteExportScope } from '../../shared/sqlScope.js'
+import * as R from '../../shared/reportesSql.js'
+import { assertReportType } from '../../shared/sqlScope.js'
+import { queryScoped, queryOneScoped } from '../../shared/scopedQuery.js'
+import { TRAZA_LOTES_GLOBAL, TRAZA_LOTES_SCOPED } from '../../shared/trazabilidadSql.js'
 
 export class ReportExportService {
   static async buildReportData(tipo, userId = null, meta = {}) {
     const tipoNorm = assertReportType(tipo)
     const fecha = new Date().toLocaleString('es-PE')
-    const { clause: scope, params } = loteExportScope(userId)
     const alcance = meta.alcance || (userId ? 'PERSONAL' : 'GLOBAL')
     const headerMeta = {
       fecha,
@@ -17,17 +18,12 @@ export class ReportExportService {
     }
 
     if (tipoNorm === 'produccion') {
-      const resumen = await queryOne(
-        `SELECT COUNT(*) AS total_lotes, COALESCE(SUM(cantidad_kg),0) AS total_kg
-         FROM lotes l WHERE 1=1 ${scope}`,
-        params
+      const resumen = await queryOneScoped(
+        userId,
+        R.EXPORT_PROD_RESUMEN_GLOBAL,
+        R.EXPORT_PROD_RESUMEN_SCOPED
       )
-      const rows = await query(
-        `SELECT codigo_lote, variedad_cafe, cantidad_kg, fecha_cosecha, estado
-         FROM lotes l WHERE 1=1 ${scope}
-         ORDER BY id DESC LIMIT 50`,
-        params
-      )
+      const rows = await queryScoped(userId, R.EXPORT_PROD_ROWS_GLOBAL, R.EXPORT_PROD_ROWS_SCOPED)
       return {
         titulo: alcance === 'GLOBAL' ? 'Reporte global de Producción' : 'Mi reporte de Producción',
         ...headerMeta,
@@ -37,12 +33,7 @@ export class ReportExportService {
       }
     }
     if (tipoNorm === 'calidad') {
-      const rows = await query(
-        `SELECT l.codigo_lote, c.puntaje_taza, c.calidad_final, c.fecha_evaluacion
-         FROM control_calidad c JOIN lotes l ON c.lote_id=l.id AND l.deleted_at IS NULL
-         WHERE 1=1 ${scope} ORDER BY c.id DESC LIMIT 50`,
-        params
-      )
+      const rows = await queryScoped(userId, R.EXPORT_CALIDAD_GLOBAL, R.EXPORT_CALIDAD_SCOPED)
       return {
         titulo: alcance === 'GLOBAL' ? 'Reporte global de Calidad' : 'Mi reporte de Calidad',
         ...headerMeta,
@@ -51,12 +42,7 @@ export class ReportExportService {
       }
     }
     if (tipoNorm === 'ia') {
-      const rows = await query(
-        `SELECT l.codigo_lote, p.calidad_predicha, p.confianza, p.porcentaje_riesgo, p.fecha_prediccion
-         FROM predicciones_ia p JOIN lotes l ON p.lote_id=l.id AND l.deleted_at IS NULL
-         WHERE p.origen='usuario' ${scope} ORDER BY p.id DESC LIMIT 50`,
-        params
-      )
+      const rows = await queryScoped(userId, R.EXPORT_IA_GLOBAL, R.EXPORT_IA_SCOPED)
       return {
         titulo: alcance === 'GLOBAL' ? 'Reporte global IA / Predicciones' : 'Mi reporte IA / Predicciones',
         ...headerMeta,
@@ -65,51 +51,7 @@ export class ReportExportService {
       }
     }
     if (tipoNorm === 'trazabilidad') {
-      const rows = userId
-        ? await query(
-            `SELECT l.codigo_lote,
-                CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
-                     ELSE (SELECT t.etapa FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1)
-                END AS etapa_actual,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Registrado'
-                     ELSE 'En trazabilidad'
-                END AS estado,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
-                     ELSE COALESCE((SELECT MAX(t.fecha) FROM trazabilidad t WHERE t.lote_id = l.id), 'Pendiente')
-                END AS ultima_fecha,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN '-'
-                     ELSE COALESCE((SELECT t.ubicacion FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1), '-')
-                END AS ubicacion
-         FROM lotes l
-         LEFT JOIN productores p ON p.id = l.productor_id
-         WHERE l.deleted_at IS NULL AND l.user_id = ?
-         ORDER BY l.id DESC LIMIT 100`,
-            [userId]
-          )
-        : await query(
-            `SELECT l.codigo_lote,
-                CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
-                CONCAT(u.nombres, ' ', COALESCE(u.apellidos, '')) AS cliente,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
-                     ELSE (SELECT t.etapa FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1)
-                END AS etapa_actual,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Registrado'
-                     ELSE 'En trazabilidad'
-                END AS estado,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
-                     ELSE COALESCE((SELECT MAX(t.fecha) FROM trazabilidad t WHERE t.lote_id = l.id), 'Pendiente')
-                END AS ultima_fecha,
-                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN '-'
-                     ELSE COALESCE((SELECT t.ubicacion FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1), '-')
-                END AS ubicacion
-         FROM lotes l
-         LEFT JOIN productores p ON p.id = l.productor_id
-         LEFT JOIN usuarios u ON u.id = l.user_id
-         WHERE l.deleted_at IS NULL
-         ORDER BY l.id DESC LIMIT 100`,
-            []
-          )
+      const rows = await queryScoped(userId, TRAZA_LOTES_GLOBAL, TRAZA_LOTES_SCOPED)
       return {
         titulo: alcance === 'GLOBAL' ? 'Reporte global de Trazabilidad' : 'Mi reporte de Trazabilidad',
         ...headerMeta,

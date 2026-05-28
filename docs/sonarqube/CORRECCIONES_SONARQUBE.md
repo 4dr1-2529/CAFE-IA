@@ -1,89 +1,77 @@
 # Correcciones SonarQube / SonarCloud
 
-Fecha: 2026-05-28  
-Proyecto: `4dr1-2529_CAFE-IA`
+**Proyecto:** `4dr1-2529_CAFE-IA`  
+**Última actualización:** 2026-05-28
 
-## Resumen
+## Tabla de hallazgos
 
-| # | Vulnerabilidad | Severidad | Archivo | Estado |
-|---|----------------|-----------|---------|--------|
-| 1 | SQL injection (consulta por concatenación) | Crítica | `ReportesRepository.js` | Corregido |
-| 2 | Fuga de variables de entorno sensibles | Crítica | `vite.config.js` | Corregido |
-| 3 | Dependencia `tmp` (path traversal) | Alta | `backend/package.json` (transitiva exceljs) | Corregido |
-| 4 | Dependencia `uuid` (buffer bounds) | Media | `backend/package.json` (transitiva exceljs) | Corregido |
-| 5 | Dependencia `joblib` | Baja | `ml/requirements.txt` | Corregido |
+| Hallazgo | Severidad | Archivo | Corrección aplicada | Estado |
+|----------|-----------|---------|---------------------|--------|
+| Potential SQL injection via string-based query | Crítica | `ReportesRepository.js` | Consultas 100 % estáticas en `reportesSql.js` + `trazabilidadSql.js`; ejecución con `scopedQuery.js` y placeholders `?` | Corregido |
+| Potential leakage of sensitive environment variables | Crítica | `vite.config.js` | `loadEnv(..., 'VITE_')` únicamente; sin `define` de `process.env`; frontend usa `import.meta.env.VITE_API_URL` | Corregido |
+| uuid vulnerable (GHSA-w5hq-g745-h8pq) | Media | `package.json` / lockfiles | `overrides`: `uuid@^11.1.1` | Corregido |
+| joblib vulnerable | Baja | `ml/requirements.txt` | `joblib>=1.5.0` | Corregido |
+| tmp path traversal (transitiva exceljs) | Alta | `backend/package.json` | `overrides`: `tmp@^0.2.6` | Corregido |
 
 ---
 
 ## 1. SQL injection — ReportesRepository
 
-**Detección:** Consultas armadas con template strings / fragmentos dinámicos (`${ls.clause}`, alias SQL, columnas JOIN variables).
+**Problema:** Sonar detectaba interpolación `${ls.clause}` y fragmentos dinámicos en SQL.
 
-**Acción correctiva:**
+**Solución:**
 
-- Nuevo módulo `backend/src/shared/sqlScope.js` con fragmentos SQL **fijos** y parámetros `?`.
-- Whitelist de tipos de reporte (`assertReportType`, `REPORT_TABLE_KEYS`).
-- `trazabilidadSql.js`: expresiones SQL estáticas (alias `l` fijo); `sqlResumenEtapas` / `sqlKpisEtapasLotes` reciben solo `userId` numérico o `null`.
-- `ReportesRepository.trazabilidad`: consultas global/personal separadas (sin `${clienteCols}` / `${joinCliente}`).
-- `ReportExportService`: mismas reglas; trazabilidad con dos SQL estáticos.
-- `DashboardRepository`: usa `sqlScope` compartido (sin alias dinámico).
-
-**Evidencia:** Parámetros siempre en array `[userId]`; no hay nombres de tabla/columna desde `req.params` o body.
+- `backend/src/shared/reportesSql.js` — pares `*_GLOBAL` / `*_SCOPED` sin entrada de usuario en el texto SQL.
+- `backend/src/shared/scopedQuery.js` — `queryScoped(userId, sqlGlobal, sqlScoped)` elige consulta según scope validado.
+- `backend/src/shared/sqlScope.js` — whitelist `REPORT_TABLE_KEYS` y `assertReportType()`.
+- `ReportesRepository.js` — sin template strings en SQL; solo llama a helpers y constantes.
+- `ReportExportService.js` — misma estrategia.
 
 ---
 
-## 2. Fuga de variables — vite.config.js
+## 2. Variables sensibles — vite.config.js
 
-**Detección:** `loadEnv(mode, process.cwd(), '')` cargaba **todas** las variables del `.env` (incl. `MYSQLPASSWORD`, `JWT_SECRET`, etc.).
+**Problema:** `loadEnv(mode, process.cwd(), '')` exponía todas las variables del `.env`.
 
-**Acción correctiva:**
+**Solución:**
 
-- `loadEnv(mode, process.cwd(), 'VITE_')` — solo prefijo público.
-- `define` limitado a `import.meta.env.VITE_API_URL` con valor derivado únicamente de `VITE_*` o default Railway en producción.
-- `envPrefix: ['VITE_']` mantenido.
-
-**Evidencia:** El bundle de frontend no recibe secretos de servidor.
-
----
-
-## 3–4. Dependencias npm (`tmp`, `uuid`)
-
-**Acción correctiva:**
-
-```json
-"overrides": {
-  "tmp": "^0.2.6",
-  "uuid": "^11.1.1"
-}
+```js
+loadEnv(mode, process.cwd(), 'VITE_')
+envPrefix: ['VITE_']
 ```
 
-En `backend/package.json` y `package.json` (raíz, Cypress).
-
-**Evidencia:** `npm audit` en backend tras `npm install` — ver salida de CI/local.
-
----
-
-## 5. joblib (Python ML)
-
-**Acción correctiva:** `ml/requirements.txt` → `joblib>=1.4.2`
-
-**Evidencia:** Actualizar entorno ML con `pip install -r ml/requirements.txt --upgrade`
+- Eliminado `define` de `import.meta.env.VITE_API_URL` con valores derivados de env completo.
+- Producción: `VITE_API_URL` en `frontend/vercel.json` y fallback en `frontend/src/config/api.js`.
 
 ---
 
-## Validación ejecutada
+## 3. uuid
+
+```json
+"overrides": { "uuid": "^11.1.1" }
+```
+
+En `backend/package.json` y `package.json` (raíz).
+
+---
+
+## 4. joblib
+
+`ml/requirements.txt`: `joblib>=1.5.0` (usado por scikit-learn en entrenamiento ML).
+
+---
+
+## Validación
 
 ```bash
 cd backend && npm install && npm audit && npm test
-cd frontend && npm install && npm audit && npm run build
+cd ../frontend && npm install && npm run build && npm audit
 ```
 
 ---
 
-## Volver a analizar en SonarCloud
+## Re-escaneo SonarCloud
 
-1. Configurar secret `SONAR_TOKEN` en GitHub (si no existe).
-2. Push a `main` → workflow `sonarcloud` en Actions.
-3. Revisar: https://sonarcloud.io/project/overview?id=4dr1-2529_CAFE-IA
-
-Capturas sugeridas: Overview (Quality Gate), Issues (0 críticas en archivos corregidos).
+1. Secret `SONAR_TOKEN` en GitHub Actions.
+2. Push a `main` → job **SonarCloud Analysis**.
+3. Dashboard: https://sonarcloud.io/project/overview?id=4dr1-2529_CAFE-IA

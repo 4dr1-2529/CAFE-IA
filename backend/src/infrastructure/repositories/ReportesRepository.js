@@ -1,9 +1,13 @@
 import { query, queryOne } from '../database/pool.js'
-import { loteScope, productorScope } from '../../shared/sqlScope.js'
+import * as R from '../../shared/reportesSql.js'
+import { queryOneScoped, queryScoped } from '../../shared/scopedQuery.js'
 import {
   sqlKpisEtapasLotes,
   sqlResumenEtapas,
-  sqlUltimaEtapaSubquery,
+  TRAZA_LOTES_GLOBAL,
+  TRAZA_LOTES_SCOPED,
+  TRAZA_REGISTROS_GLOBAL,
+  TRAZA_REGISTROS_SCOPED,
 } from '../../shared/trazabilidadSql.js'
 
 function toNum(row, field = 'c') {
@@ -15,97 +19,33 @@ function toNum(row, field = 'c') {
 
 export class ReportesRepository {
   static async produccion(userId = null) {
-    const ls = loteScope(userId)
-    const ps = productorScope(userId)
     const isGlobal = !userId
 
-    const resumen = await queryOne(
-      `SELECT COUNT(*) AS total_lotes, COALESCE(SUM(l.cantidad_kg),0) AS total_kg,
-              COALESCE(AVG(l.humedad),0) AS humedad_promedio, COALESCE(AVG(l.temperatura),0) AS temp_promedio
-       FROM lotes l WHERE l.deleted_at IS NULL ${ls.clause}`,
-      ls.params
+    const resumen = await queryOneScoped(
+      userId,
+      R.PRODUCCION_RESUMEN_GLOBAL,
+      R.PRODUCCION_RESUMEN_SCOPED
     )
-
-    const prediccionesResumen = await queryOne(
-      `SELECT COUNT(*) AS total
-       FROM predicciones_ia pr
-       JOIN lotes l ON pr.lote_id = l.id AND l.deleted_at IS NULL
-       WHERE pr.origen = 'usuario' ${ls.clause}`,
-      ls.params
+    const prediccionesResumen = await queryOneScoped(
+      userId,
+      R.PRODUCCION_PREDICCIONES_GLOBAL,
+      R.PRODUCCION_PREDICCIONES_SCOPED
     )
 
     const [porVariedad, porMes, porProductor, top5Lotes, registros] = await Promise.all([
-      query(
-        `SELECT l.variedad_cafe, COUNT(*) AS lotes, COALESCE(SUM(l.cantidad_kg), 0) AS kg
-         FROM lotes l WHERE l.deleted_at IS NULL ${ls.clause}
-         GROUP BY l.variedad_cafe ORDER BY kg DESC`,
-        ls.params
-      ),
-      query(
-        `SELECT DATE_FORMAT(COALESCE(l.fecha_cosecha, l.created_at), '%Y-%m') AS mes,
-                COUNT(*) AS lotes,
-                COALESCE(SUM(l.cantidad_kg), 0) AS kg
-         FROM lotes l
-         WHERE l.deleted_at IS NULL
-           AND COALESCE(l.fecha_cosecha, l.created_at) IS NOT NULL ${ls.clause}
-         GROUP BY DATE_FORMAT(COALESCE(l.fecha_cosecha, l.created_at), '%Y-%m')
-         ORDER BY mes ASC`,
-        ls.params
-      ),
-      query(
-        `SELECT CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
-                p.codigo_productor,
-                COUNT(l.id) AS lotes,
-                COALESCE(SUM(l.cantidad_kg), 0) AS kg
-         FROM lotes l
-         INNER JOIN productores p ON p.id = l.productor_id AND p.deleted_at IS NULL
-         WHERE l.deleted_at IS NULL ${ls.clause}
-         GROUP BY l.productor_id, p.nombres, p.apellidos, p.codigo_productor
-         ORDER BY kg DESC`,
-        ls.params
-      ),
-      query(
-        `SELECT l.codigo_lote, l.cantidad_kg, l.fecha_cosecha, l.variedad_cafe, l.estado,
-                CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor
-         FROM lotes l
-         LEFT JOIN productores p ON p.id = l.productor_id
-         WHERE l.deleted_at IS NULL ${ls.clause}
-         ORDER BY l.cantidad_kg DESC LIMIT 5`,
-        ls.params
-      ),
-      query(
-        `SELECT pr.*, l.codigo_lote FROM produccion pr
-         JOIN lotes l ON pr.lote_id = l.id AND l.deleted_at IS NULL
-         WHERE 1=1 ${ls.clause}
-         ORDER BY pr.fecha_registro DESC LIMIT 100`,
-        ls.params
-      ),
+      queryScoped(userId, R.PRODUCCION_VARIEDAD_GLOBAL, R.PRODUCCION_VARIEDAD_SCOPED),
+      queryScoped(userId, R.PRODUCCION_MES_GLOBAL, R.PRODUCCION_MES_SCOPED),
+      queryScoped(userId, R.PRODUCCION_PRODUCTOR_GLOBAL, R.PRODUCCION_PRODUCTOR_SCOPED),
+      queryScoped(userId, R.PRODUCCION_TOP5_GLOBAL, R.PRODUCCION_TOP5_SCOPED),
+      queryScoped(userId, R.PRODUCCION_REGISTROS_GLOBAL, R.PRODUCCION_REGISTROS_SCOPED),
     ])
 
-    const lotesConTraz = await queryOne(
-      `SELECT COUNT(DISTINCT l.id) AS c FROM lotes l
-       INNER JOIN trazabilidad t ON t.lote_id = l.id
-       WHERE l.deleted_at IS NULL ${ls.clause}`,
-      ls.params
-    )
-    const lotesSinTraz = await queryOne(
-      `SELECT COUNT(*) AS c FROM lotes l
-       WHERE l.deleted_at IS NULL ${ls.clause}
-       AND NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id)`,
-      ls.params
-    )
-    const lotesConIa = await queryOne(
-      `SELECT COUNT(DISTINCT l.id) AS c FROM lotes l
-       INNER JOIN predicciones_ia p ON p.lote_id = l.id AND p.origen = 'usuario'
-       WHERE l.deleted_at IS NULL ${ls.clause}`,
-      ls.params
-    )
-    const lotesSinIa = await queryOne(
-      `SELECT COUNT(*) AS c FROM lotes l
-       WHERE l.deleted_at IS NULL ${ls.clause}
-       AND NOT EXISTS (SELECT 1 FROM predicciones_ia p WHERE p.lote_id = l.id AND p.origen = 'usuario')`,
-      ls.params
-    )
+    const [lotesConTraz, lotesSinTraz, lotesConIa, lotesSinIa] = await Promise.all([
+      queryOneScoped(userId, R.PRODUCCION_LOTES_TRAZ_GLOBAL, R.PRODUCCION_LOTES_TRAZ_SCOPED),
+      queryOneScoped(userId, R.PRODUCCION_LOTES_SIN_TRAZ_GLOBAL, R.PRODUCCION_LOTES_SIN_TRAZ_SCOPED),
+      queryOneScoped(userId, R.PRODUCCION_LOTES_IA_GLOBAL, R.PRODUCCION_LOTES_IA_SCOPED),
+      queryOneScoped(userId, R.PRODUCCION_LOTES_SIN_IA_GLOBAL, R.PRODUCCION_LOTES_SIN_IA_SCOPED),
+    ])
 
     const totalLotes = toNum(resumen, 'total_lotes')
     const extras = {
@@ -182,42 +122,13 @@ export class ReportesRepository {
       extras.lotesSinTrazabilidadLista = sinTrazaList
       extras.lotesSinIALista = sinIAList
     } else {
+      const id = Number(userId)
       const [totalProductores, lotesRecientes, sinTrazaList, sinIAList, misProductores] = await Promise.all([
-        queryOne(`SELECT COUNT(*) AS c FROM productores p WHERE p.deleted_at IS NULL ${ps.clause}`, ps.params),
-        query(
-          `SELECT l.codigo_lote, l.cantidad_kg, l.estado,
-                  CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor
-           FROM lotes l
-           LEFT JOIN productores p ON p.id = l.productor_id
-           WHERE l.deleted_at IS NULL ${ls.clause}
-           ORDER BY l.created_at DESC LIMIT 10`,
-          ls.params
-        ),
-        query(
-          `SELECT l.codigo_lote, CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor
-           FROM lotes l
-           LEFT JOIN productores p ON p.id = l.productor_id
-           WHERE l.deleted_at IS NULL ${ls.clause}
-           AND NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id)
-           ORDER BY l.id DESC LIMIT 8`,
-          ls.params
-        ),
-        query(
-          `SELECT l.codigo_lote FROM lotes l
-           WHERE l.deleted_at IS NULL ${ls.clause}
-           AND NOT EXISTS (SELECT 1 FROM predicciones_ia p WHERE p.lote_id = l.id AND p.origen = 'usuario')
-           ORDER BY l.id DESC LIMIT 8`,
-          ls.params
-        ),
-        query(
-          `SELECT p.id, p.codigo_productor, p.nombres, p.apellidos, p.parcela,
-                  COUNT(l.id) AS lotes
-           FROM productores p
-           LEFT JOIN lotes l ON l.productor_id = p.id AND l.deleted_at IS NULL
-           WHERE p.deleted_at IS NULL ${ps.clause}
-           GROUP BY p.id ORDER BY p.nombres LIMIT 20`,
-          ps.params
-        ),
+        queryOne(R.PRODUCCION_COUNT_PRODUCTORES_SCOPED, [id]),
+        query(R.PRODUCCION_LOTES_RECIENTES_SCOPED, [id]),
+        query(R.PRODUCCION_SIN_TRAZ_LIST_SCOPED, [id]),
+        query(R.PRODUCCION_SIN_IA_LIST_SCOPED, [id]),
+        query(R.PRODUCCION_MIS_PRODUCTORES_SCOPED, [id]),
       ])
       extras.totalProductores = toNum(totalProductores)
       extras.lotesRecientes = lotesRecientes
@@ -243,63 +154,23 @@ export class ReportesRepository {
   }
 
   static async calidad(userId = null) {
-    const ls = loteScope(userId)
-    const resumen = await queryOne(
-      `SELECT COUNT(*) AS total, COALESCE(AVG(c.puntaje_taza), 0) AS promedio
-       FROM control_calidad c
-       JOIN lotes l ON c.lote_id = l.id AND l.deleted_at IS NULL
-       WHERE 1=1 ${ls.clause}`,
-      ls.params
-    )
-    const evaluaciones = await query(
-      `SELECT c.*, l.codigo_lote,
-              CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
-              l.variedad_cafe
-       FROM control_calidad c
-       JOIN lotes l ON c.lote_id = l.id AND l.deleted_at IS NULL
-       LEFT JOIN productores p ON p.id = l.productor_id
-       WHERE 1=1 ${ls.clause}
-       ORDER BY c.id DESC LIMIT 100`,
-      ls.params
+    const resumen = await queryOneScoped(userId, R.CALIDAD_RESUMEN_GLOBAL, R.CALIDAD_RESUMEN_SCOPED)
+    const evaluaciones = await queryScoped(
+      userId,
+      R.CALIDAD_EVALUACIONES_GLOBAL,
+      R.CALIDAD_EVALUACIONES_SCOPED
     )
     return { resumen, evaluaciones, totalEvaluacionesUnicas: evaluaciones.length }
   }
 
   static async predicciones(userId = null) {
-    const ls = loteScope(userId)
-    const resumen = await queryOne(
-      `SELECT COUNT(*) AS total,
-              COALESCE(AVG(p.confianza), 0) AS confianza_promedio,
-              COALESCE(AVG(p.porcentaje_riesgo), 0) AS riesgo_promedio
-       FROM predicciones_ia p
-       JOIN lotes l ON p.lote_id = l.id AND l.deleted_at IS NULL
-       WHERE p.origen = 'usuario' ${ls.clause}`,
-      ls.params
-    )
-    const porCalidad = await query(
-      `SELECT p.calidad_predicha, COUNT(*) AS cantidad
-       FROM predicciones_ia p
-       JOIN lotes l ON p.lote_id = l.id AND l.deleted_at IS NULL
-       WHERE p.origen = 'usuario' ${ls.clause}
-       GROUP BY p.calidad_predicha`,
-      ls.params
-    )
-    const predicciones = await query(
-      `SELECT p.*, l.codigo_lote,
-              CONCAT(pr.nombres, ' ', COALESCE(pr.apellidos, '')) AS productor,
-              l.variedad_cafe
-       FROM predicciones_ia p
-       JOIN lotes l ON p.lote_id = l.id AND l.deleted_at IS NULL
-       LEFT JOIN productores pr ON pr.id = l.productor_id
-       WHERE p.origen = 'usuario' ${ls.clause}
-       ORDER BY p.id DESC LIMIT 100`,
-      ls.params
-    )
-    const lotesPendientes = await queryOne(
-      `SELECT COUNT(*) AS c FROM lotes l
-       WHERE l.deleted_at IS NULL ${ls.clause}
-       AND NOT EXISTS (SELECT 1 FROM predicciones_ia p WHERE p.lote_id = l.id AND p.origen = 'usuario')`,
-      ls.params
+    const resumen = await queryOneScoped(userId, R.IA_RESUMEN_GLOBAL, R.IA_RESUMEN_SCOPED)
+    const porCalidad = await queryScoped(userId, R.IA_POR_CALIDAD_GLOBAL, R.IA_POR_CALIDAD_SCOPED)
+    const predicciones = await queryScoped(userId, R.IA_LISTA_GLOBAL, R.IA_LISTA_SCOPED)
+    const lotesPendientes = await queryOneScoped(
+      userId,
+      R.IA_LOTES_PENDIENTES_GLOBAL,
+      R.IA_LOTES_PENDIENTES_SCOPED
     )
     return {
       resumen: {
@@ -317,10 +188,6 @@ export class ReportesRepository {
   }
 
   static async trazabilidad(userId = null) {
-    const ls = loteScope(userId)
-    const isGlobal = !userId
-    const ultimaEtapa = sqlUltimaEtapaSubquery()
-
     const resumenEtapasQuery = sqlResumenEtapas(userId)
     const resumenEtapas = await query(resumenEtapasQuery.sql, resumenEtapasQuery.params)
 
@@ -337,54 +204,8 @@ export class ReportesRepository {
       lotes_comercializados: toNum(resumenKpisRow, 'lotes_comercializados'),
     }
 
-    const registros = await query(
-      `SELECT t.*, l.codigo_lote, l.estado AS estado_lote, l.cantidad_kg,
-              CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor
-       FROM trazabilidad t
-       JOIN lotes l ON t.lote_id = l.id AND l.deleted_at IS NULL
-       LEFT JOIN productores p ON p.id = l.productor_id
-       WHERE 1=1 ${ls.clause}
-       ORDER BY t.lote_id, t.orden LIMIT 200`,
-      ls.params
-    )
-
-    const loteSelectBase = `SELECT l.id AS lote_id, l.codigo_lote, l.cantidad_kg, l.variedad_cafe,
-              CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
-              CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
-                   ELSE COALESCE(${ultimaEtapa}, 'Pendiente')
-              END AS etapa_actual,
-              CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN NULL
-                   ELSE (SELECT MAX(t.fecha) FROM trazabilidad t WHERE t.lote_id = l.id)
-              END AS ultima_fecha,
-              CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN '-'
-                   ELSE COALESCE((SELECT t.ubicacion FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1), '-')
-              END AS ubicacion,
-              CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Registrado'
-                   ELSE 'En trazabilidad'
-              END AS estado_display,
-              CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 1 ELSE 0 END AS sin_trazabilidad`
-
-    const lotesRows = isGlobal
-      ? await query(
-          `${loteSelectBase},
-              CONCAT(u.nombres, ' ', COALESCE(u.apellidos, '')) AS cliente,
-              u.codigo_usuario AS codigo_cliente,
-              l.user_id
-       FROM lotes l
-       LEFT JOIN productores p ON p.id = l.productor_id
-       LEFT JOIN usuarios u ON u.id = l.user_id
-       WHERE l.deleted_at IS NULL
-       ORDER BY l.id DESC LIMIT 100`,
-          []
-        )
-      : await query(
-          `${loteSelectBase}
-       FROM lotes l
-       LEFT JOIN productores p ON p.id = l.productor_id
-       WHERE l.deleted_at IS NULL AND l.user_id = ?
-       ORDER BY l.id DESC LIMIT 100`,
-          ls.params
-        )
+    const registros = await queryScoped(userId, TRAZA_REGISTROS_GLOBAL, TRAZA_REGISTROS_SCOPED)
+    const lotesRows = await queryScoped(userId, TRAZA_LOTES_GLOBAL, TRAZA_LOTES_SCOPED)
 
     const lotesResumen = lotesRows.map((row) => ({
       ...row,
