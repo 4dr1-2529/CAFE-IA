@@ -238,7 +238,7 @@ export default function ArquitecturaPage() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { t: 'Frontend', d: 'Vite build → Vercel / estático', p: 'VITE_API_BASE_URL' },
+            { t: 'Frontend', d: 'Vite build → Vercel / estático', p: 'VITE_API_URL' },
             { t: 'Backend', d: 'Node Express → Render / Railway', p: 'Puerto 3029' },
             { t: 'MySQL', d: 'cafe_sostenible utf8mb4', p: '39 tablas + vistas SQL' },
           ].map((x) => (

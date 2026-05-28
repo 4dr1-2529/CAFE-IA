@@ -25,6 +25,7 @@ import {
   LineChart,
   Line,
 } from 'recharts'
+import { API_URL } from '../../config/api.js'
 import { getDashboard } from '../../services/api/index.js'
 import { getInfoModelo } from '../../services/ml.service.js'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -161,7 +162,7 @@ export default function Dashboard() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm w-full max-w-xl">
           <h2 className="text-xl font-semibold text-red-700 mb-3">Backend no disponible</h2>
           <p className="text-red-600 mb-4">
-            Verifica que el servidor esté activo en <strong>http://localhost:3029</strong>.
+            Verifica que el backend esté activo{API_URL ? <> en <strong>{API_URL}</strong></> : null}.
           </p>
           <button
             type="button"

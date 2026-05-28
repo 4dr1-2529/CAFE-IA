@@ -24,17 +24,24 @@ export function createApp() {
   const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5175', 'http://127.0.0.1:5175']
   const allowedOrigins = [...new Set([...env.corsOrigins, ...(env.nodeEnv !== 'production' ? devOrigins : [])])]
 
+  const vercelPreviewPattern = /^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i
+
   app.use(
     cors({
       origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+        // Producción: previews y deploys de Vercel (*.vercel.app)
+        if (env.nodeEnv === 'production' && vercelPreviewPattern.test(origin)) {
+          return callback(null, true)
+        }
         // Dev: permitir Vite en LAN (ej. http://192.168.x.x:5174)
         if (env.nodeEnv !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin)) {
           return callback(null, true)
         }
         return callback(new Error('CORS policy: origin not allowed'))
       },
-      optionsSuccessStatus: 200
+      optionsSuccessStatus: 200,
+      credentials: true,
     })
   )
   app.use(express.json({ limit: '2mb' }))

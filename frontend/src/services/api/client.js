@@ -1,19 +1,8 @@
-﻿/** En dev usa /api (proxy Vite) para evitar CORS al abrir por IP de red (192.168.x). */
-function resolveApiBaseUrls() {
-  if (import.meta.env.DEV) return ['/api']
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3029').replace(/\/$/, '')
-  return [`${base}/api`]
-}
-
-const DEFAULT_BASE_URLS = resolveApiBaseUrls()
-
-function resolveApiOrigin() {
-  if (import.meta.env.DEV && typeof window !== 'undefined') return window.location.origin
-  const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3029'
-  return base.replace(/\/$/, '')
-}
-const TIMEOUT = 8000
+﻿import { API_URL, getApiRequestBases, getApiOrigin } from '../../config/api.js'
 import { STORAGE_KEYS } from '../../constants/storage.js'
+
+const DEFAULT_BASE_URLS = getApiRequestBases()
+const TIMEOUT = 8000
 
 const TOKEN_KEY = STORAGE_KEYS.TOKEN
 const SESSION_KEY = STORAGE_KEYS.SESSION
@@ -68,6 +57,13 @@ export function unwrapApiPayload(data) {
 }
 
 const request = async (path, options = {}) => {
+  if (!DEFAULT_BASE_URLS.length) {
+    throw new ApiError(
+      'API no configurada. Defina VITE_API_URL en Vercel apuntando al backend Railway.',
+      'CONFIG'
+    )
+  }
+
   const headers = { 'Content-Type': 'application/json', ...options.headers }
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
@@ -214,7 +210,7 @@ export const getBaseDatosTabla = (tabla) => safeAction(`/base-datos/${tabla}`)
 
 export const downloadReporte = async (tipo, formato = 'pdf') => {
   const token = getToken()
-  const base = resolveApiOrigin()
+  const base = getApiOrigin()
   const url = `${base}/api/reportes/export/${tipo}/${formato}`
   const res = await fetch(url, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -252,4 +248,4 @@ export const getAuditoria = (params = {}) => {
   return safeAction(`/auditoria${qs.toString() ? `?${qs.toString()}` : ''}`)
 }
 
-export { ApiError, request }
+export { ApiError, request, API_URL }
