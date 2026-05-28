@@ -14,7 +14,8 @@
     "build": "npm run build --prefix frontend",
     "test:e2e": "cross-env CYPRESS_BASE_URL=http://localhost:5174 cypress run --project testing",
     "test:e2e:open": "cross-env CYPRESS_BASE_URL=http://localhost:5174 cypress open --project testing",
-    "test:e2e:report": "cross-env CYPRESS_BASE_URL=http://localhost:5174 cypress run --project testing --reporter spec"
+    "test:e2e:report": "cross-env CYPRESS_BASE_URL=http://localhost:5174 cypress run --project testing --reporter spec",
+    "metricas": "node testing/metricas/scripts/generar_metricas.js"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
