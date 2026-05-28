@@ -46,10 +46,12 @@ export function createApp() {
   app.get('/api/health', (req, res) => {
     res.json({
       ok: true,
-      revision: 'mysql-hexagonal-v2.4-stable',
+      revision: 'mysql-hexagonal-v2.5-railway',
       port: env.port,
       pid: process.pid,
       database: env.db.database,
+      dbHost: env.db.host,
+      railway: Boolean(env.db.railway),
       routes: ['GET /api/dashboard', 'GET /api/usuarios', 'GET /api/auth/usuarios'],
     })
   })

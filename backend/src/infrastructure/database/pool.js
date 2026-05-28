@@ -3,21 +3,27 @@ import { env } from '../../config/env.js'
 
 let pool = null
 
+function poolOptions() {
+  const opts = {
+    host: env.db.host,
+    port: env.db.port,
+    user: env.db.user,
+    password: env.db.password,
+    database: env.db.database,
+    waitForConnections: true,
+    connectionLimit: env.db.poolMax,
+    queueLimit: 0,
+    enableKeepAlive: true,
+    charset: 'utf8mb4_unicode_ci',
+    dateStrings: true,
+  }
+  if (env.db.ssl) opts.ssl = env.db.ssl
+  return opts
+}
+
 export function getPool() {
   if (!pool) {
-    pool = mysql.createPool({
-      host: env.db.host,
-      port: env.db.port,
-      user: env.db.user,
-      password: env.db.password,
-      database: env.db.database,
-      waitForConnections: true,
-      connectionLimit: env.db.poolMax,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      charset: 'utf8mb4_unicode_ci',
-      dateStrings: true
-    })
+    pool = mysql.createPool(poolOptions())
     pool.on('connection', (conn) => {
       conn.query("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'")
     })

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import mysql from 'mysql2/promise'
 import bcrypt from 'bcryptjs'
 import { env } from '../../config/env.js'
+import { logDatabaseTarget } from '../../config/database.js'
 import { getPool, query, queryOne, execute } from './pool.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -12,23 +13,16 @@ function readSql(filename) {
   return fs.readFileSync(path.join(__dirname, '../../../sql', filename), 'utf8')
 }
 
-async function runSqlFile(connection, filename, useDatabase = true) {
-  const sql = readSql(filename)
-  const statements = sql
-    .split(';')
-    .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('--') && !s.match(/^SET /i) && !s.match(/^USE /i))
-
-  for (const stmt of statements) {
-    if (stmt.length < 5) continue
-    try {
-      await connection.query(stmt)
-    } catch (err) {
-      if (err.code === 'ER_TABLE_EXISTS_ERROR' || err.code === 'ER_DUP_ENTRY' || err.code === 'ER_DUP_KEYNAME') continue
-      if (stmt.includes('ADD CONSTRAINT fk_usuarios_productor') && err.code === 'ER_CANT_CREATE_TABLE') continue
-      console.warn(`SQL warning [${filename}]:`, err.message?.slice(0, 120))
-    }
+function connectionBase(overrides = {}) {
+  const base = {
+    host: env.db.host,
+    port: env.db.port,
+    user: env.db.user,
+    password: env.db.password,
+    multipleStatements: true,
   }
+  if (env.db.ssl) base.ssl = env.db.ssl
+  return { ...base, ...overrides }
 }
 
 async function queryTableCount(conn) {
@@ -43,29 +37,44 @@ async function queryTableCount(conn) {
   }
 }
 
-export async function initDatabase() {
-  const rootConn = await mysql.createConnection({
-    host: env.db.host,
-    port: env.db.port,
-    user: env.db.user,
-    password: env.db.password,
-    multipleStatements: true
-  })
+async function applySchemaIfNeeded(conn) {
+  const tables = await queryTableCount(conn)
+  if (tables >= 5) return false
 
-  try {
-    await rootConn.query(`CREATE DATABASE IF NOT EXISTS \`${env.db.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`)
-    const tables = await queryTableCount(rootConn)
-    if (tables < 5) {
-      const schema = readSql('schema.sql')
-      const cleaned = schema
-        .replace(/CREATE DATABASE[^;]+;/gi, '')
-        .replace(/USE\s+[^;]+;/gi, '')
-      await rootConn.query(`USE \`${env.db.database}\``)
-      await rootConn.query(cleaned)
-      console.log('Esquema MySQL aplicado desde schema.sql')
+  const schema = readSql('schema.sql')
+  const cleaned = schema
+    .replace(/CREATE DATABASE[^;]+;/gi, '')
+    .replace(/USE\s+[^;]+;/gi, '')
+  await conn.query(`USE \`${env.db.database}\``)
+  await conn.query(cleaned)
+  console.log('Esquema MySQL aplicado desde schema.sql')
+  return true
+}
+
+export async function initDatabase() {
+  logDatabaseTarget(env.db)
+
+  let adminConn
+
+  if (env.db.railway) {
+    adminConn = await mysql.createConnection(
+      connectionBase({ database: env.db.database })
+    )
+    try {
+      await applySchemaIfNeeded(adminConn)
+    } finally {
+      await adminConn.end()
     }
-  } finally {
-    await rootConn.end()
+  } else {
+    adminConn = await mysql.createConnection(connectionBase())
+    try {
+      await adminConn.query(
+        `CREATE DATABASE IF NOT EXISTS \`${env.db.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+      )
+      await applySchemaIfNeeded(adminConn)
+    } finally {
+      await adminConn.end()
+    }
   }
 
   await testConnection()
@@ -78,8 +87,10 @@ export async function initDatabase() {
     await ensureDemoData()
     await ensureDemoLotes()
   }
-  await execute(`UPDATE lotes SET qr_codigo = CONCAT('CAFE-', id) WHERE qr_codigo IS NULL OR qr_codigo = ''`).catch(() => {})
-  console.log('MySQL inicializado correctamente')
+  await execute(`UPDATE lotes SET qr_codigo = CONCAT('CAFE-', id) WHERE qr_codigo IS NULL OR qr_codigo = ''`).catch(
+    () => {}
+  )
+  console.log('[MySQL] Conectado y inicializado correctamente')
 }
 
 async function testConnection() {
@@ -99,7 +110,7 @@ async function seedCatalogsAndAdmin() {
   ).catch(() => {})
 
   const [roles] = await getPool().execute(`SELECT id, codigo FROM roles`)
-  const adminRole = roles.find(r => r.codigo === 'admin')
+  const adminRole = roles.find((r) => r.codigo === 'admin')
   if (!adminRole) return
 
   await execute(
@@ -146,19 +157,23 @@ async function ensureDemoData() {
   }
   let provId = (await queryOne('SELECT id FROM provincias WHERE region_id=? LIMIT 1', [regionId]))?.id
   if (!provId) {
-    const p = await execute(`INSERT INTO provincias (region_id, codigo, nombre) VALUES (?, 'CHN', 'Chanchamayo')`, [regionId])
+    const p = await execute(`INSERT INTO provincias (region_id, codigo, nombre) VALUES (?, 'CHN', 'Chanchamayo')`, [
+      regionId,
+    ])
     provId = p.insertId
   }
   let distId = (await queryOne('SELECT id FROM distritos WHERE provincia_id=? LIMIT 1', [provId]))?.id
   if (!distId) {
-    const d = await execute(`INSERT INTO distritos (provincia_id, codigo, nombre) VALUES (?, 'SVI', 'San Ramón')`, [provId])
+    const d = await execute(`INSERT INTO distritos (provincia_id, codigo, nombre) VALUES (?, 'SVI', 'San Ramón')`, [
+      provId,
+    ])
     distId = d.insertId
   }
 
   const productores = [
     ['P001', 'Juan', 'Pérez', '12345678', '999111222', 'juan@cafe.pe', 'Finca El Roble', 'Chanchamayo', 1650],
     ['P002', 'María', 'Gómez', '87654321', '999333444', 'maria@cafe.pe', 'Parcela La Selva', 'Perené', 1720],
-    ['P003', 'Carlos', 'Quispe', '11223344', '999555666', 'carlos@cafe.pe', 'Alto Satipo', 'Satipo', 1580]
+    ['P003', 'Carlos', 'Quispe', '11223344', '999555666', 'carlos@cafe.pe', 'Alto Satipo', 'Satipo', 1580],
   ]
   for (const p of productores) {
     await execute(
@@ -178,7 +193,7 @@ async function ensureDemoLotes() {
 
   const lotes = [
     ['LOTE-0001', productor.id, 'Arabica', '2026-03-15', 450, 'Produccion', 11.5, 20, 1650, 'Honey'],
-    ['LOTE-0002', productor.id, 'Typica', '2026-04-01', 320, 'Secado', 12.2, 19, 1720, 'Lavado']
+    ['LOTE-0002', productor.id, 'Typica', '2026-04-01', 320, 'Secado', 12.2, 19, 1720, 'Lavado'],
   ]
   for (const l of lotes) {
     const ins = await execute(
@@ -192,7 +207,7 @@ async function ensureDemoLotes() {
       ['Secado', 'Secado del café', 7, 'Pendiente'],
       ['Control de calidad', 'Evaluación sensorial', 14, 'Pendiente'],
       ['Almacenamiento', 'Almacén', 21, 'Pendiente'],
-      ['Comercialización', 'Venta', 28, 'Pendiente']
+      ['Comercialización', 'Venta', 28, 'Pendiente'],
     ]
     let orden = 1
     for (const [etapa, desc, dias, estado] of etapas) {
@@ -203,6 +218,9 @@ async function ensureDemoLotes() {
         [ins.insertId, etapa, desc, dias === 0 ? l[3] : null, productor.parcela || productor.ubicacion || '', estado, orden++]
       ).catch(() => {})
     }
-    await execute(`INSERT INTO inventario (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?,?,CURDATE())`, [ins.insertId, l[4]]).catch(() => {})
+    await execute(`INSERT INTO inventario (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?,?,CURDATE())`, [
+      ins.insertId,
+      l[4],
+    ]).catch(() => {})
   }
 }
