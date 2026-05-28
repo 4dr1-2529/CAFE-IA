@@ -39,6 +39,10 @@ ml/venv/
 # Tests / cobertura
 coverage/
 .nyc_output/
+.scannerwork/
+
+# SonarCloud (reportes locales opcionales)
+.sonar/
 testing/cypress/screenshots/
 testing/cypress/videos/
 testing/cypress/downloads/

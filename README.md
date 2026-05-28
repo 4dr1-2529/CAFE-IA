@@ -230,6 +230,14 @@ python train_model.py
 
 ---
 
+## CI y calidad de código
+
+En cada push/PR a `main` o `develop`, GitHub Actions ejecuta tests del backend, build del frontend, análisis **SonarCloud** y `npm audit`.
+
+Configuración SonarCloud (token `SONAR_TOKEN`): [docs/SONARCLOUD.md](docs/SONARCLOUD.md).
+
+---
+
 ## Licencia
 
 MIT — Proyecto académico Café Sostenible AI.
