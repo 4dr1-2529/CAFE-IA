@@ -11,6 +11,13 @@
     "test": "npm test --prefix backend",
     "db:seed": "npm run db:seed --prefix backend",
     "db:seed:pmv2": "npm run db:seed:pmv2 --prefix backend",
-    "build": "npm run build --prefix frontend"
+    "build": "npm run build --prefix frontend",
+    "test:e2e": "cross-env CYPRESS_BASE_URL=http://localhost:5174 cypress run --project testing",
+    "test:e2e:open": "cross-env CYPRESS_BASE_URL=http://localhost:5174 cypress open --project testing",
+    "test:e2e:report": "cross-env CYPRESS_BASE_URL=http://localhost:5174 cypress run --project testing --reporter spec"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "cypress": "^13.17.0"
   }
 }

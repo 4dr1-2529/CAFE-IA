@@ -39,6 +39,10 @@ ml/venv/
 # Tests / cobertura
 coverage/
 .nyc_output/
+testing/cypress/screenshots/
+testing/cypress/videos/
+testing/cypress/downloads/
+testing/cypress/evidencias/
 
 # OS
 *.tmp
