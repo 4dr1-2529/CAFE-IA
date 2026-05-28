@@ -19,7 +19,7 @@ async function main() {
   )
 
   const porCliente = await query(
-    `SELECT l.user_id, etapa_norm AS etapa, COUNT(*) AS lotes FROM (
+    `SELECT user_id, etapa_norm AS etapa, COUNT(*) AS lotes FROM (
       SELECT l.id, l.user_id,
         CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
         ELSE COALESCE(

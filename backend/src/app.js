@@ -5,6 +5,9 @@ import rateLimit from 'express-rate-limit'
 import { env } from './config/env.js'
 import apiRouter from './interfaces/http/routes/index.js'
 import { userFacingMessage } from './shared/apiResponse.js'
+import { readGuard } from './interfaces/http/middleware/rbac.js'
+import { asyncHandler } from './shared/asyncHandler.js'
+import { BaseDatosController } from './interfaces/http/controllers/BaseDatosController.js'
 
 export function createApp() {
   const app = express()
@@ -50,6 +53,9 @@ export function createApp() {
       routes: ['GET /api/dashboard', 'GET /api/usuarios', 'GET /api/auth/usuarios'],
     })
   })
+
+  app.get('/api/base-datos', readGuard, asyncHandler(BaseDatosController.resumen))
+  app.get('/api/base-datos/:tabla', readGuard, asyncHandler(BaseDatosController.tabla))
 
   app.use('/api', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
