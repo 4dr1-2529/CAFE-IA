@@ -30,8 +30,8 @@ export function createApp() {
     cors({
       origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
-        // Producción: previews y deploys de Vercel (*.vercel.app)
-        if (env.nodeEnv === 'production' && vercelPreviewPattern.test(origin)) {
+        // Deploys y previews de Vercel (*.vercel.app)
+        if (vercelPreviewPattern.test(origin)) {
           return callback(null, true)
         }
         // Dev: permitir Vite en LAN (ej. http://192.168.x.x:5174)

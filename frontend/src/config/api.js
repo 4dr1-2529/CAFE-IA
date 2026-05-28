@@ -1,28 +1,29 @@
 /**
  * URL base del backend (sin /api).
- * Producción Vercel: definir VITE_API_URL en el panel o en frontend/vercel.json.
- * Desarrollo: fallback localhost:3029 o proxy Vite /api.
+ * Producción: Railway (nunca localhost).
+ * Desarrollo: proxy Vite /api o localhost:3029.
  */
+export const RAILWAY_API_URL =
+  'https://cafe-sostenible-api-production-03ad.up.railway.app'
+
 const fromEnv =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
   ''
 
-export const API_URL = (fromEnv || (import.meta.env.DEV ? 'http://localhost:3029' : '')).replace(
-  /\/$/,
-  ''
-)
+/** En build de producción sin env, usar Railway (evita localhost en Vercel). */
+export const API_URL = (
+  fromEnv ||
+  (import.meta.env.DEV ? 'http://localhost:3029' : RAILWAY_API_URL)
+).replace(/\/$/, '')
 
-if (!import.meta.env.DEV && !API_URL) {
-  console.error(
-    '[API] VITE_API_URL no está definida. Configure en Vercel: https://cafe-sostenible-api-production-03ad.up.railway.app'
-  )
+if (import.meta.env.PROD) {
+  console.info('[API] Producción — backend:', API_URL)
 }
 
 /** Prefijo para fetch JSON (client.js). */
 export function getApiRequestBases() {
   if (import.meta.env.DEV) return ['/api']
-  if (!API_URL) return []
   return [`${API_URL}/api`]
 }
 
