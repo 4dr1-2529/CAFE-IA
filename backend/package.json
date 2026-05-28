@@ -27,5 +27,9 @@
   },
   "devDependencies": {
     "supertest": "^6.3.4"
+  },
+  "overrides": {
+    "tmp": "^0.2.6",
+    "uuid": "^11.1.1"
   }
 }

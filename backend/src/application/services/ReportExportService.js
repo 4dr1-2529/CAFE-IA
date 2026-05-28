@@ -1,16 +1,13 @@
 import PDFDocument from 'pdfkit'
 import ExcelJS from 'exceljs'
 import { query, queryOne } from '../../infrastructure/database/pool.js'
-
-function scopeSql(userId, alias = 'l') {
-  return userId ? ` AND ${alias}.user_id = ? AND ${alias}.deleted_at IS NULL ` : ` AND ${alias}.deleted_at IS NULL `
-}
+import { assertReportType, loteExportScope } from '../../shared/sqlScope.js'
 
 export class ReportExportService {
   static async buildReportData(tipo, userId = null, meta = {}) {
+    const tipoNorm = assertReportType(tipo)
     const fecha = new Date().toLocaleString('es-PE')
-    const scope = scopeSql(userId)
-    const params = userId ? [userId] : []
+    const { clause: scope, params } = loteExportScope(userId)
     const alcance = meta.alcance || (userId ? 'PERSONAL' : 'GLOBAL')
     const headerMeta = {
       fecha,
@@ -19,7 +16,7 @@ export class ReportExportService {
       usuario: meta.email || meta.nombre || '—',
     }
 
-    if (tipo === 'produccion') {
+    if (tipoNorm === 'produccion') {
       const resumen = await queryOne(
         `SELECT COUNT(*) AS total_lotes, COALESCE(SUM(cantidad_kg),0) AS total_kg
          FROM lotes l WHERE 1=1 ${scope}`,
@@ -39,7 +36,7 @@ export class ReportExportService {
         columns: ['Código', 'Variedad', 'Kg', 'Cosecha', 'Estado'],
       }
     }
-    if (tipo === 'calidad') {
+    if (tipoNorm === 'calidad') {
       const rows = await query(
         `SELECT l.codigo_lote, c.puntaje_taza, c.calidad_final, c.fecha_evaluacion
          FROM control_calidad c JOIN lotes l ON c.lote_id=l.id AND l.deleted_at IS NULL
@@ -53,7 +50,7 @@ export class ReportExportService {
         columns: ['Lote', 'Puntaje', 'Calidad', 'Fecha'],
       }
     }
-    if (tipo === 'ia') {
+    if (tipoNorm === 'ia') {
       const rows = await query(
         `SELECT l.codigo_lote, p.calidad_predicha, p.confianza, p.porcentaje_riesgo, p.fecha_prediccion
          FROM predicciones_ia p JOIN lotes l ON p.lote_id=l.id AND l.deleted_at IS NULL
@@ -67,15 +64,11 @@ export class ReportExportService {
         columns: ['Lote', 'Calidad predicha', 'Confianza %', 'Riesgo %', 'Fecha'],
       }
     }
-    if (tipo === 'trazabilidad') {
-      const clienteCol = userId
-        ? ''
-        : `, CONCAT(u.nombres, ' ', COALESCE(u.apellidos, '')) AS cliente`
-      const joinCliente = userId ? '' : ' LEFT JOIN usuarios u ON u.id = l.user_id'
-      const rows = await query(
-        `SELECT l.codigo_lote,
-                CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor
-                ${clienteCol},
+    if (tipoNorm === 'trazabilidad') {
+      const rows = userId
+        ? await query(
+            `SELECT l.codigo_lote,
+                CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
                 CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
                      ELSE (SELECT t.etapa FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1)
                 END AS etapa_actual,
@@ -90,11 +83,33 @@ export class ReportExportService {
                 END AS ubicacion
          FROM lotes l
          LEFT JOIN productores p ON p.id = l.productor_id
-         ${joinCliente}
-         WHERE 1=1 ${scope}
+         WHERE l.deleted_at IS NULL AND l.user_id = ?
          ORDER BY l.id DESC LIMIT 100`,
-        params
-      )
+            [userId]
+          )
+        : await query(
+            `SELECT l.codigo_lote,
+                CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
+                CONCAT(u.nombres, ' ', COALESCE(u.apellidos, '')) AS cliente,
+                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
+                     ELSE (SELECT t.etapa FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1)
+                END AS etapa_actual,
+                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Registrado'
+                     ELSE 'En trazabilidad'
+                END AS estado,
+                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
+                     ELSE COALESCE((SELECT MAX(t.fecha) FROM trazabilidad t WHERE t.lote_id = l.id), 'Pendiente')
+                END AS ultima_fecha,
+                CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN '-'
+                     ELSE COALESCE((SELECT t.ubicacion FROM trazabilidad t WHERE t.lote_id = l.id ORDER BY t.fecha DESC, t.orden DESC, t.id DESC LIMIT 1), '-')
+                END AS ubicacion
+         FROM lotes l
+         LEFT JOIN productores p ON p.id = l.productor_id
+         LEFT JOIN usuarios u ON u.id = l.user_id
+         WHERE l.deleted_at IS NULL
+         ORDER BY l.id DESC LIMIT 100`,
+            []
+          )
       return {
         titulo: alcance === 'GLOBAL' ? 'Reporte global de Trazabilidad' : 'Mi reporte de Trazabilidad',
         ...headerMeta,

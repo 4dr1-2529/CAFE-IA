@@ -7,22 +7,28 @@ export const ETAPAS_CADENA = [
   'Comercialización',
 ]
 
-/** Subconsulta: última etapa por lote (una sola fila por lote). */
-export function sqlUltimaEtapaSubquery(loteAlias = 'l') {
-  return `(
-    SELECT t.etapa FROM trazabilidad t
-    WHERE t.lote_id = ${loteAlias}.id
-    ORDER BY t.fecha DESC, t.orden DESC, t.id DESC
-    LIMIT 1
-  )`
+const SQL_ULTIMA_ETAPA = `(
+  SELECT t.etapa FROM trazabilidad t
+  WHERE t.lote_id = l.id
+  ORDER BY t.fecha DESC, t.orden DESC, t.id DESC
+  LIMIT 1
+)`
+
+const SQL_ETAPA_NORM = `CASE
+  WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
+  ELSE COALESCE(${SQL_ULTIMA_ETAPA}, 'Pendiente')
+END`
+
+const WHERE_LOTE_GLOBAL = 'WHERE l.deleted_at IS NULL'
+const WHERE_LOTE_SCOPED = 'WHERE l.deleted_at IS NULL AND l.user_id = ?'
+
+/** Subconsulta: última etapa por lote (alias fijo l). */
+export function sqlUltimaEtapaSubquery() {
+  return SQL_ULTIMA_ETAPA
 }
 
-export function sqlEtapaNormExpr(loteAlias = 'l') {
-  const ultima = sqlUltimaEtapaSubquery(loteAlias)
-  return `CASE
-    WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = ${loteAlias}.id) THEN 'Pendiente'
-    ELSE COALESCE(${ultima}, 'Pendiente')
-  END`
+export function sqlEtapaNormExpr() {
+  return SQL_ETAPA_NORM
 }
 
 export function bucketEtapa(etapaNorm) {
@@ -36,11 +42,38 @@ export function bucketEtapa(etapaNorm) {
   return 'otro'
 }
 
-/** SQL para KPIs de etapas (un conteo por lote). */
-export function sqlKpisEtapasLotes(loteWhereClause = '') {
-  const etapaNorm = sqlEtapaNormExpr('l')
-  return `
-    SELECT COUNT(*) AS total_lotes,
+function scopedWhere(userId) {
+  if (userId == null || userId === '') {
+    return { where: WHERE_LOTE_GLOBAL, params: [] }
+  }
+  const id = Number(userId)
+  if (!Number.isInteger(id) || id < 1) {
+    throw Object.assign(new Error('userId inválido'), { status: 400 })
+  }
+  return { where: WHERE_LOTE_SCOPED, params: [id] }
+}
+
+/** Resumen de etapas por lote (SQL estático + params). */
+export function sqlResumenEtapas(userId) {
+  const { where, params } = scopedWhere(userId)
+  return {
+    sql: `SELECT etapa_norm AS etapa, COUNT(*) AS lotes
+       FROM (
+         SELECT l.id, ${SQL_ETAPA_NORM} AS etapa_norm
+         FROM lotes l
+         ${where}
+       ) scoped
+       GROUP BY etapa_norm
+       ORDER BY etapa_norm`,
+    params,
+  }
+}
+
+/** KPIs de etapas (SQL estático + params). */
+export function sqlKpisEtapasLotes(userId) {
+  const { where, params } = scopedWhere(userId)
+  return {
+    sql: `SELECT COUNT(*) AS total_lotes,
       SUM(CASE WHEN etapa_norm = 'Pendiente' THEN 1 ELSE 0 END) AS lotes_pendientes,
       SUM(CASE WHEN etapa_norm IN ('Cosecha','Producción','Produccion','Selección','Seleccion') THEN 1 ELSE 0 END) AS lotes_en_produccion,
       SUM(CASE WHEN etapa_norm = 'Secado' THEN 1 ELSE 0 END) AS lotes_en_secado,
@@ -48,8 +81,10 @@ export function sqlKpisEtapasLotes(loteWhereClause = '') {
       SUM(CASE WHEN etapa_norm = 'Almacenamiento' THEN 1 ELSE 0 END) AS lotes_almacenados,
       SUM(CASE WHEN etapa_norm IN ('Comercialización','Comercializacion') THEN 1 ELSE 0 END) AS lotes_comercializados
     FROM (
-      SELECT l.id, ${etapaNorm} AS etapa_norm
+      SELECT l.id, ${SQL_ETAPA_NORM} AS etapa_norm
       FROM lotes l
-      WHERE l.deleted_at IS NULL ${loteWhereClause}
-    ) scoped`
+      ${where}
+    ) scoped`,
+    params,
+  }
 }

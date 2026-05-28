@@ -3,12 +3,18 @@ import react from '@vitejs/plugin-react'
 
 const RAILWAY_API_DEFAULT = 'https://cafe-sostenible-api-production-03ad.up.railway.app'
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
-  const apiUrl =
+/** Solo variables públicas VITE_* (nunca secretos de servidor). */
+function readPublicApiUrl(mode) {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  return (
     env.VITE_API_URL ||
     env.VITE_API_BASE_URL ||
     (mode === 'production' ? RAILWAY_API_DEFAULT : 'http://localhost:3029')
+  ).replace(/\/$/, '')
+}
+
+export default defineConfig(({ mode }) => {
+  const apiUrl = readPublicApiUrl(mode)
 
   return {
     plugins: [react()],

@@ -1,4 +1,5 @@
 import { query, queryOne } from '../database/pool.js'
+import { loteScope, productorScope } from '../../shared/sqlScope.js'
 
 const LIMIT_TABLA = 8
 
@@ -14,16 +15,6 @@ function toCount(row, field = 'c') {
   const v = row[field] ?? row.total ?? row.count
   if (typeof v === 'bigint') return Number(v)
   return Number(v) || 0
-}
-
-function loteScope(userId, alias = 'l') {
-  if (!userId) return { clause: '', params: [] }
-  return { clause: ` AND ${alias}.user_id = ? AND ${alias}.deleted_at IS NULL `, params: [userId] }
-}
-
-function productorScope(userId, alias = 'p') {
-  if (!userId) return { clause: '', params: [] }
-  return { clause: ` AND ${alias}.user_id = ? AND ${alias}.deleted_at IS NULL `, params: [userId] }
 }
 
 export class DashboardRepository {

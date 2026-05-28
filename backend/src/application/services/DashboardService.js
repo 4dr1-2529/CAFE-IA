@@ -39,9 +39,8 @@ export class DashboardService {
     )
     payload.trazabilidadActiva = Number(traz?.c) || 0
 
-    const etapaScope = isAdmin ? '' : ' AND l.user_id = ? '
-    const etapaParams = isAdmin ? [] : [user.sub]
-    const etapasRow = await queryOne(sqlKpisEtapasLotes(etapaScope), etapaParams)
+    const kpisEtapas = sqlKpisEtapasLotes(isAdmin ? null : user.sub)
+    const etapasRow = await queryOne(kpisEtapas.sql, kpisEtapas.params)
     payload.etapasTrazabilidad = {
       total_lotes: Number(etapasRow?.total_lotes) || 0,
       pendientes: Number(etapasRow?.lotes_pendientes) || 0,

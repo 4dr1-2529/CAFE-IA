@@ -1,15 +1,10 @@
 import { query, queryOne } from '../database/pool.js'
-import { sqlEtapaNormExpr, sqlUltimaEtapaSubquery } from '../../shared/trazabilidadSql.js'
-
-function loteScope(userId, alias = 'l') {
-  if (!userId) return { clause: '', params: [] }
-  return { clause: ` AND ${alias}.user_id = ? AND ${alias}.deleted_at IS NULL `, params: [userId] }
-}
-
-function productorScope(userId, alias = 'p') {
-  if (!userId) return { clause: '', params: [] }
-  return { clause: ` AND ${alias}.user_id = ? AND ${alias}.deleted_at IS NULL `, params: [userId] }
-}
+import { loteScope, productorScope } from '../../shared/sqlScope.js'
+import {
+  sqlKpisEtapasLotes,
+  sqlResumenEtapas,
+  sqlUltimaEtapaSubquery,
+} from '../../shared/trazabilidadSql.js'
 
 function toNum(row, field = 'c') {
   if (!row) return 0
@@ -324,37 +319,13 @@ export class ReportesRepository {
   static async trazabilidad(userId = null) {
     const ls = loteScope(userId)
     const isGlobal = !userId
+    const ultimaEtapa = sqlUltimaEtapaSubquery()
 
-    const etapaNormExpr = sqlEtapaNormExpr('l')
-    const ultimaEtapa = sqlUltimaEtapaSubquery('l')
+    const resumenEtapasQuery = sqlResumenEtapas(userId)
+    const resumenEtapas = await query(resumenEtapasQuery.sql, resumenEtapasQuery.params)
 
-    const resumenEtapas = await query(
-      `SELECT etapa_norm AS etapa, COUNT(*) AS lotes
-       FROM (
-         SELECT l.id, ${etapaNormExpr} AS etapa_norm
-         FROM lotes l
-         WHERE l.deleted_at IS NULL ${ls.clause}
-       ) scoped
-       GROUP BY etapa_norm
-       ORDER BY etapa_norm`,
-      ls.params
-    )
-
-    const resumenKpisRow = await queryOne(
-      `SELECT COUNT(*) AS total_lotes,
-              SUM(CASE WHEN etapa_norm = 'Pendiente' THEN 1 ELSE 0 END) AS lotes_pendientes,
-              SUM(CASE WHEN etapa_norm IN ('Cosecha','Producción','Produccion','Selección','Seleccion') THEN 1 ELSE 0 END) AS lotes_en_produccion,
-              SUM(CASE WHEN etapa_norm = 'Secado' THEN 1 ELSE 0 END) AS lotes_en_secado,
-              SUM(CASE WHEN etapa_norm IN ('Control de calidad','Calidad','Control Calidad') THEN 1 ELSE 0 END) AS lotes_en_control_calidad,
-              SUM(CASE WHEN etapa_norm = 'Almacenamiento' THEN 1 ELSE 0 END) AS lotes_almacenados,
-              SUM(CASE WHEN etapa_norm IN ('Comercialización','Comercializacion') THEN 1 ELSE 0 END) AS lotes_comercializados
-       FROM (
-         SELECT l.id, ${etapaNormExpr} AS etapa_norm
-         FROM lotes l
-         WHERE l.deleted_at IS NULL ${ls.clause}
-       ) scoped`,
-      ls.params
-    )
+    const kpisQuery = sqlKpisEtapasLotes(userId)
+    const resumenKpisRow = await queryOne(kpisQuery.sql, kpisQuery.params)
 
     const resumenKpis = {
       total_lotes: toNum(resumenKpisRow, 'total_lotes'),
@@ -377,17 +348,7 @@ export class ReportesRepository {
       ls.params
     )
 
-    const clienteCols = isGlobal
-      ? `CONCAT(u.nombres, ' ', COALESCE(u.apellidos, '')) AS cliente,
-         u.codigo_usuario AS codigo_cliente,
-         l.user_id,`
-      : ''
-
-    const joinCliente = isGlobal ? 'LEFT JOIN usuarios u ON u.id = l.user_id' : ''
-
-    const lotesRows = await query(
-      `SELECT l.id AS lote_id, l.codigo_lote, l.cantidad_kg, l.variedad_cafe,
-              ${clienteCols}
+    const loteSelectBase = `SELECT l.id AS lote_id, l.codigo_lote, l.cantidad_kg, l.variedad_cafe,
               CONCAT(p.nombres, ' ', COALESCE(p.apellidos, '')) AS productor,
               CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Pendiente'
                    ELSE COALESCE(${ultimaEtapa}, 'Pendiente')
@@ -401,14 +362,29 @@ export class ReportesRepository {
               CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 'Registrado'
                    ELSE 'En trazabilidad'
               END AS estado_display,
-              CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 1 ELSE 0 END AS sin_trazabilidad
+              CASE WHEN NOT EXISTS (SELECT 1 FROM trazabilidad t WHERE t.lote_id = l.id) THEN 1 ELSE 0 END AS sin_trazabilidad`
+
+    const lotesRows = isGlobal
+      ? await query(
+          `${loteSelectBase},
+              CONCAT(u.nombres, ' ', COALESCE(u.apellidos, '')) AS cliente,
+              u.codigo_usuario AS codigo_cliente,
+              l.user_id
        FROM lotes l
        LEFT JOIN productores p ON p.id = l.productor_id
-       ${joinCliente}
-       WHERE l.deleted_at IS NULL ${ls.clause}
+       LEFT JOIN usuarios u ON u.id = l.user_id
+       WHERE l.deleted_at IS NULL
        ORDER BY l.id DESC LIMIT 100`,
-      ls.params
-    )
+          []
+        )
+      : await query(
+          `${loteSelectBase}
+       FROM lotes l
+       LEFT JOIN productores p ON p.id = l.productor_id
+       WHERE l.deleted_at IS NULL AND l.user_id = ?
+       ORDER BY l.id DESC LIMIT 100`,
+          ls.params
+        )
 
     const lotesResumen = lotesRows.map((row) => ({
       ...row,
