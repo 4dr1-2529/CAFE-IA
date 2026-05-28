@@ -216,7 +216,7 @@ python train_model.py
 | Plataforma | Componente |
 |------------|--------------|
 | Render / Railway | Backend + MySQL |
-| Vercel | Frontend (`vercel.json` incluido) |
+| Vercel | Frontend — Root Directory: `frontend`, `frontend/vercel.json` |
 
 ---
 
