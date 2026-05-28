@@ -26,8 +26,11 @@ async function runStatements(sql) {
 }
 
 async function addUserIdFromLote(table, afterColumn = 'lote_id') {
-  if (await columnExists(table, 'user_id')) return
-  await runStatements(`ALTER TABLE ${table} ADD COLUMN user_id INT UNSIGNED NULL AFTER ${afterColumn}`)
+  if (await columnExists(table, 'user_id')) {
+    console.log(`Migración: ${table}.user_id ya existe, omitiendo`)
+    return
+  }
+  await runStatements(`ALTER TABLE ${table} ADD COLUMN user_id INT UNSIGNED NULL DEFAULT NULL AFTER ${afterColumn}`)
   await execute(
     `UPDATE ${table} t INNER JOIN lotes l ON l.id = t.lote_id SET t.user_id = l.user_id WHERE t.user_id IS NULL`
   ).catch(() => {})
@@ -38,7 +41,7 @@ async function addUserIdFromLote(table, afterColumn = 'lote_id') {
 export async function applyMultiusuarioMigrations() {
   if (!(await columnExists('lotes', 'user_id'))) {
     await runStatements(`
-      ALTER TABLE lotes ADD COLUMN user_id INT UNSIGNED NULL AFTER productor_id;
+      ALTER TABLE lotes ADD COLUMN user_id INT UNSIGNED NULL DEFAULT NULL AFTER productor_id;
       UPDATE lotes SET user_id = 1 WHERE user_id IS NULL;
       ALTER TABLE lotes MODIFY user_id INT UNSIGNED NOT NULL;
     `)
@@ -48,18 +51,21 @@ export async function applyMultiusuarioMigrations() {
       CREATE INDEX idx_lotes_created_at ON lotes(created_at);
     `)
     console.log('Migración: lotes.user_id aplicada')
+  } else {
+    console.log('Migración: lotes.user_id ya existe, omitiendo')
   }
 
   if (!(await columnExists('productores', 'user_id'))) {
     await runStatements(`
-      ALTER TABLE productores ADD COLUMN user_id INT UNSIGNED NULL AFTER id;
-      UPDATE productores SET user_id = 1 WHERE user_id IS NULL;
+      ALTER TABLE productores ADD COLUMN user_id INT UNSIGNED NULL DEFAULT NULL AFTER id;
     `)
     await runStatements(`
       ALTER TABLE productores ADD CONSTRAINT fk_productores_usuario FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL;
       CREATE INDEX idx_productores_user ON productores(user_id);
     `)
     console.log('Migración: productores.user_id aplicada')
+  } else {
+    console.log('Migración: productores.user_id ya existe, omitiendo')
   }
 
   await execute(
@@ -99,5 +105,7 @@ export async function applyMultiusuarioMigrations() {
       ALTER TABLE usuarios ADD COLUMN codigo_usuario VARCHAR(20) NULL UNIQUE AFTER id;
     `)
     console.log('Migración: usuarios.codigo_usuario aplicada')
+  } else {
+    console.log('Migración: usuarios.codigo_usuario ya existe, omitiendo')
   }
 }
