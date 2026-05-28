@@ -1,23 +1,28 @@
 import mysql from 'mysql2/promise'
-import { env } from '../../config/env.js'
+import { loadEnv, assertMysqlEnv } from '../../config/database.js'
+
+loadEnv()
 
 let pool = null
 
 function poolOptions() {
+  assertMysqlEnv()
   const opts = {
-    host: env.db.host,
-    port: env.db.port,
-    user: env.db.user,
-    password: env.db.password,
-    database: env.db.database,
+    host: process.env.MYSQLHOST,
+    port: Number(process.env.MYSQLPORT),
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE,
     waitForConnections: true,
-    connectionLimit: env.db.poolMax,
+    connectionLimit: Number(process.env.DB_POOL_MAX) || 10,
     queueLimit: 0,
     enableKeepAlive: true,
     charset: 'utf8mb4_unicode_ci',
     dateStrings: true,
   }
-  if (env.db.ssl) opts.ssl = env.db.ssl
+  if (process.env.MYSQL_SSL === 'true' || process.env.RAILWAY_ENVIRONMENT) {
+    opts.ssl = { rejectUnauthorized: false }
+  }
   return opts
 }
 

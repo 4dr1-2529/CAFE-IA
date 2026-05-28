@@ -1,6 +1,6 @@
 import { createApp } from './src/app.js'
 import { env } from './src/config/env.js'
-import { isRailwayRuntime } from './src/config/database.js'
+import { logMysqlEnvForRailway } from './src/config/database.js'
 import { initDatabase } from './src/infrastructure/database/migrate.js'
 import { closePool } from './src/infrastructure/database/pool.js'
 
@@ -8,28 +8,28 @@ const app = createApp()
 const host = '0.0.0.0'
 
 async function start() {
-  if (isRailwayRuntime()) {
-    console.log('[Railway] Entorno detectado — usando variables MYSQL*')
+  console.log('[Railway] Verificación variables MySQL:')
+  logMysqlEnvForRailway()
+
+  if (process.env.RAILWAY_ENVIRONMENT) {
+    console.log('[Railway] Entorno:', process.env.RAILWAY_ENVIRONMENT)
   }
 
   try {
     await initDatabase()
   } catch (err) {
     console.error('[MySQL] Error inicializando:', err.message)
-    if (env.db.railway) {
-      console.error(
-        'Verifique en Railway: MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE (servicio MySQL vinculado).'
-      )
-    } else {
-      console.error('Local: copie backend/.env.example a .env y asegure que MySQL/XAMPP esté activo.')
-    }
+    console.error(
+      'Configure únicamente: MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE. ' +
+        'Elimine DB_HOST/DB_USER del panel Railway si existen.'
+    )
     process.exit(1)
   }
 
   const server = app.listen(env.port, host, () => {
     console.log(`[HTTP] Backend activo en http://${host}:${env.port}`)
-    console.log(`[HTTP] Puerto Railway/PORT: ${env.port}`)
-    console.log(`[MySQL] Base de datos: ${env.db.database}`)
+    console.log(`[HTTP] Puerto: ${env.port}`)
+    console.log(`[MySQL] Conectado a ${process.env.MYSQLHOST}:${process.env.MYSQLPORT}/${process.env.MYSQLDATABASE}`)
   })
 
   server.on('error', (err) => {

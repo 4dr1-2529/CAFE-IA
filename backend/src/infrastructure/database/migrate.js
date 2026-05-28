@@ -15,13 +15,15 @@ function readSql(filename) {
 
 function connectionBase(overrides = {}) {
   const base = {
-    host: env.db.host,
-    port: env.db.port,
-    user: env.db.user,
-    password: env.db.password,
+    host: process.env.MYSQLHOST,
+    port: Number(process.env.MYSQLPORT),
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
     multipleStatements: true,
   }
-  if (env.db.ssl) base.ssl = env.db.ssl
+  if (process.env.MYSQL_SSL === 'true' || process.env.RAILWAY_ENVIRONMENT) {
+    base.ssl = { rejectUnauthorized: false }
+  }
   return { ...base, ...overrides }
 }
 
@@ -29,7 +31,7 @@ async function queryTableCount(conn) {
   try {
     const [rows] = await conn.query(
       `SELECT COUNT(*) AS c FROM information_schema.tables WHERE table_schema = ?`,
-      [env.db.database]
+      [process.env.MYSQLDATABASE]
     )
     return Number(rows[0]?.c) || 0
   } catch {
@@ -45,7 +47,7 @@ async function applySchemaIfNeeded(conn) {
   const cleaned = schema
     .replace(/CREATE DATABASE[^;]+;/gi, '')
     .replace(/USE\s+[^;]+;/gi, '')
-  await conn.query(`USE \`${env.db.database}\``)
+  await conn.query(`USE \`${process.env.MYSQLDATABASE}\``)
   await conn.query(cleaned)
   console.log('Esquema MySQL aplicado desde schema.sql')
   return true
@@ -58,7 +60,7 @@ export async function initDatabase() {
 
   if (env.db.railway) {
     adminConn = await mysql.createConnection(
-      connectionBase({ database: env.db.database })
+      connectionBase({ database: process.env.MYSQLDATABASE })
     )
     try {
       await applySchemaIfNeeded(adminConn)
@@ -69,7 +71,7 @@ export async function initDatabase() {
     adminConn = await mysql.createConnection(connectionBase())
     try {
       await adminConn.query(
-        `CREATE DATABASE IF NOT EXISTS \`${env.db.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+        `CREATE DATABASE IF NOT EXISTS \`${process.env.MYSQLDATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
       )
       await applySchemaIfNeeded(adminConn)
     } finally {

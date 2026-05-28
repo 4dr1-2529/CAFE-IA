@@ -1,12 +1,8 @@
-import dotenv from 'dotenv'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import { resolveDatabaseConfig } from './database.js'
+import { loadEnv, getMysqlConfig } from './database.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-dotenv.config({ path: path.join(__dirname, '../../.env') })
+loadEnv()
 
-const db = resolveDatabaseConfig()
+const db = getMysqlConfig()
 
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
