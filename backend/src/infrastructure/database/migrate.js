@@ -178,11 +178,14 @@ async function ensureDemoData() {
     ['P003', 'Carlos', 'Quispe', '11223344', '999555666', 'carlos@cafe.pe', 'Alto Satipo', 'Satipo', 1580],
   ]
   for (const p of productores) {
-    await execute(
-      `INSERT INTO productores (distrito_id, codigo_productor, nombres, apellidos, dni, telefono, correo, parcela, ubicacion, altitud, estado)
+    const result = await execute(
+      `INSERT IGNORE INTO productores (distrito_id, codigo_productor, nombres, apellidos, dni, telefono, correo, parcela, ubicacion, altitud, estado)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')`,
       [distId, ...p]
-    ).catch(() => {})
+    ).catch(() => null)
+    if (result?.affectedRows === 0) {
+      console.log(`ensureDemoData: productor ${p[0]} ya existe, omitiendo`)
+    }
   }
 }
 

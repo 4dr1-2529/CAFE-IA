@@ -268,6 +268,7 @@ CREATE TABLE IF NOT EXISTS cosechas (
 CREATE TABLE IF NOT EXISTS produccion (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   lote_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NULL DEFAULT NULL,
   fecha_registro DATE NOT NULL,
   cantidad_kg DECIMAL(10,2),
   humedad DECIMAL(5,2),
@@ -277,6 +278,7 @@ CREATE TABLE IF NOT EXISTS produccion (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_produccion_lote FOREIGN KEY (lote_id) REFERENCES lotes(id),
   INDEX idx_produccion_lote (lote_id),
+  INDEX idx_produccion_user (user_id),
   INDEX idx_produccion_fecha (fecha_registro)
 ) ENGINE=InnoDB;
 
@@ -355,6 +357,7 @@ CREATE TABLE IF NOT EXISTS criterios_calidad (
 CREATE TABLE IF NOT EXISTS control_calidad (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   lote_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NULL DEFAULT NULL,
   evaluador_id INT UNSIGNED NULL,
   aroma DECIMAL(4,2),
   sabor DECIMAL(4,2),
@@ -372,7 +375,8 @@ CREATE TABLE IF NOT EXISTS control_calidad (
   UNIQUE KEY uk_control_calidad_lote (lote_id),
   CONSTRAINT fk_calidad_lote FOREIGN KEY (lote_id) REFERENCES lotes(id),
   CONSTRAINT fk_calidad_evaluador FOREIGN KEY (evaluador_id) REFERENCES usuarios(id),
-  INDEX idx_calidad_lote (lote_id)
+  INDEX idx_calidad_lote (lote_id),
+  INDEX idx_calidad_user (user_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS evaluaciones_calidad (
@@ -422,6 +426,7 @@ CREATE TABLE IF NOT EXISTS resultados_cata (
 CREATE TABLE IF NOT EXISTS predicciones_ia (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   lote_id INT UNSIGNED NOT NULL,
+  user_id INT UNSIGNED NULL DEFAULT NULL,
   humedad DECIMAL(5,2),
   temperatura DECIMAL(5,2),
   altitud DECIMAL(8,2),
@@ -440,6 +445,7 @@ CREATE TABLE IF NOT EXISTS predicciones_ia (
   version_modelo VARCHAR(20) DEFAULT 'v2.0',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_predicciones_lote (lote_id),
+  INDEX idx_predicciones_user (user_id),
   INDEX idx_predicciones_origen (origen)
 ) ENGINE=InnoDB;
 

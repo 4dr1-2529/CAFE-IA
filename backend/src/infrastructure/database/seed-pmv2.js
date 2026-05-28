@@ -41,7 +41,8 @@ async function ensureGeo() {
 }
 
 async function clearDemoData() {
-  await execute('SET FOREIGN_KEY_CHECKS = 0')
+  console.log('PMV2 seed: limpiando datos demo anteriores...')
+  await execute('SET FOREIGN_KEY_CHECKS = 0').catch(() => {})
   const tables = [
     'variables_prediccion',
     'recomendaciones_ia',
@@ -55,10 +56,13 @@ async function clearDemoData() {
     'productores',
   ]
   for (const t of tables) {
-    await execute(`DELETE FROM ${t}`).catch(() => {})
+    await execute(`DELETE FROM ${t}`).catch((err) => {
+      console.warn(`PMV2 seed: no se pudo limpiar ${t}:`, err.message?.slice(0, 80))
+    })
     await execute(`ALTER TABLE ${t} AUTO_INCREMENT = 1`).catch(() => {})
   }
-  await execute('SET FOREIGN_KEY_CHECKS = 1')
+  await execute('SET FOREIGN_KEY_CHECKS = 1').catch(() => {})
+  console.log('PMV2 seed: datos demo limpiados')
 }
 
 export async function seedPMV2Data(force = false) {
@@ -74,12 +78,17 @@ export async function seedPMV2Data(force = false) {
   const productorIds = []
 
   for (const p of PRODUCTORES) {
-    const ins = await execute(
-      `INSERT INTO productores (distrito_id, codigo_productor, nombres, apellidos, dni, telefono, correo, parcela, ubicacion, altitud, estado)
+    await execute(
+      `INSERT IGNORE INTO productores (distrito_id, codigo_productor, nombres, apellidos, dni, telefono, correo, parcela, ubicacion, altitud, estado)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')`,
       [distritoId, ...p]
-    )
-    productorIds.push(ins.insertId)
+    ).catch(() => {})
+    const row = await queryOne('SELECT id FROM productores WHERE codigo_productor = ?', [p[0]])
+    if (row?.id) {
+      productorIds.push(row.id)
+    } else {
+      console.warn(`PMV2 seed: no se pudo insertar/encontrar productor ${p[0]}`)
+    }
   }
 
   let loteGlobal = 1
@@ -105,11 +114,12 @@ export async function seedPMV2Data(force = false) {
       const estado = ESTADOS[Math.min(li, ESTADOS.length - 1)]
 
       const ins = await execute(
-        `INSERT INTO lotes (codigo_lote, productor_id, variedad_cafe, fecha_cosecha, cantidad_kg, estado, humedad, temperatura, altitud, tipo_secado, calidad_grano, tiempo_almacenamiento_dias, qr_codigo)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        `INSERT INTO lotes (codigo_lote, productor_id, user_id, variedad_cafe, fecha_cosecha, cantidad_kg, estado, humedad, temperatura, altitud, tipo_secado, calidad_grano, tiempo_almacenamiento_dias, qr_codigo)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           codigo,
           productorId,
+          1,
           variedad,
           fecha,
           cantidad,
