@@ -16,6 +16,7 @@ import reportesRoutes from './reportes.routes.js'
 import chatbotRoutes from './chatbot.routes.js'
 import auditoriaRoutes from './auditoria.routes.js'
 import baseDatosRoutes from './base-datos.routes.js'
+import systemRoutes from './system.routes.js'
 
 const apiRouter = Router()
 
@@ -35,5 +36,6 @@ apiRouter.use('/reportes', reportesRoutes)
 apiRouter.use('/chatbot', chatbotRoutes)
 apiRouter.use('/auditoria', auditoriaRoutes)
 apiRouter.use('/base-datos', baseDatosRoutes)
+apiRouter.use('/admin', systemRoutes)
 
 export default apiRouter
