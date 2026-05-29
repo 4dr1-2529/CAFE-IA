@@ -67,9 +67,8 @@ export class UsuarioRepository {
   }
 
   static async listAll({ limit = 200 } = {}) {
-    return runSelect(`${await selectBase()} ORDER BY u.created_at DESC LIMIT ?`, [
-      Math.min(500, Math.max(1, limit)),
-    ])
+    const safeLimit = Math.min(500, Math.max(1, Number(limit) || 200))
+    return runSelect(`${await selectBase()} ORDER BY u.created_at DESC LIMIT ${safeLimit}`)
   }
 
   static async listActive() {
