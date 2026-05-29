@@ -1,128 +1,236 @@
-import { BookOpen, CheckCircle, Package, Link, Eye, LayoutDashboard } from 'lucide-react'
+import { BookOpen, CheckCircle, Package, Link, Eye, LayoutDashboard, User } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import KpiCard from '../../components/ui/KpiCard.jsx'
 
+/** Historias derivadas de funcionalidades implementadas en código (mayo 2026) */
 const historias = [
   {
     id: 'HU01',
-    titulo: 'Registrar y gestionar productores',
-    descripcion: 'Como administrador, quiero registrar productores con validación para asociar cada lote a su origen verificable.',
+    titulo: 'Iniciar sesión con JWT',
+    actor: 'Usuario (admin o cliente)',
+    descripcion: 'Como usuario registrado, quiero iniciar sesión con email y contraseña para acceder a la plataforma con mi rol.',
     estado: 'Implementado',
     prioridad: 'Alta',
-    modulo: 'Productores',
-    endpoint: 'GET/POST/PUT/DELETE /api/productores',
-    vista: '/productores',
-    sprint: 'PMV1',
+    pmv: 'PMV1',
+    sprint: 'Sprint 1 — Auth',
+    modulo: 'Login',
+    endpoint: 'POST /api/auth/login · GET /api/auth/me',
+    vista: '/login',
     criterios: [
-      'Código automático P001, P002…',
-      'Validación frontend (validation.js) + toast',
-      'RBAC: escritura solo admin/supervisor',
-      'Persistencia MySQL productores',
+      'LoginPage.jsx valida credenciales y guarda JWT en localStorage',
+      'AuthContext restaura sesión al recargar con /auth/me',
+      'Credenciales seed: admin@cafeai.com / cliente1@cafeai.com',
+      'Tests: PF-01-login-admin · PF-02-login-cliente · integration.test.js',
     ],
   },
   {
     id: 'HU02',
-    titulo: 'Registrar producción y lotes',
-    descripcion: 'Como supervisor, quiero registrar lotes de café con catálogos (variedad, secado, estado) vinculados a productor.',
+    titulo: 'Gestionar usuarios del sistema',
+    actor: 'Administrador',
+    descripcion: 'Como administrador, quiero crear, editar, activar/desactivar y resetear contraseñas de usuarios con rol admin o cliente.',
     estado: 'Implementado',
     prioridad: 'Alta',
-    modulo: 'Registro Producción',
-    endpoint: 'POST /api/lotes · GET /api/lotes/next-code',
-    vista: '/registro',
-    sprint: 'PMV1–PMV2',
+    pmv: 'PMV1',
+    sprint: 'Sprint 2 — Multiusuario',
+    modulo: 'Usuarios',
+    endpoint: 'GET/POST/PUT /api/usuarios · PATCH /estado · /rol · POST /reset-password',
+    vista: '/usuarios',
     criterios: [
-      'Campos obligatorios validados (DTO backend)',
-      'FK a catálogos: variedad_id, proceso_secado_id, estado_lote_id',
-      'Trazabilidad inicial automática (5 etapas)',
-      'Sin predicción IA automática al crear lote',
-      'Seed PMV2: hasta 25 lotes demo',
+      'UsuariosPage.jsx visible solo para admin (AdminRoute + MainLayout)',
+      'adminGuard en usuarios.routes.js',
+      'Roles: admin y cliente (RoleHelper.js)',
+      'No desactivar último admin · no quitarse rol admin a sí mismo',
     ],
   },
   {
     id: 'HU03',
-    titulo: 'Consultar trazabilidad de lotes',
-    descripcion: 'Como usuario autenticado, quiero ver la línea de tiempo y el detalle de cada lote para auditoría del proceso.',
+    titulo: 'Registrar y gestionar productores',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como usuario autenticado, quiero registrar productores con código automático para asociar lotes a su origen.',
     estado: 'Implementado',
     prioridad: 'Alta',
-    modulo: 'Trazabilidad',
-    endpoint: 'GET /api/trazabilidad · GET /api/lotes/:id',
-    vista: '/trazabilidad',
-    sprint: 'PMV1',
+    pmv: 'PMV1',
+    sprint: 'Sprint 1 — CRUD core',
+    modulo: 'Productores',
+    endpoint: 'GET/POST/PUT/DELETE /api/productores',
+    vista: '/productores',
     criterios: [
-      'Lista y búsqueda por código o productor',
-      'Componente TrazabilidadTimeline por etapas',
-      'Código QR simulado por lote',
-      'Orden cronológico sin duplicar etapas',
+      'Código P001… generado en ProductorRepository.nextCodigoForUser',
+      'ADMIN ve todos; CLIENTE solo productores con su user_id',
+      'Validación DTO en productor.validator.js',
+      'Test E2E: PF-05-productores.cy.js',
     ],
   },
   {
     id: 'HU04',
-    titulo: 'Evaluar calidad del café',
-    descripcion: 'Como evaluador, quiero registrar cata sensorial y obtener puntaje 0–100 con clasificación automática.',
+    titulo: 'Registrar producción y lotes',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como usuario operativo, quiero registrar lotes de café con catálogos (variedad, secado, estado) vinculados a un productor.',
     estado: 'Implementado',
     prioridad: 'Alta',
-    modulo: 'Control Calidad',
-    endpoint: 'POST /api/control-calidad',
-    vista: '/calidad',
-    sprint: 'PMV1',
+    pmv: 'PMV1',
+    sprint: 'Sprint 2 — Lotes',
+    modulo: 'Registro Producción',
+    endpoint: 'POST /api/lotes · GET /api/lotes/next-code · GET/POST /api/produccion',
+    vista: '/registro',
     criterios: [
-      'Parámetros 1–10 con decimales (aroma, acidez, cuerpo, sabor, balance)',
-      'Puntaje final 0–100 y etiqueta Alta/Media/Baja',
-      'Tests unitarios computeScores',
-      'Visible en Reportes y Base de Datos',
+      'CodeGenerator asigna código legible por usuario',
+      'Trazabilidad inicial: 5 etapas automáticas al crear lote',
+      'POST /lotes sin token → 401 (integration.test.js)',
+      'Test E2E: PF-06-registro-produccion.cy.js',
     ],
   },
   {
     id: 'HU05',
-    titulo: 'Predecir calidad con IA bajo demanda',
-    descripcion: 'Como analista, quiero ejecutar predicción IA solo cuando lo decida, con factores y recomendaciones técnicas.',
+    titulo: 'Consultar trazabilidad de lotes',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como usuario autenticado, quiero ver la línea de tiempo y el detalle de cada lote para auditar el proceso cafetalero.',
     estado: 'Implementado',
     prioridad: 'Alta',
-    modulo: 'Módulo IA',
-    endpoint: 'POST /api/predicciones/ejecutar',
-    vista: '/ia',
-    sprint: 'PMV2',
+    pmv: 'PMV1',
+    sprint: 'Sprint 2 — Trazabilidad',
+    modulo: 'Trazabilidad',
+    endpoint: 'GET /api/trazabilidad · GET /api/lotes/:id',
+    vista: '/trazabilidad',
     criterios: [
-      'Motor PredictionEngine v2 (dominio)',
-      'Una predicción por lote; selector solo pendientes',
-      'Salida: calidad, confianza %, riesgo %, factores, alertas',
-      'Endpoint unificado (sin /prediccion-ia duplicado)',
-      'Coherencia Reportes IA ↔ Base de Datos',
+      'TrazabilidadTimeline por etapas ordenadas',
+      'QR simulado qr_codigo = CAFE-{id}',
+      'Scope por rol en trazabilidadSql.js',
+      'Test E2E: PF-07-trazabilidad.cy.js',
     ],
   },
   {
     id: 'HU06',
-    titulo: 'Generar reportes y exportaciones',
-    descripcion: 'Como administrador, quiero reportes de producción, calidad, trazabilidad e IA con export PDF/Excel.',
+    titulo: 'Evaluar calidad del café',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como evaluador, quiero registrar cata sensorial y obtener puntaje 0–100 con clasificación automática.',
     estado: 'Implementado',
     prioridad: 'Alta',
-    modulo: 'Reportes',
-    endpoint: 'GET /api/reportes/* · export/:tipo/:formato',
-    vista: '/reportes',
-    sprint: 'PMV2',
+    pmv: 'PMV1',
+    sprint: 'Sprint 3 — Calidad',
+    modulo: 'Control Calidad',
+    endpoint: 'GET/POST /api/control-calidad',
+    vista: '/calidad',
     criterios: [
-      'Agregados desde MySQL (ReportesService hexagonal)',
-      'Totales de predicciones reales (sin demos obsoletas)',
-      'Export PDF y Excel',
-      'Resumen trazabilidad por etapa actual',
+      'Parámetros sensoriales 1–10 → puntaje 0–100',
+      'Clasificación Alta / Media / Baja',
+      'Test unitario: calidad.service.test.js (computeScores)',
+      'Datos visibles en Reportes y Base de Datos',
     ],
   },
   {
     id: 'HU07',
-    titulo: 'Dashboard analítico',
-    descripcion: 'Como gerente, quiero un panel con KPIs y gráficos para monitorear producción, calidad e IA.',
+    titulo: 'Dashboard analítico por rol',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como gerente o cliente, quiero un panel con KPIs y gráficos filtrados según mi rol para monitorear la operación.',
+    estado: 'Implementado',
+    prioridad: 'Alta',
+    pmv: 'PMV1',
+    sprint: 'Sprint 3 — Dashboard',
+    modulo: 'Dashboard',
+    endpoint: 'GET /api/dashboard · GET /api/dashboard/metrics',
+    vista: '/',
+    criterios: [
+      'KPIs: lotes, productores, evaluaciones, predicciones, trazabilidad activa',
+      'Gráficos Recharts con chartTheme.js (claro/oscuro)',
+      'ADMIN: vista global · CLIENTE: scope user_id',
+      'Tests: PF-03-dashboard-admin · PF-04-dashboard-cliente · integration.test.js',
+    ],
+  },
+  {
+    id: 'HU08',
+    titulo: 'Generar reportes y exportaciones',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como usuario autenticado, quiero reportes de producción, calidad, trazabilidad e IA con export PDF/Excel.',
+    estado: 'Implementado',
+    prioridad: 'Alta',
+    pmv: 'PMV1',
+    sprint: 'Sprint 4 — Reportes',
+    modulo: 'Reportes',
+    endpoint: 'GET /api/reportes/* · /export/:tipo/:formato',
+    vista: '/reportes',
+    criterios: [
+      'ReportesService agrega datos MySQL por rol',
+      'Export PDF (pdfkit) y Excel (exceljs)',
+      'Tipos: produccion, calidad, predicciones, trazabilidad',
+      'Test E2E: PF-09-reportes.cy.js',
+    ],
+  },
+  {
+    id: 'HU09',
+    titulo: 'Consultar base de datos del sistema',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como usuario autenticado, quiero visualizar tablas MySQL con alcance global (admin) o personal (cliente).',
     estado: 'Implementado',
     prioridad: 'Media',
-    modulo: 'Dashboard',
-    endpoint: 'GET /api/dashboard/metrics',
-    vista: '/',
-    sprint: 'PMV2',
+    pmv: 'PMV1',
+    sprint: 'Sprint 4 — Transparencia datos',
+    modulo: 'Base de Datos',
+    endpoint: 'GET /api/base-datos · GET /api/base-datos/:tabla',
+    vista: '/basedatos',
     criterios: [
-      'KPIs: lotes, productores, evaluaciones, predicciones',
-      'Gráficos Recharts con tema claro/oscuro',
-      'Vistas SQL opcionales en backend',
-      'readGuard JWT obligatorio',
+      'BaseDatosPage.jsx muestra resumen y filas por tabla',
+      'ADMIN: 7 tablas incl. usuarios · CLIENTE: 6 tablas operativas',
+      'ActionLogService registra cada consulta',
+      'Coherencia con Reportes e IA verificada en flujos manuales',
+    ],
+  },
+  {
+    id: 'HU10',
+    titulo: 'Predecir calidad con IA bajo demanda',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como analista, quiero ejecutar predicción IA solo cuando lo decida, con factores, alertas y recomendaciones.',
+    estado: 'Implementado',
+    prioridad: 'Alta',
+    pmv: 'PMV2',
+    sprint: 'Sprint 5 — IA predictiva',
+    modulo: 'Módulo IA',
+    endpoint: 'POST /api/predicciones/ejecutar · GET /api/predicciones',
+    vista: '/ia',
+    criterios: [
+      'PredictionEngine v2.0-heuristic en domain/',
+      'Una predicción por lote; selector solo lotes pendientes',
+      'Salida: calidad, confianza %, riesgo %, factores, alertas',
+      'Tests: prediction.test.js · PF-08-modulo-ia.cy.js',
+    ],
+  },
+  {
+    id: 'HU11',
+    titulo: 'Consultar asistente Chatbot IA',
+    actor: 'Administrador / Cliente',
+    descripcion: 'Como usuario, quiero un chatbot que responda sobre el proyecto, arquitectura y datos reales de mi operación.',
+    estado: 'Implementado',
+    prioridad: 'Media',
+    pmv: 'PMV2',
+    sprint: 'Sprint 5 — Chatbot',
+    modulo: 'Chatbot IA',
+    endpoint: 'POST /api/chatbot',
+    vista: '/chatbot-ia',
+    criterios: [
+      'ChatbotService.js con intents: PMV, arquitectura, trazabilidad, conteos',
+      'ChatbotDataService consulta MySQL según rol',
+      'Nav en grupo PMV2 / Mejoras (MainLayout.jsx)',
+      'Test E2E: PF-10-chatbot.cy.js',
+    ],
+  },
+  {
+    id: 'HU12',
+    titulo: 'Auditar acciones del sistema',
+    actor: 'Administrador',
+    descripcion: 'Como administrador, quiero consultar y registrar el historial de auditoría de acciones críticas del sistema.',
+    estado: 'Implementado',
+    prioridad: 'Media',
+    pmv: 'PMV2',
+    sprint: 'Sprint 6 — Auditoría',
+    modulo: 'Auditoría',
+    endpoint: 'GET/POST /api/auditoria',
+    vista: '/auditoria',
+    criterios: [
+      'AuditoriaPage.jsx solo visible para admin',
+      'adminGuard en auditoria.routes.js',
+      'Tabla auditoria_logs + ActionLogService (LOGIN, CRUD usuarios…)',
+      'RBAC verificado en PF-11-roles.cy.js',
     ],
   },
 ]
@@ -136,6 +244,12 @@ function badgeEstado(estado) {
   return map[estado] || map.Pendiente
 }
 
+function pmvBadge(pmv) {
+  return pmv === 'PMV2'
+    ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200'
+    : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200'
+}
+
 function prioridadClass(p) {
   const map = {
     Alta: 'text-red-700 dark:text-red-300',
@@ -147,20 +261,22 @@ function prioridadClass(p) {
 
 export default function HistoriasUsuarioPage() {
   const implementadas = historias.filter((h) => h.estado === 'Implementado').length
+  const pmv1 = historias.filter((h) => h.pmv === 'PMV1')
+  const pmv2 = historias.filter((h) => h.pmv === 'PMV2')
 
   return (
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
-        badge="Scrum · PMV2"
+        badge="Historias · CAFE-IA"
         title="Historias de Usuario"
-        subtitle="Requisitos funcionales HU01–HU07 con trazabilidad vista ↔ endpoint ↔ criterios de aceptación"
+        subtitle="12 historias implementadas — trazabilidad vista ↔ endpoint ↔ actor ↔ PMV1/PMV2"
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard label="Historias" value={historias.length} icon={BookOpen} color="blue" />
+        <KpiCard label="Total HU" value={historias.length} icon={BookOpen} color="blue" />
         <KpiCard label="Implementadas" value={implementadas} icon={CheckCircle} color="green" />
-        <KpiCard label="En desarrollo" value="0" icon={Package} color="amber" />
-        <KpiCard label="Pendientes" value="0" icon={Eye} color="purple" />
+        <KpiCard label="PMV1" value={pmv1.length} icon={Package} color="emerald" />
+        <KpiCard label="PMV2" value={pmv2.length} icon={Eye} color="amber" />
       </div>
 
       <div className="space-y-4">
@@ -171,20 +287,25 @@ export default function HistoriasUsuarioPage() {
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="font-mono text-sm font-bold text-amber-700 dark:text-amber-300">{historia.id}</span>
                   <h3 className="font-semibold text-heading">{historia.titulo}</h3>
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${pmvBadge(historia.pmv)}`}>{historia.pmv}</span>
                   <span className="text-xs px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-subtle">{historia.sprint}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${badgeEstado(historia.estado)}`}>
                     {historia.estado}
                   </span>
-                  <span className={`text-xs font-semibold ${prioridadClass(historia.prioridad)}`}>
-                    {historia.prioridad}
-                  </span>
+                  <span className={`text-xs font-semibold ${prioridadClass(historia.prioridad)}`}>{historia.prioridad}</span>
                 </div>
               </div>
             </div>
 
             <div className="p-4">
+              <div className="flex items-center gap-2 mb-3 text-sm">
+                <User className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                <span className="text-subtle">Actor:</span>
+                <span className="font-medium text-heading">{historia.actor}</span>
+              </div>
+
               <p className="text-sm text-body mb-4 italic">&ldquo;{historia.descripcion}&rdquo;</p>
 
               <p className="text-xs font-semibold text-subtle uppercase tracking-wide mb-2">Criterios de aceptación</p>
@@ -216,10 +337,7 @@ export default function HistoriasUsuarioPage() {
                   <Eye className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0" />
                   <div>
                     <p className="text-xs text-subtle">Vista</p>
-                    <NavLink
-                      to={historia.vista}
-                      className="text-sm font-mono text-amber-700 dark:text-amber-300 hover:underline"
-                    >
+                    <NavLink to={historia.vista} className="text-sm font-mono text-amber-700 dark:text-amber-300 hover:underline">
                       {historia.vista}
                     </NavLink>
                   </div>
@@ -233,35 +351,39 @@ export default function HistoriasUsuarioPage() {
       <div className="card-panel">
         <h2 className="text-heading text-lg mb-4 flex items-center gap-2">
           <LayoutDashboard className="w-5 h-5" />
-          Evolución por PMV (Scrum)
+          Clasificación por PMV (implementación real)
         </h2>
         <div className="overflow-x-auto">
           <table className="table-shell">
             <thead>
               <tr>
                 <th>PMV</th>
-                <th>Alcance</th>
+                <th>Módulos</th>
                 <th>Historias</th>
                 <th>Estado</th>
               </tr>
             </thead>
             <tbody>
-              {[
-                { pmv: 'PMV1', alcance: 'CRUD productores, lotes, trazabilidad, calidad, IA básica', hu: 'HU01–HU04', ok: true },
-                { pmv: 'PMV2', alcance: 'MySQL 39 tablas, JWT/RBAC, dashboard, reportes export, seed 25 lotes', hu: 'HU05–HU07', ok: true },
-                { pmv: 'PMV3', alcance: 'Hexagonal completo, tests CI, dark mode, hardening API', hu: 'Transversal', ok: true },
-              ].map((row) => (
-                <tr key={row.pmv}>
-                  <td className="font-bold">{row.pmv}</td>
-                  <td>{row.alcance}</td>
-                  <td className="font-mono text-xs">{row.hu}</td>
-                  <td>
-                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-medium">
-                      <CheckCircle className="w-4 h-4" /> Completado
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              <tr>
+                <td className="font-bold">PMV1</td>
+                <td>Login, Usuarios, Productores, Producción, Calidad, Dashboard, Reportes, Trazabilidad, Base de Datos</td>
+                <td className="font-mono text-xs">HU01–HU09</td>
+                <td>
+                  <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-medium">
+                    <CheckCircle className="w-4 h-4" /> 9/9 implementadas
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="font-bold">PMV2</td>
+                <td>Chatbot IA, Auditoría, Módulo IA</td>
+                <td className="font-mono text-xs">HU10–HU12</td>
+                <td>
+                  <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-medium">
+                    <CheckCircle className="w-4 h-4" /> 3/3 implementadas
+                  </span>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -269,12 +391,10 @@ export default function HistoriasUsuarioPage() {
 
       <div className="rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 p-4">
         <p className="text-sm text-body">
-          <strong className="text-heading">Matriz de pruebas:</strong> ver{' '}
-          <code className="text-xs bg-white dark:bg-slate-800 px-1 rounded border border-slate-200 dark:border-slate-600">
-            docs/MATRIZ_PRUEBAS_HU.md
-          </code>
-          . Ejecutar <code className="text-xs bg-white dark:bg-slate-800 px-1 rounded">cd backend && npm test</code> para
-          validación automatizada HU01, HU02, HU04, HU05 y HU06.
+          <strong className="text-heading">Validación automatizada:</strong>{' '}
+          <code className="text-xs bg-white dark:bg-slate-800 px-1 rounded">cd backend && npm test</code> (health, validators, prediction, calidad, integration) ·{' '}
+          <code className="text-xs bg-white dark:bg-slate-800 px-1 rounded">cd testing && npx cypress run</code> (PF-01 … PF-11).
+          Matriz detallada: <code className="text-xs bg-white dark:bg-slate-800 px-1 rounded">docs/MATRIZ_PRUEBAS_HU.md</code>.
         </p>
       </div>
     </div>
