@@ -20,7 +20,7 @@ import baseDatosRoutes from './base-datos.routes.js'
 const apiRouter = Router()
 
 apiRouter.use('/auth', authRoutes)
-apiRouter.get('/auth/usuarios', adminGuard, asyncHandler(UsuarioController.listActive))
+apiRouter.get('/auth/usuarios', ...adminGuard, asyncHandler(UsuarioController.listActive))
 apiRouter.use('/usuarios', usuariosRoutes)
 apiRouter.get('/dashboard', readGuard, asyncHandler(DashboardController.dashboard))
 apiRouter.use('/dashboard', dashboardRoutes)

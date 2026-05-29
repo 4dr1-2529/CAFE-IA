@@ -1,14 +1,5 @@
-import { env } from '../../config/env.js'
 import { queryOne, execute } from './pool.js'
-
-async function columnExists(table, column) {
-  const row = await queryOne(
-    `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
-     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
-    [env.db.database, table, column]
-  )
-  return Number(row?.c) > 0
-}
+import { columnExists, ensureUsuarioCodigoColumn } from './schemaHelpers.js'
 
 async function runStatements(sql) {
   const parts = sql
@@ -94,10 +85,5 @@ export async function applyMultiusuarioMigrations() {
      WHERE t.usuario_registro_id IS NULL AND l.user_id IS NOT NULL`
   ).catch(() => {})
 
-  if (!(await columnExists('usuarios', 'codigo_usuario'))) {
-    await runStatements(`
-      ALTER TABLE usuarios ADD COLUMN codigo_usuario VARCHAR(20) NULL UNIQUE AFTER id;
-    `)
-    console.log('Migración: usuarios.codigo_usuario aplicada')
-  }
+  await ensureUsuarioCodigoColumn()
 }
