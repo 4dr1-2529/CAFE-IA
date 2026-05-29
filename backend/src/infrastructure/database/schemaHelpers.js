@@ -40,3 +40,62 @@ export async function ensureUsuarioCodigoColumn() {
     return false
   }
 }
+
+const AUDITORIA_COLUMNS = [
+  { name: 'usuario_nombre', ddl: 'VARCHAR(120) NULL AFTER usuario_id' },
+  { name: 'usuario_email', ddl: 'VARCHAR(150) NULL AFTER usuario_nombre' },
+  { name: 'rol', ddl: 'VARCHAR(30) NULL AFTER usuario_email' },
+  { name: 'modulo', ddl: 'VARCHAR(60) NULL AFTER accion' },
+  { name: 'descripcion', ddl: 'TEXT NULL AFTER modulo' },
+  { name: 'metodo', ddl: 'VARCHAR(10) NULL AFTER descripcion' },
+  { name: 'ruta', ddl: 'VARCHAR(255) NULL AFTER metodo' },
+  { name: 'user_agent', ddl: 'VARCHAR(500) NULL AFTER ip_address' },
+]
+
+export async function ensureAuditoriaColumns() {
+  for (const col of AUDITORIA_COLUMNS) {
+    if (await columnExists('auditoria_logs', col.name)) continue
+    try {
+      await execute(`ALTER TABLE auditoria_logs ADD COLUMN ${col.name} ${col.ddl}`)
+      console.log(`[MySQL] Columna auditoria_logs.${col.name} creada`)
+    } catch (err) {
+      if (err.code === 'ER_DUP_FIELDNAME') continue
+      console.warn(`[MySQL] auditoria_logs.${col.name}:`, err.message?.slice(0, 120))
+    }
+  }
+
+  await execute(
+    `UPDATE auditoria_logs SET modulo = COALESCE(modulo, JSON_UNQUOTE(JSON_EXTRACT(detalle, '$.modulo')))
+     WHERE modulo IS NULL AND detalle IS NOT NULL`
+  ).catch(() => {})
+  await execute(
+    `UPDATE auditoria_logs SET descripcion = COALESCE(descripcion, JSON_UNQUOTE(JSON_EXTRACT(detalle, '$.descripcion')))
+     WHERE descripcion IS NULL AND detalle IS NOT NULL`
+  ).catch(() => {})
+  await execute(
+    `UPDATE auditoria_logs SET user_agent = COALESCE(user_agent, JSON_UNQUOTE(JSON_EXTRACT(detalle, '$.user_agent')))
+     WHERE user_agent IS NULL AND detalle IS NOT NULL`
+  ).catch(() => {})
+  await execute(
+    `UPDATE auditoria_logs a
+     INNER JOIN usuarios u ON u.id = a.usuario_id
+     SET a.usuario_nombre = COALESCE(a.usuario_nombre, TRIM(CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')))),
+         a.usuario_email = COALESCE(a.usuario_email, u.email),
+         a.rol = COALESCE(a.rol, (SELECT r.codigo FROM roles r WHERE r.id = u.rol_id LIMIT 1))
+     WHERE a.usuario_id IS NOT NULL`
+  ).catch(() => {})
+
+  for (const idx of [
+    'CREATE INDEX idx_auditoria_modulo ON auditoria_logs(modulo)',
+    'CREATE INDEX idx_auditoria_rol ON auditoria_logs(rol)',
+    'CREATE INDEX idx_auditoria_accion ON auditoria_logs(accion)',
+  ]) {
+    try {
+      await execute(idx)
+    } catch (err) {
+      if (!['ER_DUP_KEYNAME'].includes(err.code)) {
+        // ignore if index exists
+      }
+    }
+  }
+}

@@ -15,15 +15,12 @@ export class PrediccionService {
     if (!loteId) throw new AppError('Selecciona un lote pendiente', 400)
     await RoleHelper.assertLoteAccess(loteId, meta.user)
     const row = await PredictionService.executeForLote(loteId, meta.user?.sub)
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    await ActionLogService.fromMeta(meta, {
       accion: 'EJECUTAR_PREDICCION_IA',
       modulo: 'ia',
-      descripcion: `${RoleHelper.isAdmin(meta.user) ? 'ADMIN' : 'CLIENTE'} ejecutó predicción ML lote ${loteId}`,
+      descripcion: `${meta.user?.nombre || 'Usuario'} generó predicción IA para lote ${loteId}`,
       entidad: 'predicciones_ia',
       entidadId: row?.id || null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
     return row
   }

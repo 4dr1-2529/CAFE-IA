@@ -76,15 +76,12 @@ export class UsuarioService {
       activo: body.activo !== false,
     })
 
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
-      accion: 'CREAR_CLIENTE',
+    await ActionLogService.fromMeta(meta, {
+      accion: 'CREAR_USUARIO',
       modulo: 'usuarios',
-      descripcion: `ADMIN creó cliente/usuario ${email} con rol ${rolCodigo.toUpperCase()}`,
+      descripcion: `Admin creó usuario ${email} con rol ${rolCodigo}`,
       entidad: 'usuarios',
       entidadId: row.id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
 
     return UsuarioRepository.toPublic(row)
@@ -110,15 +107,12 @@ export class UsuarioService {
       telefono: body.telefono ?? current.telefono,
     })
 
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
-      accion: 'EDITAR_CLIENTE',
+    await ActionLogService.fromMeta(meta, {
+      accion: 'EDITAR_USUARIO',
       modulo: 'usuarios',
-      descripcion: `ADMIN editó usuario ${email}`,
+      descripcion: `Admin editó usuario ${email}`,
       entidad: 'usuarios',
       entidadId: id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
 
     return UsuarioRepository.toPublic(row)
@@ -141,15 +135,12 @@ export class UsuarioService {
     const row = await UsuarioRepository.setActivo(id, activo)
     if (!row) throw new AppError('Usuario no encontrado', 404)
 
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
-      accion: activo ? 'ACTIVAR_CLIENTE' : 'DESACTIVAR_CLIENTE',
+    await ActionLogService.fromMeta(meta, {
+      accion: activo ? 'ACTIVAR_USUARIO' : 'DESACTIVAR_USUARIO',
       modulo: 'usuarios',
-      descripcion: `ADMIN ${activo ? 'activó' : 'desactivó'} usuario ${row.email}`,
+      descripcion: `Admin ${activo ? 'activó' : 'desactivó'} usuario ${row.email}`,
       entidad: 'usuarios',
       entidadId: id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
 
     return UsuarioRepository.toPublic(row)
@@ -173,15 +164,12 @@ export class UsuarioService {
     const row = await UsuarioRepository.updateRol(id, rol.id)
     if (!row) throw new AppError('Usuario no encontrado', 404)
 
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    await ActionLogService.fromMeta(meta, {
       accion: 'CAMBIAR_ROL_USUARIO',
       modulo: 'usuarios',
-      descripcion: `ADMIN cambió rol de ${row.email} a ${rolCodigo.toUpperCase()}`,
+      descripcion: `Admin cambió rol de ${row.email} a ${rolCodigo}`,
       entidad: 'usuarios',
       entidadId: id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
 
     return UsuarioRepository.toPublic(row)
@@ -199,15 +187,12 @@ export class UsuarioService {
     const hash = await bcrypt.hash(body.password, 10)
     const row = await UsuarioRepository.updatePassword(id, hash)
 
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    await ActionLogService.fromMeta(meta, {
       accion: 'RESET_PASSWORD_USUARIO',
       modulo: 'usuarios',
-      descripcion: `ADMIN restableció contraseña de ${row.email}`,
+      descripcion: `Admin restableció contraseña de ${row.email}`,
       entidad: 'usuarios',
       entidadId: id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
 
     return { message: 'Contraseña actualizada', usuario: UsuarioRepository.toPublic(row) }

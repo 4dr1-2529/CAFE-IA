@@ -247,5 +247,6 @@ export const getAuditoria = (params = {}) => {
   })
   return safeAction(`/auditoria${qs.toString() ? `?${qs.toString()}` : ''}`)
 }
+export const getAuditoriaResumen = () => safeAction('/auditoria/resumen')
 
 export { ApiError, request, API_URL }

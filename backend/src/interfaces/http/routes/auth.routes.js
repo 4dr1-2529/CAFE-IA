@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { AuthService } from '../../../application/services/AuthService.js'
+import { requestMeta } from '../../../application/services/ActionLogService.js'
 import { authenticate } from '../middleware/auth.js'
 import { asyncHandler } from '../../../shared/asyncHandler.js'
 import { env } from '../../../config/env.js'
@@ -12,10 +13,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { email, password } = req.body || {}
     if (!email || !password) return sendError(res, 400, 'Email y contraseña requeridos')
-    const result = await AuthService.login(email, password, {
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-    })
+    const result = await AuthService.login(email, password, requestMeta(req))
     res.json({ ok: true, ...result })
   })
 )
@@ -35,11 +33,7 @@ router.post(
   '/logout',
   authenticate,
   asyncHandler(async (req, res) => {
-    await AuthService.logout(req.body?.refreshToken, {
-      user: req.user,
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-    })
+    await AuthService.logout(req.body?.refreshToken, requestMeta(req))
     res.json({ ok: true, message: 'Sesión cerrada' })
   })
 )

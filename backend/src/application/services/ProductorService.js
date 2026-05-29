@@ -81,17 +81,14 @@ export class ProductorService {
     }
 
     const row = await ProductorRepository.create(data)
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    await ActionLogService.fromMeta(meta, {
       accion: 'CREAR_PRODUCTOR',
       modulo: 'productores',
       descripcion: isAdmin
         ? `ADMIN registró productor ${row?.codigo || ''} para CLIENTE ${data._clienteLabel || data.user_id}`
-        : `CLIENTE registró productor propio ${row?.codigo || ''}`,
+        : `${meta.user?.nombre || 'Cliente'} creó productor ${row?.codigo || ''}`,
       entidad: 'productores',
       entidadId: row?.id || null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
     return row
   }
@@ -121,17 +118,14 @@ export class ProductorService {
 
     const row = await ProductorRepository.update(id, data, userIdUpdate)
     if (!row) throw new AppError('Productor no encontrado', 404)
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    await ActionLogService.fromMeta(meta, {
       accion: 'EDITAR_PRODUCTOR',
       modulo: 'productores',
       descripcion: isAdmin
         ? `ADMIN editó productor ${row?.codigo || id}${userIdUpdate ? ` (cliente user_id=${userIdUpdate})` : ''}`
-        : `CLIENTE editó productor propio ${row?.codigo || id}`,
+        : `${meta.user?.nombre || 'Cliente'} editó productor ${row?.codigo || id}`,
       entidad: 'productores',
       entidadId: id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
     return row
   }
@@ -144,15 +138,12 @@ export class ProductorService {
     if (lotes > 0) throw new AppError('No se puede eliminar un productor con lotes registrados', 400)
     const n = await ProductorRepository.softDelete(id)
     if (!n) throw new AppError('Productor no encontrado', 404)
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    await ActionLogService.fromMeta(meta, {
       accion: 'ELIMINAR_PRODUCTOR',
       modulo: 'productores',
-      descripcion: `Eliminar productor ${id}`,
+      descripcion: `${meta.user?.nombre || 'Usuario'} eliminó productor ${id}`,
       entidad: 'productores',
       entidadId: id,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
   }
 }

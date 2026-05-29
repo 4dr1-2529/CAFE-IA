@@ -48,15 +48,12 @@ export class CalidadService {
         fecha_evaluacion: fecha,
       })
       await CalidadRepository.markLoteCalidad(body.lote_id)
-      await ActionLogService.log({
-        usuarioId: meta.user.sub,
+      await ActionLogService.fromMeta(meta, {
         accion: 'REGISTRAR_CONTROL_CALIDAD',
         modulo: 'calidad',
-        descripcion: `${RoleHelper.isAdmin(meta.user) ? 'ADMIN' : 'CLIENTE'} registró control de calidad lote ${body.lote_id}`,
+        descripcion: `${meta.user?.nombre || 'Usuario'} registró control de calidad del lote ${body.lote_id}`,
         entidad: 'control_calidad',
         entidadId: row?.id || null,
-        ip: meta.ip,
-        userAgent: meta.userAgent,
       })
       return row
     } catch (e) {

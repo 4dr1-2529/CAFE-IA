@@ -24,15 +24,12 @@ export class TrazabilidadService {
       estado: body.estado || 'Pendiente',
       usuario_registro_id: meta.user.sub,
     })
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
-      accion: 'REGISTRAR_TRAZABILIDAD',
+    await ActionLogService.fromMeta(meta, {
+      accion: 'ACTUALIZAR_TRAZABILIDAD',
       modulo: 'trazabilidad',
-      descripcion: `${RoleHelper.isAdmin(meta.user) ? 'ADMIN' : 'CLIENTE'} registró trazabilidad lote ${body.lote_id}`,
+      descripcion: `${meta.user?.nombre || 'Usuario'} actualizó trazabilidad del lote ${body.lote_id} (${body.etapa || 'etapa'})`,
       entidad: 'trazabilidad',
       entidadId: row?.id || null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
     return row
   }

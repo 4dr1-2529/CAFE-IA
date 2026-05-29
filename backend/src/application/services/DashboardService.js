@@ -57,8 +57,7 @@ export class DashboardService {
     )
     const nombre = `${actor?.nombres || ''} ${actor?.apellidos || ''}`.trim() || 'Usuario'
 
-    ActionLogService.log({
-      usuarioId: user.sub,
+    ActionLogService.fromMeta(meta, {
       accion: isAdmin ? 'CONSULTAR_DASHBOARD_ADMIN' : 'CONSULTAR_DASHBOARD_CLIENTE',
       modulo: 'dashboard',
       descripcion: isAdmin
@@ -66,8 +65,6 @@ export class DashboardService {
         : `${nombre} consultó su dashboard personal`,
       entidad: 'dashboard',
       entidadId: null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
       resultado: 'exito',
     }).catch(() => {})
 

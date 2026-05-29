@@ -1,21 +1,20 @@
 import { AuditoriaService } from '../../../application/services/AuditoriaService.js'
+import { requestMeta } from '../../../application/services/ActionLogService.js'
 
 export class AuditoriaController {
   static async list(req, res) {
-    const meta = { user: req.user, ip: req.ip, userAgent: req.get('user-agent') }
-    const [data, resumen] = await Promise.all([
-      AuditoriaService.list(req.query, meta),
-      AuditoriaService.summary(meta),
-    ])
-    res.json({ ...data, resumen })
+    const meta = requestMeta(req)
+    const data = await AuditoriaService.list(req.query, meta)
+    res.json(data)
+  }
+
+  static async resumen(req, res) {
+    const data = await AuditoriaService.resumen(requestMeta(req))
+    res.json({ ok: true, data })
   }
 
   static async create(req, res) {
-    const data = await AuditoriaService.create(req.body, {
-      user: req.user,
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-    })
+    const data = await AuditoriaService.create(req.body, requestMeta(req))
     res.status(201).json(data)
   }
 }

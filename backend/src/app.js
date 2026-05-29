@@ -6,6 +6,7 @@ import { env } from './config/env.js'
 import apiRouter from './interfaces/http/routes/index.js'
 import { userFacingMessage } from './shared/apiResponse.js'
 import { readGuard } from './interfaces/http/middleware/rbac.js'
+import { auditMiddleware } from './interfaces/http/middleware/auditMiddleware.js'
 import { asyncHandler } from './shared/asyncHandler.js'
 import { BaseDatosController } from './interfaces/http/controllers/BaseDatosController.js'
 
@@ -69,7 +70,7 @@ export function createApp() {
   app.use('/api', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     next()
-  }, apiRouter)
+  }, auditMiddleware, apiRouter)
 
   app.use((req, res) => {
     res.status(404).json({ ok: false, message: 'Ruta no encontrada' })

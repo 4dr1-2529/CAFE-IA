@@ -43,14 +43,20 @@ export class AuthService {
     await execute(`UPDATE usuarios SET ultimo_login = NOW() WHERE id = ?`, [user.id])
     await ActionLogService.log({
       usuarioId: user.id,
+      usuarioNombre: nombre,
+      usuarioEmail: user.email,
+      rol,
       accion: 'LOGIN',
       modulo: 'auth',
-      descripcion: `Inicio de sesión: ${user.email}`,
+      descripcion: `${nombre || user.email} inició sesión`,
       entidad: 'usuarios',
       entidadId: user.id,
+      metodo: meta.metodo || 'POST',
+      ruta: meta.ruta || '/api/auth/login',
       ip: meta.ip || null,
       userAgent: meta.userAgent || null,
       resultado: 'exito',
+      req: meta.req,
       detalle: { email: user.email },
     })
 
@@ -98,15 +104,12 @@ export class AuthService {
     if (!refreshToken) return
     const hash = crypto.createHash('sha256').update(refreshToken).digest('hex')
     await execute(`UPDATE sesiones SET revocado = 1 WHERE refresh_token_hash = ?`, [hash])
-    await ActionLogService.log({
-      usuarioId: meta.user?.sub || null,
+    await ActionLogService.fromMeta(meta, {
       accion: 'LOGOUT',
       modulo: 'auth',
-      descripcion: 'Cierre de sesión',
+      descripcion: `${meta.user?.nombre || meta.user?.email || 'Usuario'} cerró sesión`,
       entidad: 'sesiones',
       resultado: 'exito',
-      ip: meta.ip || null,
-      userAgent: meta.userAgent || null,
     })
   }
 

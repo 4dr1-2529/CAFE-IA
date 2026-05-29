@@ -464,27 +464,21 @@ export class ChatbotService {
     try {
       answer = await ChatbotService.resolveAnswer(intent, meta)
 
-      await ActionLogService.log({
-        usuarioId: meta.user?.sub || null,
+      await ActionLogService.fromMeta(meta, {
         accion: 'CONSULTAR_CHATBOT',
         modulo: 'chatbot',
-        descripcion: question.slice(0, 120),
+        descripcion: `${meta.user?.nombre || 'Usuario'} consultó Chatbot IA: ${question.slice(0, 100)}`,
         entidad: 'chatbot',
         resultado: 'exito',
-        ip: meta.ip,
-        userAgent: meta.userAgent,
         detalle: { intent, rol: RoleHelper.normalizeRol(meta.user?.rol) },
       })
     } catch (error) {
-      await ActionLogService.log({
-        usuarioId: meta.user?.sub || null,
+      await ActionLogService.fromMeta(meta, {
         accion: 'CONSULTAR_CHATBOT',
         modulo: 'chatbot',
-        descripcion: question.slice(0, 120),
+        descripcion: `${meta.user?.nombre || 'Usuario'} consultó Chatbot IA (error)`,
         entidad: 'chatbot',
         resultado: 'error',
-        ip: meta.ip,
-        userAgent: meta.userAgent,
         detalle: { intent },
       })
       if (error?.status) throw error

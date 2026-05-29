@@ -26,15 +26,12 @@ export class ProduccionService {
       tipo_proceso: body.tipo_proceso || body.tipo_secado,
       observaciones: body.observaciones,
     })
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    await ActionLogService.fromMeta(meta, {
       accion: 'REGISTRAR_PRODUCCION',
       modulo: 'produccion',
-      descripcion: `Registro de producción para lote ${body.lote_id}`,
+      descripcion: `${meta.user?.nombre || 'Usuario'} registró producción para lote ${body.lote_id}`,
       entidad: 'produccion',
       entidadId: row?.id || null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
     })
     return row
   }

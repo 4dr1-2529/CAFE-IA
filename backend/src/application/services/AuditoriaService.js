@@ -7,43 +7,49 @@ function norm(v) {
   return typeof v === 'string' ? v.trim() : v
 }
 
+function assertAdmin(user) {
+  RoleHelper.requireAuth(user)
+  if (!RoleHelper.isAdmin(user)) {
+    throw new AppError('Solo administradores pueden ver la auditoría global', 403)
+  }
+}
+
 export class AuditoriaService {
   static async list(params = {}, meta = {}) {
-    RoleHelper.requireAuth(meta.user)
-    if (!RoleHelper.isAdmin(meta.user)) {
-      throw new AppError('Solo administradores pueden ver la auditoría global', 403)
-    }
+    assertAdmin(meta.user)
     return AuditoriaRepository.list({
       page: params.page,
       limit: params.limit,
+      user_id: params.user_id,
       usuario: norm(params.usuario),
+      rol: norm(params.rol),
       modulo: norm(params.modulo),
       accion: norm(params.accion),
-      fechaInicio: norm(params.fechaInicio),
-      fechaFin: norm(params.fechaFin),
+      fechaInicio: norm(params.fechaInicio || params.fecha_inicio),
+      fechaFin: norm(params.fechaFin || params.fecha_fin),
       search: norm(params.search),
     })
   }
 
   static async summary(meta = {}) {
-    RoleHelper.requireAuth(meta.user)
-    if (!RoleHelper.isAdmin(meta.user)) throw new AppError('No autorizado', 403)
+    assertAdmin(meta.user)
     return AuditoriaRepository.summaryToday()
   }
 
+  static async resumen(meta = {}) {
+    assertAdmin(meta.user)
+    return AuditoriaRepository.resumen()
+  }
+
   static async create(body = {}, meta = {}) {
-    RoleHelper.requireAuth(meta.user)
-    if (!RoleHelper.isAdmin(meta.user)) throw new AppError('No autorizado', 403)
-    await ActionLogService.log({
-      usuarioId: meta.user?.sub || null,
+    assertAdmin(meta.user)
+    await ActionLogService.fromMeta(meta, {
       accion: body.accion || 'EVENTO',
       modulo: body.modulo || 'sistema',
       descripcion: body.descripcion || '',
       entidad: body.entidad || 'general',
       entidadId: body.entidad_id ? Number(body.entidad_id) : null,
       resultado: body.resultado || 'exito',
-      ip: meta.ip || null,
-      userAgent: meta.userAgent || null,
       detalle: body.detalle || {},
     })
     return { ok: true }

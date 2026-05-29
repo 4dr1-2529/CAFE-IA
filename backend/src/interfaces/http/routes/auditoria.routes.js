@@ -5,7 +5,8 @@ import { AuditoriaController } from '../controllers/AuditoriaController.js'
 
 const router = Router()
 
-router.get('/', adminGuard, asyncHandler(AuditoriaController.list))
-router.post('/', adminGuard, asyncHandler(AuditoriaController.create))
+router.get('/resumen', ...adminGuard, asyncHandler(AuditoriaController.resumen))
+router.get('/', ...adminGuard, asyncHandler(AuditoriaController.list))
+router.post('/', ...adminGuard, asyncHandler(AuditoriaController.create))
 
 export default router

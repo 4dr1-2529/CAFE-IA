@@ -33,17 +33,14 @@ export class BaseDatosService {
       counts[t] = Array.isArray(rows) ? rows.length : 0
     }
 
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    ActionLogService.fromMeta(meta, {
       accion: isAdmin ? 'CONSULTAR_BASE_DATOS_ADMIN' : 'CONSULTAR_BASE_DATOS_CLIENTE',
       modulo: 'base_datos',
       descripcion: isAdmin
         ? 'Administrador consultó base de datos global'
-        : 'Cliente consultó su base de datos personal',
+        : `${meta.user?.nombre || 'Cliente'} consultó su base de datos`,
       entidad: 'base_datos',
       entidadId: null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
       resultado: 'exito',
     }).catch(() => {})
 
@@ -75,15 +72,12 @@ export class BaseDatosService {
     const scope = RoleHelper.scopeUserId(meta.user)
     const rows = await BaseDatosService.fetchTabla(key, scope)
 
-    await ActionLogService.log({
-      usuarioId: meta.user.sub,
+    ActionLogService.fromMeta(meta, {
       accion: 'CONSULTAR_TABLA_BASE_DATOS',
       modulo: 'base_datos',
-      descripcion: `${isAdmin ? 'ADMIN' : 'CLIENTE'} consultó tabla ${key}`,
+      descripcion: `${meta.user?.nombre || 'Usuario'} consultó tabla ${key}`,
       entidad: key,
       entidadId: null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
       resultado: 'exito',
     }).catch(() => {})
 

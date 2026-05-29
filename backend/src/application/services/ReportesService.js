@@ -38,17 +38,14 @@ export class ReportesService {
     RoleHelper.requireAuth(meta.user)
     const isAdmin = RoleHelper.isAdmin(meta.user)
     const data = await ReportesRepository.trazabilidad(RoleHelper.scopeUserId(meta.user))
-    ActionLogService.log({
-      usuarioId: meta.user.sub,
+    ActionLogService.fromMeta(meta, {
       accion: isAdmin ? 'CONSULTAR_REPORTE_TRAZABILIDAD_GLOBAL' : 'CONSULTAR_REPORTE_TRAZABILIDAD_PERSONAL',
       modulo: 'reportes',
       descripcion: isAdmin
         ? 'Administrador consultó reporte de trazabilidad global'
-        : 'Cliente consultó reporte de trazabilidad personal',
+        : `${meta.user?.nombre || 'Cliente'} consultó reporte de trazabilidad`,
       entidad: 'reportes',
       entidadId: null,
-      ip: meta.ip,
-      userAgent: meta.userAgent,
       resultado: 'exito',
     }).catch(() => {})
     return wrapReportesResponse(meta.user, data)
@@ -72,28 +69,22 @@ export class ReportesService {
     }
     const auditDesc = `${isAdmin ? 'ADMIN' : 'CLIENTE'} generó reporte ${alcance} ${tipoNorm} ${formato.toUpperCase()}`
     if (formato === 'pdf') {
-      await ActionLogService.log({
-        usuarioId: meta.user.sub,
-        accion: isAdmin ? 'GENERAR_REPORTE_GLOBAL_PDF' : 'GENERAR_REPORTE_PERSONAL_PDF',
+      await ActionLogService.fromMeta(meta, {
+        accion: isAdmin ? 'EXPORTAR_REPORTE_PDF' : 'EXPORTAR_REPORTE_PDF',
         modulo: 'reportes',
-        descripcion: auditDesc,
+        descripcion: `${meta.user?.nombre || 'Usuario'} exportó reporte ${tipoNorm} en PDF`,
         entidad: 'reportes',
         resultado: 'exito',
-        ip: meta.ip,
-        userAgent: meta.userAgent,
       })
       return { buffer: await ReportExportService.toPdf(tipoNorm, data), contentType: 'application/pdf', ext: 'pdf' }
     }
     if (formato === 'excel' || formato === 'xlsx') {
-      await ActionLogService.log({
-        usuarioId: meta.user.sub,
-        accion: isAdmin ? 'GENERAR_REPORTE_GLOBAL_EXCEL' : 'GENERAR_REPORTE_PERSONAL_EXCEL',
+      await ActionLogService.fromMeta(meta, {
+        accion: isAdmin ? 'EXPORTAR_REPORTE_EXCEL' : 'EXPORTAR_REPORTE_EXCEL',
         modulo: 'reportes',
-        descripcion: auditDesc,
+        descripcion: `${meta.user?.nombre || 'Usuario'} exportó reporte ${tipoNorm} en Excel`,
         entidad: 'reportes',
         resultado: 'exito',
-        ip: meta.ip,
-        userAgent: meta.userAgent,
       })
       return {
         buffer: await ReportExportService.toExcel(tipoNorm, data),

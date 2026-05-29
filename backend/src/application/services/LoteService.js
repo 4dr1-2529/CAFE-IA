@@ -127,15 +127,12 @@ export class LoteService {
         ? `ADMIN registró lote ${row?.codigo_lote || code} para CLIENTE ${nombreReg} (productor ${parcela}, ${body.cantidad_kg} kg)`
         : `CLIENTE registró lote propio ${row?.codigo_lote || code} (productor ${parcela}, ${body.cantidad_kg} kg)`
 
-      await ActionLogService.log({
-        usuarioId: meta.user.sub,
+      await ActionLogService.fromMeta(meta, {
         accion: 'CREAR_LOTE',
-        modulo: 'lotes',
+        modulo: 'produccion',
         descripcion: auditDesc,
         entidad: 'lotes',
         entidadId: loteId,
-        ip: meta.ip,
-        userAgent: meta.userAgent,
         resultado: 'exito',
         detalle: {
           codigo_lote: row?.codigo_lote || code,
@@ -144,15 +141,12 @@ export class LoteService {
           cantidad_kg: body.cantidad_kg,
         },
       })
-      await ActionLogService.log({
-        usuarioId: meta.user.sub,
+      await ActionLogService.fromMeta(meta, {
         accion: 'GENERAR_QR_TRAZABILIDAD',
         modulo: 'trazabilidad',
         descripcion: `QR generado para lote ${row?.codigo_lote || code}`,
         entidad: 'lotes',
         entidadId: loteId,
-        ip: meta.ip,
-        userAgent: meta.userAgent,
       })
       return row
     } catch (e) {

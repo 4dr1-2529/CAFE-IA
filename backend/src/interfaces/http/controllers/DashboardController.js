@@ -1,20 +1,14 @@
 import { DashboardService } from '../../../application/services/DashboardService.js'
-
-const metaFromReq = (req) => ({
-  ip: req.ip,
-  userAgent: req.get('user-agent'),
-})
+import { requestMeta } from '../../../application/services/ActionLogService.js'
 
 export class DashboardController {
   static async dashboard(req, res) {
-    res.json(
-      await DashboardService.getDashboard(req.user, metaFromReq(req))
-    )
+    const meta = requestMeta(req)
+    res.json(await DashboardService.getDashboard(meta.user, meta))
   }
 
   static async metrics(req, res) {
-    res.json(
-      await DashboardService.getMetrics(req.user, metaFromReq(req))
-    )
+    const meta = requestMeta(req)
+    res.json(await DashboardService.getMetrics(meta.user, meta))
   }
 }

@@ -113,16 +113,27 @@ CREATE TABLE IF NOT EXISTS sesiones (
 CREATE TABLE IF NOT EXISTS auditoria_logs (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   usuario_id INT UNSIGNED NULL,
+  usuario_nombre VARCHAR(120) NULL,
+  usuario_email VARCHAR(150) NULL,
+  rol VARCHAR(30) NULL,
   accion VARCHAR(80) NOT NULL,
+  modulo VARCHAR(60) NULL,
+  descripcion TEXT NULL,
+  metodo VARCHAR(10) NULL,
+  ruta VARCHAR(255) NULL,
   entidad VARCHAR(60),
   entidad_id INT UNSIGNED NULL,
   detalle JSON,
   ip_address VARCHAR(45),
+  user_agent VARCHAR(500) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_auditoria_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
   INDEX idx_auditoria_usuario (usuario_id),
   INDEX idx_auditoria_entidad (entidad, entidad_id),
-  INDEX idx_auditoria_fecha (created_at)
+  INDEX idx_auditoria_fecha (created_at),
+  INDEX idx_auditoria_modulo (modulo),
+  INDEX idx_auditoria_rol (rol),
+  INDEX idx_auditoria_accion (accion)
 ) ENGINE=InnoDB;
 
 -- ═══════════════════════════════════════
