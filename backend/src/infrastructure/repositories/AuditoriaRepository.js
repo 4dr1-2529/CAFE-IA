@@ -1,7 +1,27 @@
 import { query, queryOne } from '../database/pool.js'
-import { columnExists } from '../database/schemaHelpers.js'
+import { columnExists, ensureAuditoriaColumns } from '../database/schemaHelpers.js'
 
-function buildFilters(params = {}) {
+let extendedColumnsCache = null
+
+async function hasExtendedColumns() {
+  if (extendedColumnsCache === null) {
+    extendedColumnsCache = await columnExists('auditoria_logs', 'modulo')
+  }
+  return extendedColumnsCache
+}
+
+async function ensureReady() {
+  await ensureAuditoriaColumns()
+  extendedColumnsCache = await columnExists('auditoria_logs', 'modulo')
+}
+
+function safeLimitOffset(limit, offset) {
+  const l = Math.min(100, Math.max(1, Number(limit) || 20))
+  const o = Math.max(0, Number(offset) || 0)
+  return { limit: l, offset: o }
+}
+
+function buildFilters(params = {}, extended = true) {
   const where = []
   const values = []
 
@@ -10,19 +30,27 @@ function buildFilters(params = {}) {
     values.push(Number(params.user_id || params.userId))
   }
   if (params.usuario) {
-    where.push(`(
-      a.usuario_email LIKE ? OR a.usuario_nombre LIKE ?
-      OR u.email LIKE ? OR CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')) LIKE ?
-    )`)
+    if (extended) {
+      where.push(`(
+        a.usuario_email LIKE ? OR a.usuario_nombre LIKE ?
+        OR u.email LIKE ? OR CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')) LIKE ?
+      )`)
+    } else {
+      where.push(`(u.email LIKE ? OR CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')) LIKE ?)`)
+    }
     const q = `%${params.usuario}%`
-    values.push(q, q, q, q)
+    values.push(...(extended ? [q, q, q, q] : [q, q]))
   }
   if (params.rol) {
-    where.push(`COALESCE(a.rol, r.codigo, '') = ?`)
+    where.push(extended ? `COALESCE(a.rol, r.codigo, '') = ?` : `COALESCE(r.codigo, '') = ?`)
     values.push(params.rol)
   }
   if (params.modulo) {
-    where.push(`COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') = ?`)
+    where.push(
+      extended
+        ? `COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') = ?`
+        : `COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') = ?`
+    )
     values.push(params.modulo)
   }
   if (params.accion) {
@@ -38,14 +66,23 @@ function buildFilters(params = {}) {
     values.push(params.fechaFin)
   }
   if (params.search) {
-    where.push(`(
-      a.accion LIKE ? OR a.entidad LIKE ? OR a.ruta LIKE ?
-      OR COALESCE(a.descripcion, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') LIKE ?
-      OR COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), '') LIKE ?
-      OR COALESCE(a.usuario_nombre, '') LIKE ?
-    )`)
     const q = `%${params.search}%`
-    values.push(q, q, q, q, q, q)
+    if (extended) {
+      where.push(`(
+        a.accion LIKE ? OR a.entidad LIKE ? OR a.ruta LIKE ?
+        OR COALESCE(a.descripcion, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') LIKE ?
+        OR COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), '') LIKE ?
+        OR COALESCE(a.usuario_nombre, '') LIKE ?
+      )`)
+      values.push(q, q, q, q, q, q)
+    } else {
+      where.push(`(
+        a.accion LIKE ? OR a.entidad LIKE ?
+        OR JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')) LIKE ?
+        OR JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')) LIKE ?
+      )`)
+      values.push(q, q, q, q)
+    }
   }
 
   return { where, values }
@@ -59,40 +96,62 @@ function joinSql() {
   `
 }
 
-function selectFields() {
+function selectFields(extended) {
+  if (extended) {
+    return `
+      a.id,
+      a.usuario_id AS user_id,
+      COALESCE(NULLIF(TRIM(a.usuario_nombre), ''), CONCAT(TRIM(COALESCE(u.nombres,'')), ' ', TRIM(COALESCE(u.apellidos,''))), u.email, 'sistema') AS usuario,
+      COALESCE(a.usuario_nombre, CONCAT(TRIM(COALESCE(u.nombres,'')), ' ', TRIM(COALESCE(u.apellidos,''))), u.email) AS usuario_nombre,
+      COALESCE(a.usuario_email, u.email, '') AS usuario_email,
+      COALESCE(a.rol, r.codigo, 'sistema') AS rol,
+      a.accion,
+      COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') AS modulo,
+      COALESCE(a.descripcion, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') AS descripcion,
+      a.entidad,
+      a.entidad_id AS entidad_id,
+      COALESCE(a.metodo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.metodo')), '') AS metodo,
+      COALESCE(a.ruta, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.ruta')), '') AS ruta,
+      COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.resultado')), 'exito') AS resultado,
+      a.ip_address AS ip,
+      COALESCE(a.user_agent, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.user_agent')), '') AS user_agent,
+      a.created_at AS fecha_creacion
+    `
+  }
   return `
     a.id,
     a.usuario_id AS user_id,
-    COALESCE(NULLIF(TRIM(a.usuario_nombre), ''), CONCAT(TRIM(COALESCE(u.nombres,'')), ' ', TRIM(COALESCE(u.apellidos,''))), u.email, 'sistema') AS usuario,
-    COALESCE(a.usuario_nombre, CONCAT(TRIM(COALESCE(u.nombres,'')), ' ', TRIM(COALESCE(u.apellidos,''))), u.email) AS usuario_nombre,
-    COALESCE(a.usuario_email, u.email, '') AS usuario_email,
-    COALESCE(a.rol, r.codigo, 'sistema') AS rol,
+    COALESCE(CONCAT(TRIM(COALESCE(u.nombres,'')), ' ', TRIM(COALESCE(u.apellidos,''))), u.email, 'sistema') AS usuario,
+    COALESCE(CONCAT(TRIM(COALESCE(u.nombres,'')), ' ', TRIM(COALESCE(u.apellidos,''))), u.email) AS usuario_nombre,
+    COALESCE(u.email, '') AS usuario_email,
+    COALESCE(r.codigo, 'sistema') AS rol,
     a.accion,
-    COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') AS modulo,
-    COALESCE(a.descripcion, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') AS descripcion,
+    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') AS modulo,
+    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') AS descripcion,
     a.entidad,
     a.entidad_id AS entidad_id,
-    COALESCE(a.metodo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.metodo')), '') AS metodo,
-    COALESCE(a.ruta, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.ruta')), '') AS ruta,
+    '' AS metodo,
+    '' AS ruta,
     COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.resultado')), 'exito') AS resultado,
     a.ip_address AS ip,
-    COALESCE(a.user_agent, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.user_agent')), '') AS user_agent,
+    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.user_agent')), '') AS user_agent,
     a.created_at AS fecha_creacion
   `
 }
 
 export class AuditoriaRepository {
   static async list(params = {}) {
+    await ensureReady()
+    const extended = await hasExtendedColumns()
     const page = Math.max(1, Number(params.page) || 1)
-    const limit = Math.min(100, Math.max(1, Number(params.limit) || 20))
-    const offset = (page - 1) * limit
-    const { where, values } = buildFilters(params)
+    const { limit, offset } = safeLimitOffset(params.limit, (page - 1) * (Number(params.limit) || 20))
+    const { where, values } = buildFilters(params, extended)
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
 
     const totalRow = await queryOne(`SELECT COUNT(*) AS total ${joinSql()} ${whereSql}`, values)
     const rows = await query(
-      `SELECT ${selectFields()} ${joinSql()} ${whereSql} ORDER BY a.created_at DESC LIMIT ? OFFSET ?`,
-      [...values, limit, offset]
+      `SELECT ${selectFields(extended)} ${joinSql()} ${whereSql} ORDER BY a.created_at DESC LIMIT ${limit} OFFSET ${offset}`,
+      values
     )
     return {
       page,
@@ -103,6 +162,7 @@ export class AuditoriaRepository {
   }
 
   static async summaryToday() {
+    await ensureReady()
     const [tot, hoy, activos, errores] = await Promise.all([
       queryOne(`SELECT COUNT(*) AS c FROM auditoria_logs`),
       queryOne(`SELECT COUNT(*) AS c FROM auditoria_logs WHERE DATE(created_at)=CURDATE()`),
@@ -122,24 +182,31 @@ export class AuditoriaRepository {
   }
 
   static async resumen() {
+    await ensureReady()
+    const extended = await hasExtendedColumns()
+    const nombreExpr = extended
+      ? `COALESCE(a.usuario_nombre, CONCAT(u.nombres,' ',COALESCE(u.apellidos,'')), u.email)`
+      : `COALESCE(CONCAT(u.nombres,' ',COALESCE(u.apellidos,'')), u.email)`
+    const moduloExpr = extended
+      ? `COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general')`
+      : `COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general')`
+
     const [base, usuarioMasActivo, moduloMasUsado, ultimas] = await Promise.all([
       AuditoriaRepository.summaryToday(),
       queryOne(
-        `SELECT COALESCE(a.usuario_nombre, CONCAT(u.nombres,' ',COALESCE(u.apellidos,'')), u.email) AS nombre,
-                COUNT(*) AS acciones
+        `SELECT ${nombreExpr} AS nombre, COUNT(*) AS acciones
          FROM auditoria_logs a
          LEFT JOIN usuarios u ON u.id = a.usuario_id
-         GROUP BY a.usuario_id, nombre
+         GROUP BY a.usuario_id, ${nombreExpr}
          ORDER BY acciones DESC LIMIT 1`
       ),
       queryOne(
-        `SELECT COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') AS modulo,
-                COUNT(*) AS acciones
+        `SELECT ${moduloExpr} AS modulo, COUNT(*) AS acciones
          FROM auditoria_logs a
-         GROUP BY modulo
+         GROUP BY ${moduloExpr}
          ORDER BY acciones DESC LIMIT 1`
       ),
-      query(`SELECT ${selectFields()} ${joinSql()} ORDER BY a.created_at DESC LIMIT 10`),
+      query(`SELECT ${selectFields(extended)} ${joinSql()} ORDER BY a.created_at DESC LIMIT 10`),
     ])
     return {
       ...base,
@@ -153,5 +220,5 @@ export class AuditoriaRepository {
 }
 
 export async function auditoriaHasExtendedColumns() {
-  return columnExists('auditoria_logs', 'modulo')
+  return hasExtendedColumns()
 }
