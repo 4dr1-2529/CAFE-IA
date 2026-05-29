@@ -25,22 +25,49 @@ const PROJECT_KNOWLEDGE = {
 }
 
 const UNKNOWN_MESSAGE =
-  'No entendí la consulta. Prueba con: cuántos clientes/lotes/productores, trazabilidad, módulo IA, reportes o resumen del sistema.'
+  'No entendí la consulta. Usa las preguntas sugeridas por categoría o prueba: clientes, lotes, trazabilidad, calidad, IA o resumen del sistema.'
 
 /** Frases exactas (prioridad alta) */
 const EXACT_INTENTS = [
   { intent: 'project_overview', any: ['que hace cafe sostenible ai', 'que hace cafe sostenible', 'que hace el sistema', 'resume el proyecto'] },
-  { intent: 'pmv1_modules', any: ['pmv1', 'incluye pmv1', 'modulos pmv1'] },
+  { intent: 'pmv1_modules', any: ['pmv1', 'incluye pmv1', 'modulos pmv1', 'que incluye pmv1'] },
   { intent: 'pmv2_info', any: ['pmv2', 'mejoras pmv2', 'que mejoras tiene pmv2'] },
-  { intent: 'architecture_hexagonal', any: ['arquitectura hexagonal', 'hexagonal'] },
+  { intent: 'architecture_hexagonal', any: ['arquitectura hexagonal', 'hexagonal', 'arquitectura del proyecto'] },
   { intent: 'backend_flow', any: ['como funciona el backend'] },
   { intent: 'frontend_flow', any: ['como funciona el frontend'] },
   { intent: 'tech_react', any: ['que hace react'] },
   { intent: 'tech_express', any: ['que hace express'] },
-  { intent: 'tech_mysql', any: ['que hace mysql', 'por que usan mysql'] },
+  { intent: 'tech_mysql', any: ['que hace mysql', 'por que usan mysql', 'base de datos'] },
   { intent: 'tech_jwt', any: ['que hace jwt'] },
   { intent: 'tech_tailwind', any: ['que hace tailwind'] },
   { intent: 'tech_node', any: ['node.js', 'nodejs', 'que hace node'] },
+  { intent: 'con_trazabilidad', any: ['cuantos lotes tienen trazabilidad', 'lotes con trazabilidad'] },
+  { intent: 'con_ia', any: ['cuantos lotes tienen prediccion ia', 'lotes tienen ia', 'lotes con ia'] },
+  { intent: 'mejor_lote', any: ['mejor lote', 'mejor lote por calidad', 'cual es mi mejor lote'] },
+  { intent: 'peor_lote', any: ['menor calidad', 'peor calidad', 'lote con menor calidad'] },
+  { intent: 'promedio_calidad', any: ['promedio de calidad', 'calidad promedio', 'mi calidad promedio'] },
+  { intent: 'productor_mejor_calidad', any: ['productor tiene mejor calidad', 'mejor productor por calidad'] },
+  { intent: 'productor_mayor_produccion', any: ['productor tiene mas produccion', 'productor con mas produccion'] },
+  { intent: 'produccion_mes', any: ['produccion del mes', 'produccion mes actual', 'mi produccion del mes'] },
+  { intent: 'lotes_por_etapa', any: ['lotes por etapa', 'etapas de produccion', 'en que etapas estan'] },
+  { intent: 'trazabilidad_etapas', any: ['trazabilidad por etapa', 'cuanta trazabilidad por etapa'] },
+  { intent: 'usuario_mas_activo', any: ['usuario mas activo', 'quien es el usuario mas activo'] },
+  { intent: 'resumen_por_cliente', any: ['lotes por cliente', 'productores por cliente', 'cada cliente', 'calidad por cliente'] },
+  { intent: 'alertas_ia', any: ['alertas de riesgo', 'tengo alertas', 'recomendaciones ia'] },
+  { intent: 'riesgo_alto', any: ['riesgo alto', 'lotes con riesgo alto'] },
+  { intent: 'railway_status', any: ['estado de railway', 'estado railway'] },
+  { intent: 'vercel_status', any: ['estado de vercel', 'estado vercel'] },
+  { intent: 'evidencias_pmv', any: ['evidencias pmv'] },
+  { intent: 'historias_usuario', any: ['historias de usuario'] },
+  { intent: 'seguridad', any: ['medidas de seguridad', 'seguridad del sistema'] },
+  { intent: 'contactar_admin', any: ['contacto al administrador', 'contactar admin', 'como contacto al admin'] },
+  { intent: 'mis_datos', any: ['mis datos registrados', 'cuales son mis datos'] },
+  { intent: 'interpretar_calidad', any: ['interpreta el puntaje', 'como interpreto la calidad', 'como se interpreta'] },
+  { intent: 'registrar_productor', any: ['como registro un productor', 'registrar productor'] },
+  { intent: 'ver_reportes', any: ['como veo mis reportes', 'como veo reportes', 'mis reportes'] },
+  { intent: 'count_reportes', any: ['cuantos reportes', 'reportes generados', 'reportes he generado'] },
+  { intent: 'count_auditoria', any: ['cuantas acciones hay en auditoria', 'auditoria del sistema'] },
+  { intent: 'mi_trazabilidad', any: ['como veo mi trazabilidad', 'ver mi trazabilidad'] },
 ]
 
 const recentRequests = new Map()
@@ -99,6 +126,8 @@ function detectIntentScored(clean) {
 
   if (hasAny(clean, ['sin trazabilidad', 'no tienen trazabilidad', 'pendientes trazabilidad', 'sin traza'])) add('sin_trazabilidad', 7)
   if (hasAny(clean, ['sin ia', 'sin prediccion', 'no tienen prediccion', 'pendientes ia', 'sin inteligencia'])) add('sin_ia', 7)
+  if (hasAny(clean, ['con trazabilidad', 'tienen trazabilidad']) && hasAny(clean, ['cuant', 'lotes'])) add('con_trazabilidad', 7)
+  if (hasAny(clean, ['con ia', 'tienen prediccion', 'con prediccion']) && hasAny(clean, ['cuant', 'lotes'])) add('con_ia', 7)
   if (hasAny(clean, ['pendientes calidad', 'sin control de calidad', 'control calidad pendiente'])) add('sin_calidad', 6)
   if (hasAny(clean, ['lotes pendientes', 'tengo pendientes', 'mis pendientes', 'que lotes tengo pendientes'])) add('mis_pendientes', 7)
 
@@ -115,7 +144,24 @@ function detectIntentScored(clean) {
   else if (hasAny(clean, ['cuant', 'total', 'hay', 'cuantos']) && hasAny(clean, ['productor'])) add('count_productores', 7)
   else if (hasAny(clean, ['cuant', 'total', 'hay', 'cuantos']) && hasAny(clean, ['lote'])) add('count_lotes', 7)
 
-  if (hasAny(clean, ['mi produccion', 'produccion total']) && hasAny(clean, ['mi', 'tengo', 'mio', 'mía'])) add('mi_produccion', 7)
+  if (hasAny(clean, ['mi produccion', 'produccion total']) && hasAny(clean, ['mi', 'tengo', 'mio', 'mía', 'global'])) {
+    if (hasAny(clean, ['global', 'sistema', 'total global']) && !hasAny(clean, ['mi', 'mio'])) add('global_scope_denied', 9)
+    else add('mi_produccion', 7)
+  }
+
+  if (hasAny(clean, ['productor']) && hasAny(clean, ['mas produccion', 'mayor produccion'])) add('productor_mayor_produccion', 7)
+  if (hasAny(clean, ['mejor lote', 'mejor calidad']) && hasAny(clean, ['lote', 'mi'])) add('mejor_lote', 7)
+  if (hasAny(clean, ['peor', 'menor']) && hasAny(clean, ['calidad', 'lote'])) add('peor_lote', 7)
+  if (hasAny(clean, ['promedio']) && hasAny(clean, ['calidad'])) add('promedio_calidad', 7)
+  if (hasAny(clean, ['alerta', 'riesgo'])) add('alertas_ia', 6)
+  if (hasAny(clean, ['railway'])) add('railway_status', 8)
+  if (hasAny(clean, ['vercel'])) add('vercel_status', 8)
+  if (hasAny(clean, ['evidencia'])) add('evidencias_pmv', 7)
+  if (hasAny(clean, ['historia'])) add('historias_usuario', 7)
+  if (hasAny(clean, ['seguridad', 'jwt', 'rbac'])) add('seguridad', 6)
+  if (hasAny(clean, ['contactar', 'contacto']) && hasAny(clean, ['admin'])) add('contactar_admin', 8)
+  if (hasAny(clean, ['cuantos clientes', 'total clientes', 'clientes hay'])) add('count_clientes', 8)
+  if (hasAny(clean, ['clientes hay en el sistema', 'cuantos clientes hay en'])) add('global_scope_denied', 9)
 
   if (hasAny(clean, ['para que sirve', 'objetivo', 'beneficios', 'que problema resuelve'])) add('project_purpose', 5)
   if (hasAny(clean, ['modulos del sistema', 'modulos tiene'])) add('system_modules', 5)
@@ -138,7 +184,9 @@ function detectIntent(q) {
 
 function formatLoteList(rows) {
   if (!rows?.length) return 'No hay lotes en esa categoría.'
-  return rows.map((r) => r.codigo_lote).join(', ')
+  return rows
+    .map((r) => ChatbotDataService.formatLoteFriendly(r.codigo_lote, r.productor))
+    .join(', ')
 }
 
 export class ChatbotService {
@@ -190,9 +238,142 @@ export class ChatbotService {
 
     if (intent === 'system_status') {
       if (isAdmin) {
-        return `Resumen global (ADMIN): ${counts.clientes} clientes · ${counts.productores} productores · ${counts.lotes} lotes · ${counts.sinTrazabilidad} sin trazabilidad · ${counts.sinIA} sin predicción IA · ${counts.sinCalidad} sin control de calidad.`
+        return `Resumen global (ADMIN): ${counts.clientes} clientes · ${counts.productores} productores · ${counts.lotes} lotes · ${counts.produccionKg?.toFixed?.(1) ?? counts.produccionKg} kg · ${counts.conTrazabilidad ?? 0} con trazabilidad · ${counts.sinTrazabilidad} sin trazabilidad · ${counts.conIA ?? 0} con IA · ${counts.sinIA} sin IA · ${counts.predicciones ?? 0} predicciones.`
       }
-      return `Tus datos (CLIENTE): ${counts.productores} productores · ${counts.lotes} lotes · ${counts.produccionKg} kg · ${counts.sinTrazabilidad} sin trazabilidad · ${counts.sinIA} sin IA.`
+      return `Tus datos (CLIENTE): ${counts.productores} productores · ${counts.lotes} lotes · ${counts.produccionKg} kg · ${counts.conTrazabilidad ?? 0} con trazabilidad · ${counts.sinTrazabilidad} sin trazabilidad · ${counts.conIA ?? 0} con IA · ${counts.sinIA} sin IA · calidad promedio ${counts.promedioCalidad ?? 'N/D'}.`
+    }
+
+    if (intent === 'global_scope_denied') {
+      return 'Como CLIENTE solo puedes consultar tus propios datos (productores, lotes, producción, calidad, trazabilidad e IA de tu cuenta). Para información global contacta al administrador.'
+    }
+
+    if (intent === 'con_trazabilidad') {
+      const n = counts.conTrazabilidad ?? counts.lotes - counts.sinTrazabilidad
+      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
+      return `${scope} hay ${n} lotes con trazabilidad registrada.`
+    }
+    if (intent === 'con_ia') {
+      const n = counts.conIA ?? counts.lotes - counts.sinIA
+      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
+      return `${scope} hay ${n} lotes con predicción IA.`
+    }
+
+    if (intent === 'mejor_lote') {
+      const row = await ChatbotDataService.mejorLote(user)
+      if (!row) return isAdmin ? 'No hay evaluaciones de calidad registradas.' : 'Aún no tienes lotes evaluados en control de calidad.'
+      const label = ChatbotDataService.formatLoteFriendly(row.codigo_lote, row.productor)
+      return isAdmin
+        ? `El mejor lote es ${label} con puntaje ${row.puntaje}.`
+        : `Tu mejor lote es ${label} con puntaje ${row.puntaje}.`
+    }
+    if (intent === 'peor_lote') {
+      const row = await ChatbotDataService.peorLote(user)
+      if (!row) return 'No hay datos de calidad para comparar.'
+      const label = ChatbotDataService.formatLoteFriendly(row.codigo_lote, row.productor)
+      return isAdmin
+        ? `El lote con menor calidad es ${label} (${row.puntaje} pts).`
+        : `Tu lote con menor calidad es ${label} (${row.puntaje} pts).`
+    }
+    if (intent === 'promedio_calidad') {
+      const prom = isAdmin ? await ChatbotDataService.promedioCalidadGlobal(user) : counts.promedioCalidad ?? (await ChatbotDataService.promedioCalidadGlobal(user))
+      const scope = isAdmin ? 'El promedio global de calidad' : 'Tu promedio de calidad'
+      return `${scope} es ${prom} puntos (escala 70–95 en datos demo).`
+    }
+    if (intent === 'productor_mejor_calidad') {
+      const row = await ChatbotDataService.productorMejorCalidad(user)
+      if (!row) return 'No hay productores con evaluaciones de calidad.'
+      return isAdmin
+        ? `El productor con mejor calidad promedio es ${row.nombre} (${row.puntaje} pts).`
+        : `Tu productor con mejor calidad es ${row.nombre} (${row.puntaje} pts).`
+    }
+    if (intent === 'productor_mayor_produccion') {
+      const row = await ChatbotDataService.productorMayorProduccion(user)
+      if (!row) return 'No hay datos de producción por productor.'
+      return isAdmin
+        ? `El productor con mayor producción es ${row.nombre} con ${Number(row.kg).toFixed(1)} kg.`
+        : `Tu productor con mayor producción es ${row.nombre} con ${Number(row.kg).toFixed(1)} kg.`
+    }
+    if (intent === 'produccion_mes') {
+      const kg = await ChatbotDataService.produccionMes(user)
+      return isAdmin
+        ? `La producción del mes actual (por fecha de cosecha) es ${kg.toFixed(1)} kg.`
+        : `Tu producción del mes actual es ${kg.toFixed(1)} kg.`
+    }
+    if (intent === 'lotes_por_etapa') {
+      const rows = await ChatbotDataService.lotesPorEtapa(user)
+      if (!rows?.length) return 'No hay lotes por etapa.'
+      const txt = rows.map((r) => `${r.estado}: ${r.c}`).join(' · ')
+      return isAdmin ? `Lotes por etapa: ${txt}.` : `Tus lotes por etapa: ${txt}.`
+    }
+    if (intent === 'trazabilidad_etapas') {
+      const rows = await ChatbotDataService.trazabilidadPorEtapa(user)
+      if (!rows?.length) return 'No hay registros de trazabilidad.'
+      return `Trazabilidad por etapa: ${rows.map((r) => `${r.etapa}: ${r.c}`).join(' · ')}.`
+    }
+    if (intent === 'usuario_mas_activo') {
+      if (!isAdmin) return 'Solo el ADMIN puede ver el usuario más activo del sistema.'
+      const row = await ChatbotDataService.usuarioMasActivo()
+      return row ? `El usuario más activo es ${row.nombre} con ${row.acciones} acciones en auditoría.` : 'No hay actividad registrada.'
+    }
+    if (intent === 'resumen_por_cliente') {
+      if (!isAdmin) return 'Solo el ADMIN puede ver el desglose por cliente.'
+      const rows = await ChatbotDataService.resumenPorCliente()
+      if (!rows?.length) return 'No hay clientes registrados.'
+      return rows
+        .map((r) => `${r.codigo_usuario} ${r.nombre}: ${r.productores} productores, ${r.lotes} lotes, ${Number(r.kg).toFixed(0)} kg, calidad ${r.calidad}`)
+        .join(' | ')
+    }
+    if (intent === 'alertas_ia' || intent === 'riesgo_alto') {
+      const total = await ChatbotDataService.alertasCount(user)
+      const lista = await ChatbotDataService.lotesRiesgoAlto(user, 5)
+      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
+      const ejemplos = lista?.length ? formatLoteList(lista.map((r) => ({ codigo_lote: r.codigo_lote, productor: null }))) : 'ninguno'
+      return `${scope} hay ${total} alertas IA. Lotes con riesgo ≥50%: ${ejemplos}.`
+    }
+    if (intent === 'railway_status') {
+      return 'Railway hospeda el backend Express y MySQL en producción (cafe-sostenible-api-production). El estado depende del despliegue activo; verifica el panel Railway si hay indisponibilidad.'
+    }
+    if (intent === 'vercel_status') {
+      return 'Vercel hospeda el frontend React en https://cafe-ia-inky.vercel.app. Si la API responde pero la web no carga, revisa el último deploy en Vercel.'
+    }
+    if (intent === 'evidencias_pmv') {
+      return 'Evidencias PMV: PMV1 incluye 9 evidencias (dashboard, productores, producción, trazabilidad, calidad, IA, reportes, chatbot, despliegue). PMV2 añade multiusuario, códigos automáticos y dataset ampliado. Consulta el módulo Evidencias PMV en el menú ADMIN.'
+    }
+    if (intent === 'historias_usuario') {
+      return 'Historias de usuario HU01–HU12 cubren registro de productores, lotes, trazabilidad, control de calidad, predicciones IA, reportes, roles ADMIN/CLIENTE y chatbot. Ver módulo Historias de Usuario (solo ADMIN).'
+    }
+    if (intent === 'seguridad') {
+      return 'Seguridad: autenticación JWT, contraseñas con bcrypt, RBAC (admin/cliente), filtro por user_id en endpoints de cliente, validación de entrada, auditoría de acciones y HTTPS en producción (Railway/Vercel).'
+    }
+    if (intent === 'contactar_admin') {
+      return 'Para soporte contacta al administrador del sistema: admin@cafeai.com (módulo Usuarios y auditoría solo ADMIN).'
+    }
+    if (intent === 'mis_datos') {
+      if (isAdmin) return `Tu sesión ADMIN: ${user?.email || 'admin'}. Puedes consultar todos los datos globales del sistema.`
+      return `Tus datos: ${counts.productores} productores, ${counts.lotes} lotes, ${counts.produccionKg} kg, calidad promedio ${counts.promedioCalidad ?? 'N/D'}.`
+    }
+    if (intent === 'interpretar_calidad') {
+      return 'El puntaje de calidad (70–95 en demo) combina aroma, sabor, cuerpo y balance. ≥88 Excelente, ≥78 Buena, ≥68 Aceptable. Usa Control de Calidad y el dashboard para comparar lotes y productores.'
+    }
+    if (intent === 'registrar_productor') {
+      return 'Ve a Productores → Nuevo productor. Completa nombre, DNI, parcela y ubicación. El código P00X se asigna automáticamente y queda vinculado a tu cuenta CLIENTE.'
+    }
+    if (intent === 'ver_reportes') {
+      return 'Abre el módulo Reportes, elige tipo (Producción, Calidad, Trazabilidad o IA) y exporta PDF/Excel. Solo verás reportes de tus lotes si eres CLIENTE.'
+    }
+    if (intent === 'count_reportes') {
+      return isAdmin
+        ? `Se han generado ${counts.reportes ?? 0} reportes en el sistema.`
+        : `Has generado ${counts.reportes ?? 0} reportes en tu cuenta.`
+    }
+    if (intent === 'count_auditoria') {
+      if (!isAdmin) return 'Solo el ADMIN puede consultar la auditoría global.'
+      return `Hay ${counts.auditoria ?? 0} registros en auditoría. Revisa Historial / Auditoría en el menú ADMIN.`
+    }
+    if (intent === 'mi_trazabilidad') {
+      return isAdmin
+        ? 'La trazabilidad global está en el módulo Trazabilidad con filtros por cliente y lote.'
+        : `Tienes ${counts.conTrazabilidad ?? 0} lotes con trazabilidad y ${counts.sinTrazabilidad} sin completar. Abre Trazabilidad para registrar etapas.`
     }
 
     if (intent === 'count_clientes') {
@@ -204,8 +385,10 @@ export class ChatbotService {
       return `Tienes ${counts.productores} productores registrados.`
     }
     if (intent === 'count_lotes') {
-      if (isAdmin) return `Hay ${counts.lotes} lotes en total. ${counts.sinTrazabilidad} sin trazabilidad y ${counts.sinIA} sin predicción IA.`
-      return `Tienes ${counts.lotes} lotes. ${counts.sinTrazabilidad} sin trazabilidad y ${counts.sinIA} sin predicción IA.`
+      if (isAdmin) {
+        return `Hay ${counts.lotes} lotes. ${counts.conTrazabilidad ?? 0} con trazabilidad, ${counts.sinTrazabilidad} sin trazabilidad, ${counts.conIA ?? 0} con IA, ${counts.sinIA} sin IA.`
+      }
+      return `Tienes ${counts.lotes} lotes. ${counts.conTrazabilidad ?? 0} con trazabilidad, ${counts.sinTrazabilidad} sin trazabilidad, ${counts.conIA ?? 0} con IA, ${counts.sinIA} sin IA.`
     }
     if (intent === 'cliente_mas_lotes') {
       if (!isAdmin) return 'Solo el ADMIN puede ver qué cliente tiene más lotes.'

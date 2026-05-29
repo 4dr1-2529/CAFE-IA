@@ -171,7 +171,7 @@ export default function ModuloIA() {
                 <option value="">Seleccionar lote</option>
                 {lotesPendientes.map(lote => (
                   <option key={lote.id} value={lote.id}>
-                    {tituloLote(lote.codigo_lote)} — {lote.productor} — {lote.variedad_cafe}
+                    {tituloLote(lote.codigo_lote, lote.productor)} — {lote.variedad_cafe}
                   </option>
                 ))}
               </select>
@@ -189,7 +189,7 @@ export default function ModuloIA() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-amber-700 dark:text-amber-300 font-medium">Lote</p>
-                    <p className="text-amber-950 dark:text-slate-100 font-semibold">{tituloLote(loteSeleccionado.codigo_lote)}</p>
+                    <p className="text-amber-950 dark:text-slate-100 font-semibold">{tituloLote(loteSeleccionado.codigo_lote, loteSeleccionado.productor)}</p>
                   </div>
                   <div>
                     <p className="text-amber-700 dark:text-amber-300 font-medium">Productor</p>
@@ -333,7 +333,7 @@ export default function ModuloIA() {
                 <tr><td colSpan="7" className="px-4 py-8 text-center text-cafe-400">Todos los lotes ya tienen predicción IA</td></tr>
               ) : lotesPendientes.map((lote) => (
                 <tr key={lote.id} className="hover:bg-cafe-50">
-                  <td className="px-4 py-3 text-sm font-mono text-cafe-900">{lote.codigo_lote}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-cafe-900">{tituloLote(lote.codigo_lote, lote.productor)}</td>
                   <td className="px-4 py-3 text-sm text-cafe-700">{lote.productor}</td>
                   <td className="px-4 py-3 text-sm text-cafe-700">{lote.variedad_cafe || '-'}</td>
                   <td className="px-4 py-3 text-sm text-cafe-700">{lote.humedad}%</td>
@@ -373,7 +373,7 @@ export default function ModuloIA() {
               ) : prediccionesValidas.map(p => (
                 <tr key={p.id} className="hover:bg-cafe-50">
                   <td className="px-4 py-3 text-sm text-cafe-700">{p.fecha_prediccion}</td>
-                  <td className="px-4 py-3 text-sm font-mono text-cafe-900">{p.codigo_lote}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-cafe-900">{tituloLote(p.codigo_lote, p.productor)}</td>
                   <td className="px-4 py-3 text-sm text-cafe-700">{p.productor}</td>
                   <td className="px-4 py-3 text-sm text-cafe-700">{p.variedad_cafe || '-'}</td>
                   <td className="px-4 py-3 text-sm text-cafe-700">{p.humedad ?? '-'}{p.humedad != null ? '%' : ''}</td>

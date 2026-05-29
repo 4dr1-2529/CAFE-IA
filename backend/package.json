@@ -11,6 +11,7 @@
     "db:seed:multiusuario": "node scripts/seedMultiusuarioPMV2.js",
     "db:seed:pendientes": "node scripts/seedPendientesPMV2.js",
     "db:verify:dashboard": "node scripts/verifyDashboardData.js",
+    "seed:final": "node scripts/reset-and-seed-final.js",
     "test": "node --test tests/**/*.test.js"
   },
   "dependencies": {

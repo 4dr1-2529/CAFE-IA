@@ -6,59 +6,9 @@ import Button from '../../components/ui/Button.jsx'
 import Input from '../../components/ui/Input.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { isAdminUser } from '../../utils/role.js'
+import { getChatbotCategories, countChatbotQuestions } from '../../constants/chatbotQuestions.js'
 
 const STORAGE_KEY = 'chatbot_ia_history'
-
-const PROJECT_QUESTIONS = {
-  category: 'PROYECTO',
-  questions: [
-    '¿Qué hace el sistema?',
-    '¿Qué hace el módulo IA?',
-    '¿Cómo funciona la trazabilidad?',
-    '¿Qué reportes puedo generar?',
-    '¿Cómo registro un lote?',
-  ],
-}
-
-const CLIENTE_QUESTIONS = [
-  {
-    category: 'MI CUENTA',
-    questions: [
-      '¿Cuántos productores tengo?',
-      '¿Cuántos lotes tengo?',
-      '¿Qué lotes no tienen trazabilidad?',
-      '¿Qué lotes no tienen predicción IA?',
-      '¿Cuál es mi producción total?',
-      '¿Qué puede hacer mi rol CLIENTE?',
-    ],
-  },
-]
-
-const ADMIN_EXTRA = [
-  {
-    category: 'DATOS GLOBALES',
-    questions: [
-      '¿Cuántos clientes hay?',
-      '¿Cuántos productores hay en total?',
-      '¿Cuántos lotes hay en total?',
-      '¿Qué cliente tiene más lotes?',
-      '¿Qué cliente tiene mayor producción?',
-      '¿Cuántos lotes no tienen trazabilidad?',
-      '¿Cuántos lotes no tienen IA?',
-      '¿Cuál es el resumen global del sistema?',
-    ],
-  },
-  {
-    category: 'ADMINISTRACIÓN',
-    questions: [
-      '¿Qué usuarios están activos?',
-      '¿Qué acciones recientes hicieron los clientes?',
-      '¿Cómo resetear contraseña de cliente?',
-      '¿Cuál es la contraseña temporal para clientes?',
-      '¿Qué puede hacer el ADMIN?',
-    ],
-  },
-]
 
 function nowTime() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -67,10 +17,8 @@ function nowTime() {
 export default function ChatbotIAPage() {
   const { user } = useAuth()
   const isAdmin = isAdminUser(user)
-  const SUGGESTED_QUESTIONS = useMemo(
-    () => (isAdmin ? [PROJECT_QUESTIONS, ...ADMIN_EXTRA] : [PROJECT_QUESTIONS, ...CLIENTE_QUESTIONS]),
-    [isAdmin]
-  )
+  const SUGGESTED_QUESTIONS = useMemo(() => getChatbotCategories(isAdmin), [isAdmin])
+  const totalQuestions = useMemo(() => countChatbotQuestions(isAdmin), [isAdmin])
 
   const [messages, setMessages] = useState(() => {
     try {
@@ -83,7 +31,7 @@ export default function ChatbotIAPage() {
       {
         id: 1,
         role: 'bot',
-        text: 'Hola 👋 Soy el asistente técnico de Café Sostenible AI. Puedo ayudarte a entender el proyecto, PMV1, PMV2, arquitectura, IA y trazabilidad.',
+        text: `Hola 👋 Soy el asistente de Café Sostenible AI. Tengo ${totalQuestions} preguntas sugeridas por categoría. Como ${isAdmin ? 'ADMIN' : 'CLIENTE'} solo verás datos ${isAdmin ? 'globales del sistema' : 'de tu cuenta'}.`,
         time: nowTime(),
       },
     ]
@@ -167,16 +115,21 @@ export default function ChatbotIAPage() {
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
         title="Chatbot IA lógico"
-        subtitle="Consultas inteligentes con lógica interna y datos reales del sistema"
+        subtitle={`Consultas por rol · ${totalQuestions} preguntas sugeridas en ${SUGGESTED_QUESTIONS.length} categorías`}
         icon={Bot}
       />
 
       <div className="card-panel">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-4 h-4 text-accent" />
-          <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">Preguntas sugeridas</h2>
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-accent" />
+            <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">Preguntas sugeridas</h2>
+          </div>
+          <span className="text-xs text-muted px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
+            {isAdmin ? 'Vista ADMIN · datos globales' : 'Vista CLIENTE · solo tus datos'}
+          </span>
         </div>
-        <div className="space-y-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           {SUGGESTED_QUESTIONS.map((group) => {
             const isOpen = openCategory === group.category
             return (
@@ -186,18 +139,21 @@ export default function ChatbotIAPage() {
                   onClick={() => setOpenCategory(isOpen ? '' : group.category)}
                   className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/60 text-primary font-semibold text-xs tracking-wide hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
                 >
-                  <span>{group.category}</span>
+                  <span>
+                    {group.category}
+                    <span className="ml-2 font-normal text-muted">({group.questions.length})</span>
+                  </span>
                   <ChevronDown className={`w-4 h-4 text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isOpen && (
-                  <div className="p-3 bg-card space-y-2 animate-fadeIn border-t border-card">
+                  <div className="p-2 bg-card max-h-56 overflow-y-auto space-y-1 animate-fadeIn border-t border-card">
                     {group.questions.map((q) => (
                       <button
                         key={q}
                         type="button"
                         onClick={() => submit(q)}
                         disabled={loading}
-                        className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-secondary bg-slate-50 dark:bg-slate-800/50 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-primary border border-transparent hover:border-amber-200/50 dark:hover:border-amber-800/40 transition-all disabled:opacity-60"
+                        className="w-full text-left px-3 py-2 rounded-lg text-sm text-secondary bg-slate-50 dark:bg-slate-800/50 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:text-primary border border-transparent hover:border-amber-200/50 dark:hover:border-amber-800/40 transition-all disabled:opacity-60"
                       >
                         {q}
                       </button>
@@ -232,7 +188,7 @@ export default function ChatbotIAPage() {
                     </span>
                     <span className="text-xs text-muted">{m.time}</span>
                   </div>
-                  <p className="leading-relaxed">{m.text}</p>
+                  <p className="leading-relaxed whitespace-pre-wrap">{m.text}</p>
                 </div>
               </div>
             </div>

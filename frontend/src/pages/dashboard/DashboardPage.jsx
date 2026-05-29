@@ -30,6 +30,7 @@ import { getDashboard } from '../../services/api/index.js'
 import { getInfoModelo } from '../../services/ml.service.js'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { normalizeDashboardPayload } from '../../utils/dashboard.js'
+import { tituloLoteFromRecord } from '../../utils/loteDisplay.js'
 import { chartAxisTick, chartGridStroke, chartTooltipStyle } from '../../utils/chartTheme.js'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import KpiCard from '../../components/ui/KpiCard.jsx'
@@ -277,21 +278,21 @@ export default function Dashboard() {
           {isAdmin && ind.mejorLote && (
             <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-4">
               <p className="text-xs font-semibold text-cafe-500 uppercase">Mejor lote</p>
-              <p className="font-semibold text-cafe-900 mt-1 font-mono">{ind.mejorLote.codigo_lote}</p>
+              <p className="font-semibold text-cafe-900 mt-1">{tituloLoteFromRecord(ind.mejorLote)}</p>
               <p className="text-sm text-cafe-600">{ind.mejorLote.puntaje} pts</p>
             </div>
           )}
           {!isAdmin && ind.miMejorLote && (
             <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-4">
               <p className="text-xs font-semibold text-cafe-500 uppercase">Mi mejor lote</p>
-              <p className="font-semibold text-cafe-900 mt-1 font-mono">{ind.miMejorLote.codigo_lote}</p>
+              <p className="font-semibold text-cafe-900 mt-1">{tituloLoteFromRecord(ind.miMejorLote)}</p>
               <p className="text-sm text-cafe-600">{ind.miMejorLote.puntaje} pts</p>
             </div>
           )}
           {!isAdmin && ind.miLoteMenorCalidad && (
             <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-4">
               <p className="text-xs font-semibold text-cafe-500 uppercase">Menor calidad</p>
-              <p className="font-semibold text-cafe-900 mt-1 font-mono">{ind.miLoteMenorCalidad.codigo_lote}</p>
+              <p className="font-semibold text-cafe-900 mt-1">{tituloLoteFromRecord(ind.miLoteMenorCalidad)}</p>
               <p className="text-sm text-cafe-600">{ind.miLoteMenorCalidad.puntaje} pts</p>
             </div>
           )}

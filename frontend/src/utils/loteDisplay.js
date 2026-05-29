@@ -1,13 +1,25 @@
 /**
- * Presentación amigable de códigos de lote (LOT-USU-003-P005-003 → N° 003).
+ * Presentación amigable de códigos de lote.
+ * L001 → "Lote N° 001"
+ * LOT-USU-003-P005-003 → N° 003 (legacy)
  */
 
 export function parseLoteCodigo(codigoLote = '') {
   const raw = String(codigoLote || '').trim()
   if (!raw) return { numero: '—', codigoInterno: raw, usuarioCodigo: null, productorShort: null }
 
+  // Formato demo final: L001, L150
+  const simple = raw.match(/^L(\d+)$/i)
+  if (simple) {
+    return {
+      numero: String(simple[1]).padStart(3, '0'),
+      codigoInterno: raw,
+      usuarioCodigo: null,
+      productorShort: null,
+    }
+  }
+
   const parts = raw.split('-')
-  // LOT-USU-003-P005-003
   if (parts.length >= 6 && parts[0] === 'LOT') {
     const usuarioCodigo = `${parts[1]}-${parts[2]}-${parts[3]}`
     const productorShort = parts[4]
@@ -20,7 +32,6 @@ export function parseLoteCodigo(codigoLote = '') {
     }
   }
 
-  // Legacy LOT-20-026
   const legacy = raw.match(/LOT[E]?-(\d+)-(\d+)/i)
   if (legacy) {
     return {
@@ -34,14 +45,33 @@ export function parseLoteCodigo(codigoLote = '') {
   return { numero: raw.replace(/^LOT-?/i, '').slice(-3) || raw, codigoInterno: raw, usuarioCodigo: null, productorShort: null }
 }
 
-export function tituloLote(codigoLote) {
+export function nombreProductor(lote = {}) {
+  if (lote.productor_nombre) return lote.productor_nombre
+  if (typeof lote.productor === 'string' && lote.productor.trim()) return lote.productor.trim()
+  const p = lote.productor
+  if (p && typeof p === 'object') {
+    const full = [p.nombres, p.apellidos].filter(Boolean).join(' ').trim()
+    if (full) return full
+  }
+  const n = [lote.productor_nombres, lote.productor_apellidos].filter(Boolean).join(' ').trim()
+  return n || null
+}
+
+export function tituloLote(codigoLote, productorNombre) {
   const { numero } = parseLoteCodigo(codigoLote)
+  const prod = productorNombre || null
+  if (prod) return `Lote N° ${numero} - Productor ${prod}`
   return `Lote N° ${numero}`
 }
 
+export function tituloLoteFromRecord(lote = {}) {
+  return tituloLote(lote.codigo_lote || lote.codigo, nombreProductor(lote))
+}
+
 export function subtituloLote(lote = {}) {
-  const prod = lote.productor || lote.parcela || 'Sin productor'
+  const prod = nombreProductor(lote) || lote.parcela || 'Sin productor'
   const kg = lote.cantidad_kg ?? lote.cantidad ?? '—'
   const fecha = lote.fecha_cosecha || '—'
-  return `${prod} · ${kg} kg · ${fecha}`
+  const estado = lote.estado ? ` · ${lote.estado}` : ''
+  return `${prod} · ${kg} kg · ${fecha}${estado}`
 }

@@ -5,7 +5,7 @@ import LoteQrPanel from '../../components/features/LoteQrPanel.jsx'
 import TrazabilidadTimeline from '../../components/features/TrazabilidadTimeline.jsx'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { tituloLote, subtituloLote, parseLoteCodigo } from '../../utils/loteDisplay.js'
+import { tituloLote, subtituloLote, parseLoteCodigo, tituloLoteFromRecord } from '../../utils/loteDisplay.js'
 
 const estadoIconMap = {
   Producción: '🌱',
@@ -127,7 +127,7 @@ export default function Trazabilidad() {
                 }`}
               >
                 <div className="flex justify-between items-start gap-2 mb-1">
-                  <span className="font-bold text-cafe-900 dark:text-slate-100">{tituloLote(codigo)}</span>
+                  <span className="font-bold text-cafe-900 dark:text-slate-100">{tituloLoteFromRecord(lote)}</span>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 ${estadoBadgeClass(lote.estado)}`}>
                     {getIconoEstado(lote.estado)} {lote.estado}
                   </span>
@@ -148,7 +148,7 @@ export default function Trazabilidad() {
                 return (
                   <>
                     <div className="mb-6">
-                      <h3 className="text-2xl font-bold text-cafe-900 dark:text-slate-100">{tituloLote(codigo)}</h3>
+                      <h3 className="text-2xl font-bold text-cafe-900 dark:text-slate-100">{tituloLoteFromRecord(selectedLote)}</h3>
                       <p className="text-cafe-700 dark:text-slate-300 mt-1">{subtituloLote(selectedLote)}</p>
                       <p className="text-xs text-cafe-500 dark:text-slate-500 mt-2 font-mono">Código interno: {parsed.codigoInterno}</p>
                     </div>
