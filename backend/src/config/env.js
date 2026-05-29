@@ -13,7 +13,7 @@ export const env = {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
-  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5174,http://127.0.0.1:5174')
+  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5174,http://127.0.0.1:5174,https://cafe-ia-inky.vercel.app')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean),

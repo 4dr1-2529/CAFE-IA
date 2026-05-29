@@ -5,8 +5,9 @@ import {
 } from 'lucide-react'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import KpiCard from '../../components/ui/KpiCard.jsx'
+import { RAILWAY_API_URL, VERCEL_FRONTEND_URL } from '../../config/api.js'
 
-const RAILWAY_API = 'https://cafe-sostenible-api-production-03ad.up.railway.app'
+const RAILWAY_API = RAILWAY_API_URL
 
 const pmv1Evidencias = [
   {
@@ -210,7 +211,7 @@ const pmv2Evidencias = [
 
 const infraEvidencias = [
   { k: 'Backend Railway', v: RAILWAY_API, ok: true },
-  { k: 'Frontend Vercel', v: 'Build Vite → *.vercel.app (VITE_API_URL → Railway)', ok: true },
+  { k: 'Frontend Vercel', v: VERCEL_FRONTEND_URL, ok: true },
   { k: 'MySQL', v: '39 tablas · utf8mb4 · migrate.js al arrancar', ok: true },
   { k: 'Revisión API', v: 'mysql-hexagonal-v2.6.1-usuarios-limit', ok: true },
   { k: 'Tests backend', v: '6 archivos · health, validators, prediction, calidad, integration', ok: true },

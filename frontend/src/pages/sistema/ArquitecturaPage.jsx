@@ -4,8 +4,9 @@ import {
   TestTube, Zap, Box, Route, Code2, Container,
 } from 'lucide-react'
 import PageHeader from '../../components/ui/PageHeader.jsx'
+import { RAILWAY_API_URL, VERCEL_FRONTEND_URL } from '../../config/api.js'
 
-const RAILWAY_API = 'https://cafe-sostenible-api-production-03ad.up.railway.app'
+const RAILWAY_API = RAILWAY_API_URL
 const API_REVISION = 'mysql-hexagonal-v2.6.1-usuarios-limit'
 const GITHUB_REPO = 'https://github.com/4dr1-2529/CAFE-IA'
 
@@ -38,7 +39,7 @@ const STACK_FLOW = [
     icon: Cloud,
     gradient: 'from-black via-slate-900 to-slate-800',
     glow: 'shadow-black/30',
-    items: ['vercel.json · build Vite', 'VITE_API_URL → Railway', 'Rewrites SPA *.vercel.app'],
+    items: ['vercel.json · build Vite', 'VITE_API_URL → Railway', VERCEL_FRONTEND_URL],
   },
   {
     id: 'react',
@@ -240,6 +241,7 @@ const CATEGORY_CARDS = [
       'GitHub — 4dr1-2529/CAFE-IA',
       'Railway — API + MySQL',
       'Vercel — frontend SPA',
+      VERCEL_FRONTEND_URL,
       'CI — .github/workflows/ci.yml',
       'Auto-deploy push main',
     ],
@@ -519,7 +521,7 @@ export default function ArquitecturaPage() {
           steps={[
             { label: 'GitHub', detail: 'Push main → CAFE-IA', icon: Github },
             { label: 'Vercel', detail: 'npm run build · dist/', icon: Cloud },
-            { label: 'Frontend SPA', detail: 'React · *.vercel.app', icon: Globe },
+            { label: 'Frontend SPA', detail: VERCEL_FRONTEND_URL.replace('https://', ''), icon: Globe },
           ]}
         />
       </section>

@@ -8,6 +8,7 @@
 [![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql)]()
 [![Express](https://img.shields.io/badge/Express-4-000000?logo=express)]()
 [![Arquitectura](https://img.shields.io/badge/Arquitectura-Hexagonal-8B5CF6)]()
+[![Live Demo](https://img.shields.io/badge/Demo-cafe--ia--inky.vercel.app-0070F3?logo=vercel)](https://cafe-ia-inky.vercel.app)
 
 ---
 
@@ -17,7 +18,7 @@
 |---------|-----|
 | **Repositorio GitHub** | [github.com/4dr1-2529/CAFE-IA](https://github.com/4dr1-2529/CAFE-IA) |
 | **API producción (Railway)** | [cafe-sostenible-api-production-03ad.up.railway.app](https://cafe-sostenible-api-production-03ad.up.railway.app/api/health) |
-| **Frontend (Vercel)** | Deploy SPA — `*.vercel.app` vía `frontend/vercel.json` |
+| **Frontend (Vercel)** | [cafe-ia-inky.vercel.app](https://cafe-ia-inky.vercel.app) |
 
 ---
 
@@ -377,10 +378,12 @@ GitHub (push main)
 |------------|------------|---------------|
 | Backend API | **Railway** | Auto-deploy desde GitHub · variables `MYSQL*` |
 | MySQL | **Railway** | Servicio vinculado al backend |
-| Frontend | **Vercel** | Root: `frontend/` · [vercel.json](frontend/vercel.json) |
+| Frontend | **Vercel** | [cafe-ia-inky.vercel.app](https://cafe-ia-inky.vercel.app) · Root: `frontend/` |
 | CI/CD | **GitHub Actions** | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
 
 **API producción:** `https://cafe-sostenible-api-production-03ad.up.railway.app`
+
+**Frontend producción:** [https://cafe-ia-inky.vercel.app](https://cafe-ia-inky.vercel.app)
 
 ---
 

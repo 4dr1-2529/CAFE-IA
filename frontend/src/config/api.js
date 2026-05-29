@@ -6,6 +6,9 @@
 export const RAILWAY_API_URL =
   'https://cafe-sostenible-api-production-03ad.up.railway.app'
 
+/** Frontend producción (Vercel) */
+export const VERCEL_FRONTEND_URL = 'https://cafe-ia-inky.vercel.app'
+
 const fromEnv =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
