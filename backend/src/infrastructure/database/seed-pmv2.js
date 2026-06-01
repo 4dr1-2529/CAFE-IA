@@ -1,5 +1,5 @@
 import { PredictionEngine } from '../../domain/PredictionEngine.js'
-import { queryOne, execute, query } from './pool.js'
+import { queryOne, execute } from './pool.js'
 
 const ETAPAS = [
   ['Producción', 'Registro y cosecha del lote en finca certificada.', 0, 'Completado'],

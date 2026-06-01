@@ -21,42 +21,50 @@ function safeLimitOffset(limit, offset) {
   return { limit: l, offset: o }
 }
 
-function buildFilters(params = {}, extended = true) {
-  const where = []
-  const values = []
+function appendUserIdFilter(params, where, values) {
+  if (!params.user_id && !params.userId) return
+  where.push(`a.usuario_id = ?`)
+  values.push(Number(params.user_id || params.userId))
+}
 
-  if (params.user_id || params.userId) {
-    where.push(`a.usuario_id = ?`)
-    values.push(Number(params.user_id || params.userId))
+function appendUsuarioFilter(params, extended, where, values) {
+  if (!params.usuario) return
+  const q = `%${params.usuario}%`
+  if (extended) {
+    where.push(`(
+      a.usuario_email LIKE ? OR a.usuario_nombre LIKE ?
+      OR u.email LIKE ? OR CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')) LIKE ?
+    )`)
+    values.push(q, q, q, q)
+    return
   }
-  if (params.usuario) {
-    if (extended) {
-      where.push(`(
-        a.usuario_email LIKE ? OR a.usuario_nombre LIKE ?
-        OR u.email LIKE ? OR CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')) LIKE ?
-      )`)
-    } else {
-      where.push(`(u.email LIKE ? OR CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')) LIKE ?)`)
-    }
-    const q = `%${params.usuario}%`
-    values.push(...(extended ? [q, q, q, q] : [q, q]))
-  }
-  if (params.rol) {
-    where.push(extended ? `COALESCE(a.rol, r.codigo, '') = ?` : `COALESCE(r.codigo, '') = ?`)
-    values.push(params.rol)
-  }
-  if (params.modulo) {
-    where.push(
-      extended
-        ? `COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') = ?`
-        : `COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') = ?`
-    )
-    values.push(params.modulo)
-  }
-  if (params.accion) {
-    where.push(`a.accion = ?`)
-    values.push(params.accion)
-  }
+  where.push(`(u.email LIKE ? OR CONCAT(COALESCE(u.nombres,''), ' ', COALESCE(u.apellidos,'')) LIKE ?)`)
+  values.push(q, q)
+}
+
+function appendRolFilter(params, extended, where, values) {
+  if (!params.rol) return
+  where.push(extended ? `COALESCE(a.rol, r.codigo, '') = ?` : `COALESCE(r.codigo, '') = ?`)
+  values.push(params.rol)
+}
+
+function appendModuloFilter(params, extended, where, values) {
+  if (!params.modulo) return
+  where.push(
+    extended
+      ? `COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') = ?`
+      : `COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad, 'general') = ?`
+  )
+  values.push(params.modulo)
+}
+
+function appendAccionFilter(params, where, values) {
+  if (!params.accion) return
+  where.push(`a.accion = ?`)
+  values.push(params.accion)
+}
+
+function appendFechaFilters(params, where, values) {
   if (params.fechaInicio) {
     where.push(`DATE(a.created_at) >= DATE(?)`)
     values.push(params.fechaInicio)
@@ -65,25 +73,40 @@ function buildFilters(params = {}, extended = true) {
     where.push(`DATE(a.created_at) <= DATE(?)`)
     values.push(params.fechaFin)
   }
-  if (params.search) {
-    const q = `%${params.search}%`
-    if (extended) {
-      where.push(`(
-        a.accion LIKE ? OR a.entidad LIKE ? OR a.ruta LIKE ?
-        OR COALESCE(a.descripcion, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') LIKE ?
-        OR COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), '') LIKE ?
-        OR COALESCE(a.usuario_nombre, '') LIKE ?
-      )`)
-      values.push(q, q, q, q, q, q)
-    } else {
-      where.push(`(
-        a.accion LIKE ? OR a.entidad LIKE ?
-        OR JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')) LIKE ?
-        OR JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')) LIKE ?
-      )`)
-      values.push(q, q, q, q)
-    }
+}
+
+function appendSearchFilter(params, extended, where, values) {
+  if (!params.search) return
+  const q = `%${params.search}%`
+  if (extended) {
+    where.push(`(
+      a.accion LIKE ? OR a.entidad LIKE ? OR a.ruta LIKE ?
+      OR COALESCE(a.descripcion, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') LIKE ?
+      OR COALESCE(a.modulo, JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), '') LIKE ?
+      OR COALESCE(a.usuario_nombre, '') LIKE ?
+    )`)
+    values.push(q, q, q, q, q, q)
+    return
   }
+  where.push(`(
+    a.accion LIKE ? OR a.entidad LIKE ?
+    OR JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')) LIKE ?
+    OR JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')) LIKE ?
+  )`)
+  values.push(q, q, q, q)
+}
+
+function buildFilters(params = {}, extended = true) {
+  const where = []
+  const values = []
+
+  appendUserIdFilter(params, where, values)
+  appendUsuarioFilter(params, extended, where, values)
+  appendRolFilter(params, extended, where, values)
+  appendModuloFilter(params, extended, where, values)
+  appendAccionFilter(params, where, values)
+  appendFechaFilters(params, where, values)
+  appendSearchFilter(params, extended, where, values)
 
   return { where, values }
 }
