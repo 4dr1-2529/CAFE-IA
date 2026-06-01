@@ -1,5 +1,11 @@
 import { query, queryOne } from '../database/pool.js'
 import { loteScope, productorScope } from '../../shared/sqlScope.js'
+import {
+  columnExists,
+  ensureAuditoriaColumns,
+  ensureIaModuleTables,
+  tableExists,
+} from '../database/schemaHelpers.js'
 
 const LIMIT_TABLA = 8
 
@@ -172,8 +178,24 @@ export class DashboardRepository {
   }
 
   static async _build(userId, isAdmin) {
+    await ensureAuditoriaColumns()
+    await ensureIaModuleTables()
+
     const ls = loteScope(userId)
     const ps = productorScope(userId)
+    const hasAlertasIa = await tableExists('alertas_ia')
+    const hasAuditoriaModulo = await columnExists('auditoria_logs', 'modulo')
+    const hasAuditoriaDetalle = await columnExists('auditoria_logs', 'detalle')
+    const sqlAuditoriaModulo = hasAuditoriaModulo
+      ? `COALESCE(modulo, entidad, 'general')`
+      : hasAuditoriaDetalle
+        ? `COALESCE(JSON_UNQUOTE(JSON_EXTRACT(detalle, '$.modulo')), entidad, 'general')`
+        : `COALESCE(entidad, 'general')`
+    const sqlAuditoriaDescripcion = hasAuditoriaModulo
+      ? `COALESCE(descripcion, JSON_UNQUOTE(JSON_EXTRACT(detalle, '$.descripcion')), '')`
+      : hasAuditoriaDetalle
+        ? `COALESCE(JSON_UNQUOTE(JSON_EXTRACT(detalle, '$.descripcion')), '')`
+        : `''`
 
     const [
       totalClientesRow,
@@ -364,10 +386,9 @@ export class DashboardRepository {
         : Promise.resolve(null),
       isAdmin
         ? queryOne(
-            `SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(detalle, '$.modulo')), entidad, 'general') AS modulo,
-                    COUNT(*) AS cantidad
+            `SELECT ${sqlAuditoriaModulo} AS modulo, COUNT(*) AS cantidad
              FROM auditoria_logs
-             GROUP BY modulo
+             GROUP BY ${sqlAuditoriaModulo}
              ORDER BY cantidad DESC LIMIT 1`
           )
         : Promise.resolve(null),
@@ -386,13 +407,15 @@ export class DashboardRepository {
          ORDER BY pr.created_at DESC LIMIT 1`,
         ls.params
       ),
-      query(
-        `SELECT a.id, a.tipo_alerta, a.severidad, a.mensaje, l.codigo_lote
-         FROM alertas_ia a
-         INNER JOIN lotes l ON l.id = a.lote_id AND l.deleted_at IS NULL ${ls.clause}
-         ORDER BY a.id DESC LIMIT 10`,
-        ls.params
-      ),
+      hasAlertasIa
+        ? query(
+            `SELECT a.id, a.tipo_alerta, a.severidad, a.mensaje, l.codigo_lote
+             FROM alertas_ia a
+             INNER JOIN lotes l ON l.id = a.lote_id AND l.deleted_at IS NULL ${ls.clause}
+             ORDER BY a.id DESC LIMIT 10`,
+            ls.params
+          )
+        : Promise.resolve([]),
       query(
         `SELECT l.id, l.codigo_lote, l.cantidad_kg, l.estado, l.fecha_cosecha, l.created_at,
                 CONCAT(pr.nombres, ' ', COALESCE(pr.apellidos, '')) AS productor
@@ -415,8 +438,8 @@ export class DashboardRepository {
             `SELECT a.id,
                     COALESCE(CONCAT(u.nombres, ' ', COALESCE(u.apellidos, '')), u.email, 'sistema') AS usuario,
                     a.accion,
-                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.modulo')), a.entidad) AS modulo,
-                    COALESCE(JSON_UNQUOTE(JSON_EXTRACT(a.detalle, '$.descripcion')), '') AS descripcion,
+                    ${sqlAuditoriaModulo} AS modulo,
+                    ${sqlAuditoriaDescripcion} AS descripcion,
                     a.created_at
              FROM auditoria_logs a
              LEFT JOIN usuarios u ON u.id = a.usuario_id

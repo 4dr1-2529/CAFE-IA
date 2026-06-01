@@ -1,5 +1,5 @@
 import { queryOne, execute } from './pool.js'
-import { columnExists, ensureUsuarioCodigoColumn, ensureAuditoriaColumns } from './schemaHelpers.js'
+import { columnExists, ensureUsuarioCodigoColumn, ensureAuditoriaColumns, ensureIaModuleTables } from './schemaHelpers.js'
 
 async function runStatements(sql) {
   const parts = sql
@@ -87,4 +87,5 @@ export async function applyMultiusuarioMigrations() {
 
   await ensureUsuarioCodigoColumn()
   await ensureAuditoriaColumns()
+  await ensureIaModuleTables()
 }

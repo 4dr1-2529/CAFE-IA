@@ -1,5 +1,23 @@
 import { query, queryOne, execute } from './pool.js'
 
+export async function tableExists(table) {
+  try {
+    const row = await queryOne(
+      `SELECT COUNT(*) AS c FROM information_schema.tables
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+      [table]
+    )
+    return Number(row?.c) > 0
+  } catch {
+    try {
+      const rows = await query(`SHOW TABLES LIKE ?`, [table])
+      return rows.length > 0
+    } catch {
+      return false
+    }
+  }
+}
+
 export async function columnExists(table, column) {
   try {
     const row = await queryOne(
@@ -97,5 +115,48 @@ export async function ensureAuditoriaColumns() {
         // ignore if index exists
       }
     }
+  }
+}
+
+/** Tablas del módulo IA que pueden faltar en BD Railway creadas antes del schema completo. */
+export async function ensureIaModuleTables() {
+  if (!(await tableExists('alertas_ia'))) {
+    await execute(
+      `CREATE TABLE IF NOT EXISTS alertas_ia (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        lote_id INT UNSIGNED NOT NULL,
+        prediccion_id INT UNSIGNED NULL,
+        tipo_alerta VARCHAR(60) NOT NULL,
+        severidad ENUM('Baja','Media','Alta','Crítica') DEFAULT 'Media',
+        mensaje TEXT NOT NULL,
+        leida TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_alertas_lote (lote_id),
+        INDEX idx_alertas_leida (leida)
+      ) ENGINE=InnoDB`
+    ).catch((err) => console.warn('[MySQL] alertas_ia:', err.message?.slice(0, 120)))
+    console.log('[MySQL] Tabla alertas_ia verificada/creada')
+  }
+
+  if (!(await tableExists('recomendaciones_ia'))) {
+    await execute(
+      `CREATE TABLE IF NOT EXISTS recomendaciones_ia (
+        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        prediccion_id INT UNSIGNED NOT NULL,
+        categoria VARCHAR(60),
+        prioridad ENUM('Baja','Media','Alta') DEFAULT 'Media',
+        texto TEXT NOT NULL,
+        aplicada TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB`
+    ).catch((err) => console.warn('[MySQL] recomendaciones_ia:', err.message?.slice(0, 120)))
+  }
+
+  if (await tableExists('predicciones_ia') && !(await columnExists('predicciones_ia', 'origen'))) {
+    await execute(
+      `ALTER TABLE predicciones_ia ADD COLUMN origen ENUM('usuario','demo','sistema') DEFAULT 'usuario'`
+    ).catch((err) => {
+      if (err.code !== 'ER_DUP_FIELDNAME') console.warn('[MySQL] predicciones_ia.origen:', err.message?.slice(0, 120))
+    })
   }
 }
