@@ -1,9 +1,11 @@
-# Métricas de calidad — Semana 10
+# Métricas de calidad — CAFE-IA
 
-**Proyecto:** CAFE-IA · Café Sostenible AI  
-**Fuentes:** Cypress, Node test, SonarCloud CI, documentación en `docs/SONARCLOUD.md` y `docs/sonarqube/CORRECCIONES_SONARQUBE.md`
+**Proyecto:** Café Sostenible AI · Semana 10  
+**Última actualización:** 2026-05-31
 
-## Definición de métricas
+---
+
+## 1. Definición
 
 | Métrica | Herramienta |
 |---|---|
@@ -13,69 +15,90 @@
 | Maintainability Index | SonarQube Cloud |
 | Duplicación código | SonarQube Cloud |
 
-## Resultados reales versionados en el repositorio
+---
 
-### Cypress (E2E funcional)
-
-| Indicador | Valor | Fuente |
-|-----------|-------|--------|
-| Specs ejecutados | 11 (`PF-01` … `PF-11`) | `testing/cypress/e2e/` |
-| Tests totales | 13 | `testing/cypress/evidencias/reports/last-run.json` |
-| Passed | 13 | Idem — 2026-05-28 |
-| Failed | 0 | Idem |
-| Base URL | `http://localhost:5174` | Idem |
-
-### Backend (unitarias + integración)
-
-| Indicador | Valor | Fuente |
-|-----------|-------|--------|
-| Archivos de test | 6 | `backend/tests/` |
-| Tests Node (`npm test`) | 18 passed / 0 failed | Suite documentada en `README.md` y `EvidenciasPMVPage.jsx` |
+## 2. Resultados reales
 
 ### SonarQube Cloud
 
-| Indicador | Valor | Notas |
-|-----------|-------|-------|
-| Proyecto | `4dr1-2529_CAFE-IA` | `sonar-project.properties` |
-| Dashboard | https://sonarcloud.io/project/overview?id=4dr1-2529_CAFE-IA | Requiere `SONAR_TOKEN` en CI |
-| Security / Reliability / Maintainability / Duplicación / Issues | **No versionados en el repo** | Consultar dashboard tras cada push a `main` |
+**Proyecto:** `4dr1-2529_CAFE-IA` · **Consulta API:** 2026-05-31  
+**Dashboard:** https://sonarcloud.io/project/overview?id=4dr1-2529_CAFE-IA
 
-> Los ratings (Security B, Reliability C, etc.) y el conteo de issues **no están exportados** en archivos del repositorio. Tras los commits de corrección SonarQube (`fix: sonarqube issues…`, refactors de complejidad), el conteo debe verificarse en SonarCloud.
+| Métrica | Resultado |
+|---|---|
+| Quality Gate | **OK** |
+| Security | **A** (rating 1.0) |
+| Reliability | **C** (rating 3.0) |
+| Maintainability | **A** (sqale_rating 1.0) |
+| Duplications | **2,6 %** |
+| Bugs | **6** |
+| Vulnerabilities | **0** |
+| Code Smells | **271** |
+| Issues (bugs + smells + vulns) | **277** |
+| Líneas de código (ncloc) | **16 969** |
 
-Correcciones documentadas en repo: `docs/sonarqube/CORRECCIONES_SONARQUBE.md` (SQL estático, vite env, uuid, CI SHA pinning, etc.).
+### JMeter / carga API
 
-### JMeter / pruebas de carga
+**Fuente:** `testing/metricas/resultados_resumen.json` · **Fecha:** 2026-05-28  
+**Endpoint:** `GET /api/health` (Railway producción) · **500 requests**, 50 usuarios concurrentes
 
-Fuente: `testing/metricas/resultados_resumen.json` y `testing/metricas/jmeter/resultado_jmeter.csv` — ejecución 2026-05-28 contra `GET /api/health` (Railway, 500 requests, 50 usuarios concurrentes).
+| Métrica | Resultado |
+|---|---|
+| Tiempo promedio API | **443,05 ms** |
+| Requests por minuto | **6 320 rpm** |
+| Disponibilidad | **100 %** (500/500 exitosos) |
+| Error Rate | **0 %** (0 fallidos) |
+| Tiempo mínimo | 182 ms |
+| Tiempo máximo | 2 699 ms |
+| P95 | 2 614 ms |
 
-| Indicador | Valor | Fuente |
-|-----------|-------|--------|
-| Tiempo promedio API | **443,05 ms** | `resultados_resumen.json` |
-| Requests por minuto | **6 320 rpm** | Idem |
-| Error | **0 %** (0 fallidos / 500) | Idem |
-| Disponibilidad | **100 %** | `grafana/disponibilidad_resultado.json` |
-| Tiempo mínimo | 182 ms | `resultados_resumen.json` |
-| Tiempo máximo | 2 699 ms | Idem |
-| P95 | 2 614 ms | Idem |
+### Cypress (pruebas funcionales E2E)
 
-Script de regeneración: `npm run metricas` → `testing/metricas/scripts/generar_metricas.js`  
-Reporte consolidado: [`../metricas/REPORTE_METRICAS_ARQUITECTURA_RENDIMIENTO.md`](../metricas/REPORTE_METRICAS_ARQUITECTURA_RENDIMIENTO.md)
+**Fuente:** `testing/cypress/evidencias/reports/last-run.json` · **Fecha:** 2026-05-28
 
-## CI (`.github/workflows/ci.yml`)
+| Métrica | Resultado |
+|---|---|
+| Specs ejecutados | 11 (PF-01 … PF-11) |
+| Tests totales | 13 |
+| Passed | **13** |
+| Failed | **0** |
+| Tasa éxito | **100 %** |
 
-1. Tests backend (`npm test`)
-2. Build frontend (`npm run build`)
-3. SonarCloud Analysis (con `SONAR_TOKEN`)
+### Backend (unitarias + integración)
 
-## Comandos de verificación local
+**Fuente:** `backend/tests/` (6 archivos) · documentado en `HistoriasUsuarioPage.jsx`
 
-```bash
-# E2E
-npm run test:e2e
+| Métrica | Resultado |
+|---|---|
+| Tests Node (`npm test`) | **18 passed / 0 failed** |
 
-# Backend
-cd backend && npm test
+---
 
-# Build frontend
-cd frontend && npm run build
-```
+## 3. Interpretación
+
+- **SonarQube Cloud:** El Quality Gate está en **OK**. Security y Maintainability en **A** indican buena postura de seguridad (0 vulnerabilidades abiertas) y deuda técnica controlada. **Reliability C** refleja **6 bugs** abiertos detectados por análisis estático; conviene priorizar su corrección. **Duplicación 2,6 %** está en rango aceptable. Los refactors documentados en `docs/sonarqube/CORRECCIONES_SONARQUBE.md` (SQL estático, SHA pinning CI, overrides npm) contribuyen a la mejora respecto a análisis anteriores.
+- **JMeter:** La API en Railway cumple objetivos del proyecto: tiempo medio **< 2 s**, **> 300 rpm** y **disponibilidad ≥ 99 %**. Evidencia CSV: `testing/metricas/jmeter/resultado_jmeter.csv`.
+- **Cypress + backend:** **31 pruebas automatizadas** verificadas (13 E2E + 18 Node) sin fallos en la última ejecución registrada. No hay reporte de cobertura de líneas (Istanbul) versionado; la métrica de cobertura operativa es **tasa de éxito de suites** documentadas.
+
+---
+
+## Archivos utilizados
+
+| Archivo | Uso |
+|---------|-----|
+| API SonarCloud `measures/component` | Ratings Security, Reliability, Maintainability, duplicación, bugs |
+| `sonar-project.properties` | Configuración del proyecto |
+| `testing/metricas/resultados_resumen.json` | JMeter / script `generar_metricas.js` |
+| `testing/metricas/jmeter/resultado_jmeter.csv` | Detalle por request |
+| `testing/cypress/evidencias/reports/last-run.json` | Resultados Cypress |
+| `backend/tests/*.test.js` | Suite unitaria e integración |
+| `docs/sonarqube/CORRECCIONES_SONARQUBE.md` | Contexto de correcciones |
+
+## Resumen
+
+| Tipo | Detalle |
+|------|---------|
+| **Obtenidas de SonarCloud (API)** | Security A, Reliability C, Maintainability A, Duplications 2,6 %, 277 issues, QG OK |
+| **Obtenidas de JMeter** | 443 ms, 6 320 rpm, 100 % disponibilidad, 0 % error |
+| **Obtenidas de Cypress/backend** | 13/13 E2E, 18/18 Node tests |
+| **No versionadas en repo** | Cobertura de líneas (% LOC); export JSON Sonar en CI |
