@@ -18,7 +18,7 @@ const fromEnv =
 export const API_URL = (
   fromEnv ||
   (import.meta.env.DEV ? 'http://localhost:3029' : RAILWAY_API_URL)
-).replaceAll(/\/$/, '')
+).replace(/\/$/, '')
 
 if (import.meta.env.PROD) {
   console.info('[API] Producción — backend:', API_URL)
