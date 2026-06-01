@@ -20,6 +20,10 @@
 | SonarCloud | `sonar-project.properties` | CI GitHub Actions |
 | ML evidencia Python | `ml/train_model.py` | `cd ml && python train_model.py` |
 
+## Métricas de rendimiento y arquitectura
+
+- [metricas/REPORTE_METRICAS_ARQUITECTURA_RENDIMIENTO.md](./metricas/REPORTE_METRICAS_ARQUITECTURA_RENDIMIENTO.md) — JMeter, Prometheus, Grafana, SonarCloud
+
 ## Documentación relacionada
 
 - [cypress/README_PRUEBAS_FUNCIONALES.md](./cypress/README_PRUEBAS_FUNCIONALES.md) — guía operativa Cypress

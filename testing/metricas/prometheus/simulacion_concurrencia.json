@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "descripcion": "Simulación académica de métricas de concurrencia (equivalente a scrape Prometheus en entorno de pruebas)",
+    "herramienta_base": "Node.js generar_metricas.js",
+    "entorno": "pruebas_controladas",
+    "api": "https://cafe-sostenible-api-production-03ad.up.railway.app/api/health",
+    "fecha_ejecucion": "2026-05-28T20:46:42.851Z"
+  },
+  "escalabilidad_concurrente": {
+    "usuarios_simulados": 50,
+    "total_requests": 500,
+    "duracion_segundos": 4.75,
+    "requests_exitosos": 500,
+    "requests_fallidos": 0,
+    "porcentaje_exitoso": 100,
+    "latencia_promedio_ms": 443.05,
+    "latencia_p95_ms": 2614,
+    "latencia_min_ms": 182,
+    "latencia_max_ms": 2699,
+    "throughput_rpm": 6320,
+    "objetivo_usuarios": 500,
+    "nota": "Para efectos de entorno académico se simuló la métrica de concurrencia mediante script Node, equivalente a una prueba básica de carga."
+  }
+}

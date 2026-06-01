@@ -46,12 +46,20 @@ Correcciones documentadas en repo: `docs/sonarqube/CORRECCIONES_SONARQUBE.md` (S
 
 ### JMeter / pruebas de carga
 
-| Indicador | Estado |
-|-----------|--------|
-| Reporte JMeter (`.jtl`, `.html`) | **No encontrado** en el repositorio |
-| Script `npm run metricas` | Apunta a `testing/metricas/scripts/generar_metricas.js` — **carpeta ausente** en el árbol actual |
+Fuente: `testing/metricas/resultados_resumen.json` y `testing/metricas/jmeter/resultado_jmeter.csv` — ejecución 2026-05-28 contra `GET /api/health` (Railway, 500 requests, 50 usuarios concurrentes).
 
-No se incluyen cifras de tiempo promedio, RPM ni disponibilidad sin artefacto versionado. Si se dispone de un reporte JMeter externo, debe agregarse bajo `testing/metricas/` y actualizar esta sección.
+| Indicador | Valor | Fuente |
+|-----------|-------|--------|
+| Tiempo promedio API | **443,05 ms** | `resultados_resumen.json` |
+| Requests por minuto | **6 320 rpm** | Idem |
+| Error | **0 %** (0 fallidos / 500) | Idem |
+| Disponibilidad | **100 %** | `grafana/disponibilidad_resultado.json` |
+| Tiempo mínimo | 182 ms | `resultados_resumen.json` |
+| Tiempo máximo | 2 699 ms | Idem |
+| P95 | 2 614 ms | Idem |
+
+Script de regeneración: `npm run metricas` → `testing/metricas/scripts/generar_metricas.js`  
+Reporte consolidado: [`../metricas/REPORTE_METRICAS_ARQUITECTURA_RENDIMIENTO.md`](../metricas/REPORTE_METRICAS_ARQUITECTURA_RENDIMIENTO.md)
 
 ## CI (`.github/workflows/ci.yml`)
 
