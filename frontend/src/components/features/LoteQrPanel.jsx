@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import PropTypes from 'prop-types'
 import QRCode from 'react-qr-code'
 import { Download } from 'lucide-react'
 
@@ -55,4 +56,14 @@ export default function LoteQrPanel({ lote }) {
       </div>
     </div>
   )
+}
+
+LoteQrPanel.propTypes = {
+  lote: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+    codigo_lote: PropTypes.string,
+    productor: PropTypes.string,
+    variedad_cafe: PropTypes.string,
+    qr_codigo: PropTypes.string,
+  }),
 }

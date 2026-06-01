@@ -11,7 +11,7 @@ export class LoteController {
   }
 
   static async getById(req, res) {
-    res.json(await LoteService.getById(parseInt(req.params.id, 10), { user: req.user }))
+    res.json(await LoteService.getById(Number.parseInt(req.params.id, 10), { user: req.user }))
   }
 
   static async create(req, res) {

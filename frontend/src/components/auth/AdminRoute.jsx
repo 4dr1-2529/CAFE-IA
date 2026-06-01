@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { ROUTES } from '../../constants/routes.js'
@@ -15,4 +16,8 @@ export default function AdminRoute({ children }) {
     return <Navigate to={ROUTES.DASHBOARD} replace />
   }
   return children
+}
+
+AdminRoute.propTypes = {
+  children: PropTypes.node.isRequired,
 }

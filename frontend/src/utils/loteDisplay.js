@@ -23,7 +23,7 @@ export function parseLoteCodigo(codigoLote = '') {
   if (parts.length >= 6 && parts[0] === 'LOT') {
     const usuarioCodigo = `${parts[1]}-${parts[2]}-${parts[3]}`
     const productorShort = parts[4]
-    const numero = parts.slice(5).join('-') || parts[parts.length - 1]
+    const numero = parts.slice(5).join('-') || parts.at(-1)
     return {
       numero: String(numero).padStart(3, '0'),
       codigoInterno: raw,

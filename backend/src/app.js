@@ -13,24 +13,27 @@ import { BaseDatosController } from './interfaces/http/controllers/BaseDatosCont
 export function createApp() {
   const app = express()
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000,
-      max: 500,
-      standardHeaders: true,
-      legacyHeaders: false,
-    })
-  )
+  const skipRateLimit = env.nodeEnv === 'test' || process.env.npm_lifecycle_event === 'test'
+  if (!skipRateLimit) {
+    app.use(
+      rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 500,
+        standardHeaders: true,
+        legacyHeaders: false,
+      })
+    )
+  }
 
   const devOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:5175', 'http://127.0.0.1:5175']
-  const allowedOrigins = [...new Set([...env.corsOrigins, ...(env.nodeEnv !== 'production' ? devOrigins : [])])]
+  const allowedOrigins = new Set([...env.corsOrigins, ...(env.nodeEnv !== 'production' ? devOrigins : [])])
 
   const vercelPreviewPattern = /^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) return callback(null, true)
+        if (!origin || allowedOrigins.has(origin)) return callback(null, true)
         // Deploys y previews de Vercel (*.vercel.app)
         if (vercelPreviewPattern.test(origin)) {
           return callback(null, true)

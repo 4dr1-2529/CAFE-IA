@@ -121,7 +121,7 @@ export default function Productores() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar este productor? Esta acción no puede deshacerse.')) return
+    if (!globalThis.confirm('¿Eliminar este productor? Esta acción no puede deshacerse.')) return
     try {
       await deleteProductor(id)
       toast.success('Productor eliminado correctamente.')

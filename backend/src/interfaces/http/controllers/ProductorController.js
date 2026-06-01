@@ -12,12 +12,12 @@ export class ProductorController {
   }
 
   static async update(req, res) {
-    const row = await ProductorService.update(parseInt(req.params.id, 10), req.body, requestMeta(req))
+    const row = await ProductorService.update(Number.parseInt(req.params.id, 10), req.body, requestMeta(req))
     res.json(row)
   }
 
   static async remove(req, res) {
-    await ProductorService.remove(parseInt(req.params.id, 10), requestMeta(req))
+    await ProductorService.remove(Number.parseInt(req.params.id, 10), requestMeta(req))
     res.status(204).send()
   }
 }

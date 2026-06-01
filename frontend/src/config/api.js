@@ -18,7 +18,7 @@ const fromEnv =
 export const API_URL = (
   fromEnv ||
   (import.meta.env.DEV ? 'http://localhost:3029' : RAILWAY_API_URL)
-).replace(/\/$/, '')
+).replaceAll(/\/$/, '')
 
 if (import.meta.env.PROD) {
   console.info('[API] Producción — backend:', API_URL)
@@ -32,8 +32,8 @@ export function getApiRequestBases() {
 
 /** Origen absoluto para descargas (PDF/Excel). */
 export function getApiOrigin() {
-  if (import.meta.env.DEV && typeof window !== 'undefined') {
-    return window.location.origin
+  if (import.meta.env.DEV && typeof globalThis.window !== 'undefined') {
+    return globalThis.location.origin
   }
   return API_URL
 }

@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import crypto from 'crypto'
+import crypto from 'node:crypto'
 import { env } from '../../config/env.js'
 import { query, queryOne, execute } from '../../infrastructure/database/pool.js'
 import { ActionLogService } from './ActionLogService.js'

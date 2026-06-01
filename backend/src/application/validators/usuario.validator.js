@@ -10,7 +10,7 @@ export function validateCreateUsuario(body = {}) {
   if (body.rol && !ROLES_PERMITIDOS.has(body.rol)) errors.push('rol debe ser admin o cliente')
   if (!body.rol) errors.push('rol es obligatorio')
   if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email))) errors.push('email no válido')
-  if (body.telefono && !/^\d+$/.test(String(body.telefono).replace(/\s/g, ''))) {
+  if (body.telefono && !/^\d+$/.test(String(body.telefono).replaceAll(/\s/g, ''))) {
     errors.push('teléfono solo debe contener números')
   }
   return errors
@@ -21,7 +21,7 @@ export function validateUpdateUsuario(body = {}) {
   if (body.nombres !== undefined && !String(body.nombres).trim()) errors.push('nombre no puede estar vacío')
   if (body.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email))) errors.push('email no válido')
   if (body.rol && !ROLES_PERMITIDOS.has(body.rol)) errors.push('rol debe ser admin o cliente')
-  if (body.telefono && !/^\d+$/.test(String(body.telefono).replace(/\s/g, ''))) {
+  if (body.telefono && !/^\d+$/.test(String(body.telefono).replaceAll(/\s/g, ''))) {
     errors.push('teléfono solo debe contener números')
   }
   return errors

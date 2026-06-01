@@ -74,9 +74,9 @@ export class ProductorService {
       data.user_id = Number(meta.user.sub)
     }
 
-    const scope = await ProductorRepository.findByUserId(data.user_id)
-    if (scope.some((p) => String(p.dni) === String(data.dni))) throw new AppError('dni duplicado', 409)
-    if (scope.some((p) => String(p.correo || '').toLowerCase() === String(data.correo || '').toLowerCase())) {
+    const existingProductores = await ProductorRepository.findByUserId(data.user_id)
+    if (existingProductores.some((p) => String(p.dni) === String(data.dni))) throw new AppError('dni duplicado', 409)
+    if (existingProductores.some((p) => String(p.correo || '').toLowerCase() === String(data.correo || '').toLowerCase())) {
       throw new AppError('correo duplicado', 409)
     }
 
@@ -108,11 +108,11 @@ export class ProductorService {
       userIdUpdate = uid
     }
 
-    const scope = await ProductorService.list(meta, isAdmin && userIdUpdate ? { user_id: userIdUpdate } : {})
-    if (scope.some((p) => p.id !== Number(id) && String(p.dni) === String(data.dni))) {
+    const peerProductores = await ProductorService.list(meta, isAdmin && userIdUpdate ? { user_id: userIdUpdate } : {})
+    if (peerProductores.some((p) => p.id !== Number(id) && String(p.dni) === String(data.dni))) {
       throw new AppError('dni duplicado', 409)
     }
-    if (scope.some((p) => p.id !== Number(id) && String(p.correo || '').toLowerCase() === String(data.correo || '').toLowerCase())) {
+    if (peerProductores.some((p) => p.id !== Number(id) && String(p.correo || '').toLowerCase() === String(data.correo || '').toLowerCase())) {
       throw new AppError('correo duplicado', 409)
     }
 

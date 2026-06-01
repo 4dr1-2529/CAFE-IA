@@ -125,7 +125,7 @@ export default function RegistroProduccion() {
   }
 
   const handleProductorChange = (e) => {
-    const productorId = e.target.value ? parseInt(e.target.value, 10) : ''
+    const productorId = e.target.value ? Number.parseInt(e.target.value, 10) : ''
     const productor = productores.find(p => p.id === productorId)
 
     setFormData(prev => ({

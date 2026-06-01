@@ -7,7 +7,6 @@ import {
   Brain,
   AlertTriangle,
   Users,
-  FileText,
   ClipboardList,
   BarChart3,
 } from 'lucide-react'
@@ -167,7 +166,7 @@ export default function Dashboard() {
           </p>
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={() => globalThis.location.reload()}
             className="inline-flex items-center justify-center px-5 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
             Reintentar conexión

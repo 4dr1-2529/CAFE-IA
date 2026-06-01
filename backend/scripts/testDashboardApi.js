@@ -7,13 +7,21 @@ import { closePool } from '../src/infrastructure/database/pool.js'
 
 const passwords = ['admin123', 'Admin123', 'admin', 'password', 'mabppe29', 'mbappe29']
 
+function sanitizeLog(value) {
+  return String(value ?? '')
+    .replaceAll(/[\r\n\t<>]/g, ' ')
+    .replaceAll(/\s+/g, ' ')
+    .trim()
+    .slice(0, 200)
+}
+
 async function main() {
   await initDatabase()
   let login = null
   for (const p of passwords) {
     try {
       login = await AuthService.login('admin@cafeai.com', p)
-      console.log('Login OK con password:', p)
+      console.log('Login OK (credencial de prueba válida)')
       break
     } catch {
       // next
@@ -32,17 +40,18 @@ async function main() {
   console.log('Status:', res.status)
   try {
     const json = JSON.parse(text)
-    console.log('rol:', json.rol)
-    console.log('cards.totalClientes:', json.cards?.totalClientes)
-    console.log('cards keys:', json.cards ? Object.keys(json.cards) : 'sin cards')
+    console.log('rol:', sanitizeLog(json.rol))
+    console.log('cards.totalClientes:', sanitizeLog(json.cards?.totalClientes))
+    const keys = json.cards ? Object.keys(json.cards).join(', ') : 'sin cards'
+    console.log('cards keys:', sanitizeLog(keys))
   } catch {
-    console.log(text.slice(0, 500))
+    console.log(sanitizeLog(text.slice(0, 500)))
   }
   await closePool()
 }
 
 main().catch(async (e) => {
-  console.error(e.message)
+  console.error(sanitizeLog(e.message))
   await closePool()
   process.exit(1)
 })

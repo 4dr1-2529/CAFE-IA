@@ -11,7 +11,7 @@ export class UsuarioController {
   }
 
   static async getById(req, res) {
-    res.json(await UsuarioService.getById(parseInt(req.params.id, 10), requestMeta(req)))
+    res.json(await UsuarioService.getById(Number.parseInt(req.params.id, 10), requestMeta(req)))
   }
 
   static async create(req, res) {
@@ -20,21 +20,21 @@ export class UsuarioController {
   }
 
   static async update(req, res) {
-    const row = await UsuarioService.update(parseInt(req.params.id, 10), req.body, requestMeta(req))
+    const row = await UsuarioService.update(Number.parseInt(req.params.id, 10), req.body, requestMeta(req))
     res.json(row)
   }
 
   static async setEstado(req, res) {
-    const row = await UsuarioService.setEstado(parseInt(req.params.id, 10), req.body, requestMeta(req))
+    const row = await UsuarioService.setEstado(Number.parseInt(req.params.id, 10), req.body, requestMeta(req))
     res.json(row)
   }
 
   static async changeRol(req, res) {
-    const row = await UsuarioService.changeRol(parseInt(req.params.id, 10), req.body, requestMeta(req))
+    const row = await UsuarioService.changeRol(Number.parseInt(req.params.id, 10), req.body, requestMeta(req))
     res.json(row)
   }
 
   static async resetPassword(req, res) {
-    res.json(await UsuarioService.resetPassword(parseInt(req.params.id, 10), req.body, requestMeta(req)))
+    res.json(await UsuarioService.resetPassword(Number.parseInt(req.params.id, 10), req.body, requestMeta(req)))
   }
 }

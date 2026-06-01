@@ -224,7 +224,7 @@ export default function ChatbotIAPage() {
           <div className="flex items-center gap-2">
             <Input
               value={input}
-              onChange={(e) => setInput(e.target.value.replace(/[<>]/g, '').slice(0, maxLen))}
+              onChange={(e) => setInput(e.target.value.replaceAll(/[<>]/g, '').slice(0, maxLen))}
               placeholder="Escribe tu consulta..."
               className="flex-1"
             />

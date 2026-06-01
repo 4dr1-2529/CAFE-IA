@@ -18,8 +18,40 @@ const AUDIT_PREFIXES = [
 
 const SKIP_PATHS = new Set(['/api/health', '/'])
 
+const GET_AUDIT_RULES = [
+  { prefix: '/api/productores', accion: 'CONSULTAR_PRODUCTORES', modulo: 'productores', descripcion: 'Consultó listado de productores', entidad: 'productores' },
+  { prefix: '/api/lotes', accion: 'CONSULTAR_LOTES', modulo: 'lotes', descripcion: 'Consultó listado de lotes', entidad: 'lotes' },
+  { prefix: '/api/produccion', accion: 'CONSULTAR_PRODUCCION', modulo: 'produccion', descripcion: 'Consultó registros de producción', entidad: 'produccion' },
+  { prefix: '/api/trazabilidad', accion: 'CONSULTAR_TRAZABILIDAD', modulo: 'trazabilidad', descripcion: 'Consultó trazabilidad de lotes', entidad: 'trazabilidad' },
+  { prefix: '/api/predicciones', accion: 'CONSULTAR_PREDICCIONES', modulo: 'ia', descripcion: 'Consultó predicciones IA', entidad: 'predicciones_ia' },
+  { prefix: '/api/reportes', accion: 'CONSULTAR_REPORTES', modulo: 'reportes', descripcion: 'Consultó módulo de reportes', entidad: 'reportes' },
+  { prefix: '/api/auditoria', accion: 'CONSULTAR_AUDITORIA', modulo: 'auditoria', descripcion: 'Consultó historial de auditoría', entidad: 'auditoria_logs' },
+  { prefix: '/api/usuarios', accion: 'CONSULTAR_USUARIOS', modulo: 'usuarios', descripcion: 'Consultó listado de usuarios', entidad: 'usuarios' },
+]
+
 function normalizePath(url = '') {
   return String(url).split('?')[0]
+}
+
+function resolveCalidadAudit(p) {
+  if (!p.startsWith('/api/control-calidad') && !p.startsWith('/api/evaluaciones')) return null
+  return { accion: 'CONSULTAR_CALIDAD', modulo: 'calidad', descripcion: 'Consultó control de calidad', entidad: 'control_calidad' }
+}
+
+function resolveGetAudit(path) {
+  if (path.startsWith('/api/dashboard')) return null
+  const calidad = resolveCalidadAudit(path)
+  if (calidad) return calidad
+  const rule = GET_AUDIT_RULES.find((r) => path.startsWith(r.prefix))
+  return rule ? { accion: rule.accion, modulo: rule.modulo, descripcion: rule.descripcion, entidad: rule.entidad } : null
+}
+
+function resolvePostAudit(path) {
+  if (path.startsWith('/api/chatbot')) return null
+  if (path.startsWith('/api/reportes') && path.includes('export')) {
+    return { accion: 'EXPORTAR_REPORTE', modulo: 'reportes', descripcion: 'Exportó un reporte', entidad: 'reportes' }
+  }
+  return null
 }
 
 function resolveAudit(path, method) {
@@ -31,28 +63,8 @@ function resolveAudit(path, method) {
     return { accion: 'LOGOUT', modulo: 'auth', descripcion: 'Cierre de sesión', entidad: 'usuarios' }
   }
 
-  if (m === 'GET') {
-    if (p.startsWith('/api/productores')) return { accion: 'CONSULTAR_PRODUCTORES', modulo: 'productores', descripcion: 'Consultó listado de productores', entidad: 'productores' }
-    if (p.startsWith('/api/lotes')) return { accion: 'CONSULTAR_LOTES', modulo: 'lotes', descripcion: 'Consultó listado de lotes', entidad: 'lotes' }
-    if (p.startsWith('/api/produccion')) return { accion: 'CONSULTAR_PRODUCCION', modulo: 'produccion', descripcion: 'Consultó registros de producción', entidad: 'produccion' }
-    if (p.startsWith('/api/control-calidad') || p.startsWith('/api/evaluaciones')) {
-      return { accion: 'CONSULTAR_CALIDAD', modulo: 'calidad', descripcion: 'Consultó control de calidad', entidad: 'control_calidad' }
-    }
-    if (p.startsWith('/api/trazabilidad')) return { accion: 'CONSULTAR_TRAZABILIDAD', modulo: 'trazabilidad', descripcion: 'Consultó trazabilidad de lotes', entidad: 'trazabilidad' }
-    if (p.startsWith('/api/predicciones')) return { accion: 'CONSULTAR_PREDICCIONES', modulo: 'ia', descripcion: 'Consultó predicciones IA', entidad: 'predicciones_ia' }
-    if (p.startsWith('/api/reportes')) return { accion: 'CONSULTAR_REPORTES', modulo: 'reportes', descripcion: 'Consultó módulo de reportes', entidad: 'reportes' }
-    if (p.startsWith('/api/auditoria')) return { accion: 'CONSULTAR_AUDITORIA', modulo: 'auditoria', descripcion: 'Consultó historial de auditoría', entidad: 'auditoria_logs' }
-    if (p.startsWith('/api/dashboard')) return null
-    if (p.startsWith('/api/usuarios')) return { accion: 'CONSULTAR_USUARIOS', modulo: 'usuarios', descripcion: 'Consultó listado de usuarios', entidad: 'usuarios' }
-  }
-
-  if (m === 'POST') {
-    if (p.startsWith('/api/chatbot')) return null
-    if (p.startsWith('/api/reportes') && p.includes('export')) {
-      return { accion: 'EXPORTAR_REPORTE', modulo: 'reportes', descripcion: 'Exportó un reporte', entidad: 'reportes' }
-    }
-  }
-
+  if (m === 'GET') return resolveGetAudit(p)
+  if (m === 'POST') return resolvePostAudit(p)
   return null
 }
 

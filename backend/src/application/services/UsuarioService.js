@@ -58,8 +58,8 @@ export class UsuarioService {
     if (errors.length) throw new AppError(errors.join('; '), 400)
 
     const rolCodigo = body.rol === ROLES.ADMIN ? ROLES.ADMIN : ROLES.CLIENTE
-    const rol = await UsuarioRepository.getRolId(rolCodigo)
-    if (!rol) throw new AppError('Rol no encontrado', 400)
+    const rolRow = await UsuarioRepository.getRolId(rolCodigo)
+    if (!rolRow) throw new AppError('Rol no encontrado', 400)
 
     const email = body.email.trim().toLowerCase()
     const exists = await UsuarioRepository.findByEmail(email)
@@ -67,7 +67,7 @@ export class UsuarioService {
 
     const hash = await bcrypt.hash(body.password, 10)
     const row = await UsuarioRepository.create({
-      rolId: rol.id,
+      rolId: rolRow.id,
       email,
       passwordHash: hash,
       nombres: body.nombres,
@@ -158,10 +158,10 @@ export class UsuarioService {
     }
     await UsuarioService.assertNotLastAdmin(id, rolCodigo !== ROLES.ADMIN)
 
-    const rol = await UsuarioRepository.getRolId(rolCodigo)
-    if (!rol) throw new AppError('Rol no encontrado', 400)
+    const rolRow = await UsuarioRepository.getRolId(rolCodigo)
+    if (!rolRow) throw new AppError('Rol no encontrado', 400)
 
-    const row = await UsuarioRepository.updateRol(id, rol.id)
+    const row = await UsuarioRepository.updateRol(id, rolRow.id)
     if (!row) throw new AppError('Usuario no encontrado', 404)
 
     await ActionLogService.fromMeta(meta, {

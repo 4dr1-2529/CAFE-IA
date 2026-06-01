@@ -17,7 +17,7 @@ export class CodeGenerator {
   /** Extrae P001 de PROD-USU-001-003 */
   static shortFromProductorCode(codigoProductor) {
     const parts = String(codigoProductor || '').split('-')
-    const last = parts[parts.length - 1] || '001'
+    const last = parts.at(-1) || '001'
     return `P${String(last).padStart(3, '0')}`
   }
 

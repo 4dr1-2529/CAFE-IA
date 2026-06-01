@@ -57,7 +57,7 @@ export class BaseDatosService {
   static async getTabla(tabla, meta = {}) {
     RoleHelper.requireAuth(meta.user)
     const isAdmin = RoleHelper.isAdmin(meta.user)
-    const key = String(tabla || '').toLowerCase().replace(/-/g, '_')
+    const key = String(tabla || '').toLowerCase().replaceAll('-', '_')
 
     if (key === 'auditoria' || key === 'usuarios') {
       if (!isAdmin) throw new AppError('No autorizado para consultar esta tabla', 403)
@@ -69,8 +69,8 @@ export class BaseDatosService {
       throw new AppError('Tabla no reconocida', 404)
     }
 
-    const scope = RoleHelper.scopeUserId(meta.user)
-    const rows = await BaseDatosService.fetchTabla(key, scope)
+    const scopeUserId = RoleHelper.scopeUserId(meta.user)
+    const rows = await BaseDatosService.fetchTabla(key, scopeUserId)
 
     ActionLogService.fromMeta(meta, {
       accion: 'CONSULTAR_TABLA_BASE_DATOS',

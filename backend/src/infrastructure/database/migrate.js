@@ -1,6 +1,6 @@
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import mysql from 'mysql2/promise'
 import bcrypt from 'bcryptjs'
 import { env } from '../../config/env.js'
@@ -45,8 +45,8 @@ async function applySchemaIfNeeded(conn) {
 
   const schema = readSql('schema.sql')
   const cleaned = schema
-    .replace(/CREATE DATABASE[^;]+;/gi, '')
-    .replace(/USE\s+[^;]+;/gi, '')
+    .replaceAll(/CREATE DATABASE[^;]+;/gi, '')
+    .replaceAll(/USE\s+[^;]+;/gi, '')
   await conn.query(`USE \`${process.env.MYSQLDATABASE}\``)
   await conn.query(cleaned)
   console.log('Esquema MySQL aplicado desde schema.sql')

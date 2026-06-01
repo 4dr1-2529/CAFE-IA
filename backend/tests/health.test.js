@@ -13,6 +13,7 @@ test('GET /api/health responde ok', async () => {
     assert.equal(body.ok, true)
     assert.match(body.revision, /mysql/)
   } finally {
-    server.close()
+    server.closeAllConnections?.()
+    await new Promise((resolve) => server.close(resolve))
   }
 })

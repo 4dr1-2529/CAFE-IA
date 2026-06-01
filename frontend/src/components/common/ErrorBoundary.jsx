@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import PropTypes from 'prop-types'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
 class ErrorBoundary extends Component {
@@ -7,7 +8,7 @@ class ErrorBoundary extends Component {
     this.state = { hasError: false, error: null, errorInfo: null }
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(_error) {
     return { hasError: true }
   }
 
@@ -36,6 +37,7 @@ class ErrorBoundary extends Component {
               Ha ocurrido un error en este componente. Revisa la consola para más detalles.
             </p>
             <button
+              type="button"
               onClick={this.handleRetry}
               className="inline-flex items-center gap-2 bg-cafe-600 text-white px-6 py-3 rounded-lg hover:bg-cafe-700 transition-colors"
             >
@@ -64,3 +66,7 @@ class ErrorBoundary extends Component {
 }
 
 export default ErrorBoundary
+
+ErrorBoundary.propTypes = {
+  children: PropTypes.node.isRequired,
+}

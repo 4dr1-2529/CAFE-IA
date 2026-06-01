@@ -72,14 +72,18 @@ const EXACT_INTENTS = [
 
 const recentRequests = new Map()
 
+function accountScope(isAdmin, adminLabel = 'En el sistema', clientLabel = 'En tu cuenta') {
+  return isAdmin ? adminLabel : clientLabel
+}
+
 function normalizeText(text = '') {
   return String(text)
-    .replace(/[<>]/g, '')
+    .replaceAll(/[<>]/g, '')
     .trim()
     .slice(0, 300)
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replaceAll(/[\u0300-\u036f]/g, '')
 }
 
 function hasAny(clean, words) {
@@ -173,7 +177,7 @@ function detectIntentScored(clean) {
 
 function detectIntent(q) {
   if (!q) return 'unknown'
-  const clean = q.replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim()
+  const clean = q.replaceAll(/[^\w\s]/g, ' ').replaceAll(/\s+/g, ' ').trim()
 
   for (const rule of EXACT_INTENTS) {
     if (rule.any?.some((kw) => clean.includes(kw))) return rule.intent
@@ -249,13 +253,11 @@ export class ChatbotService {
 
     if (intent === 'con_trazabilidad') {
       const n = counts.conTrazabilidad ?? counts.lotes - counts.sinTrazabilidad
-      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
-      return `${scope} hay ${n} lotes con trazabilidad registrada.`
+      return `${accountScope(isAdmin)} hay ${n} lotes con trazabilidad registrada.`
     }
     if (intent === 'con_ia') {
       const n = counts.conIA ?? counts.lotes - counts.sinIA
-      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
-      return `${scope} hay ${n} lotes con predicción IA.`
+      return `${accountScope(isAdmin)} hay ${n} lotes con predicción IA.`
     }
 
     if (intent === 'mejor_lote') {
@@ -276,8 +278,7 @@ export class ChatbotService {
     }
     if (intent === 'promedio_calidad') {
       const prom = isAdmin ? await ChatbotDataService.promedioCalidadGlobal(user) : counts.promedioCalidad ?? (await ChatbotDataService.promedioCalidadGlobal(user))
-      const scope = isAdmin ? 'El promedio global de calidad' : 'Tu promedio de calidad'
-      return `${scope} es ${prom} puntos (escala 70–95 en datos demo).`
+      return `${accountScope(isAdmin, 'El promedio global de calidad', 'Tu promedio de calidad')} es ${prom} puntos (escala 70–95 en datos demo).`
     }
     if (intent === 'productor_mejor_calidad') {
       const row = await ChatbotDataService.productorMejorCalidad(user)
@@ -326,9 +327,8 @@ export class ChatbotService {
     if (intent === 'alertas_ia' || intent === 'riesgo_alto') {
       const total = await ChatbotDataService.alertasCount(user)
       const lista = await ChatbotDataService.lotesRiesgoAlto(user, 5)
-      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
       const ejemplos = lista?.length ? formatLoteList(lista.map((r) => ({ codigo_lote: r.codigo_lote, productor: null }))) : 'ninguno'
-      return `${scope} hay ${total} alertas IA. Lotes con riesgo ≥50%: ${ejemplos}.`
+      return `${accountScope(isAdmin)} hay ${total} alertas IA. Lotes con riesgo ≥50%: ${ejemplos}.`
     }
     if (intent === 'railway_status') {
       return 'Railway hospeda el backend Express y MySQL en producción (cafe-sostenible-api-production). El estado depende del despliegue activo; verifica el panel Railway si hay indisponibilidad.'
@@ -402,17 +402,14 @@ export class ChatbotService {
     }
     if (intent === 'sin_trazabilidad') {
       const lista = await ChatbotDataService.listLotesSinTrazabilidad(user, 5)
-      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
-      return `${scope} hay ${counts.sinTrazabilidad} lotes sin trazabilidad. Ejemplos: ${formatLoteList(lista)}`
+      return `${accountScope(isAdmin)} hay ${counts.sinTrazabilidad} lotes sin trazabilidad. Ejemplos: ${formatLoteList(lista)}`
     }
     if (intent === 'sin_ia') {
       const lista = await ChatbotDataService.listLotesSinIA(user, 5)
-      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
-      return `${scope} hay ${counts.sinIA} lotes sin predicción IA. Ejemplos: ${formatLoteList(lista)}`
+      return `${accountScope(isAdmin)} hay ${counts.sinIA} lotes sin predicción IA. Ejemplos: ${formatLoteList(lista)}`
     }
     if (intent === 'sin_calidad') {
-      const scope = isAdmin ? 'En el sistema' : 'En tu cuenta'
-      return `${scope} hay ${counts.sinCalidad} lotes pendientes de control de calidad.`
+      return `${accountScope(isAdmin)} hay ${counts.sinCalidad} lotes pendientes de control de calidad.`
     }
     if (intent === 'mi_produccion') {
       if (isAdmin) return `La producción global es ${counts.produccionKg ?? 'N/D'} kg (suma de lotes). Consulta Reportes para detalle por cliente.`

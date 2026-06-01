@@ -1,3 +1,5 @@
+import PropTypes from 'prop-types'
+
 export default function PageLoader({ label = 'Cargando...' }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 animate-fadeIn" role="status">
@@ -8,4 +10,8 @@ export default function PageLoader({ label = 'Cargando...' }) {
       <p className="text-sm font-medium text-muted">{label}</p>
     </div>
   )
+}
+
+PageLoader.propTypes = {
+  label: PropTypes.string,
 }

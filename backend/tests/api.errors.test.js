@@ -2,6 +2,11 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createApp } from '../src/app.js'
 
+async function closeServer(server) {
+  server.closeAllConnections?.()
+  await new Promise((resolve) => server.close(resolve))
+}
+
 test('GET /api/ruta-inexistente responde 404', async () => {
   const app = createApp()
   const server = app.listen(0)
@@ -12,7 +17,7 @@ test('GET /api/ruta-inexistente responde 404', async () => {
     const body = await res.json()
     assert.ok(body.message)
   } finally {
-    server.close()
+    await closeServer(server)
   }
 })
 
@@ -28,6 +33,6 @@ test('POST /api/lotes sin token responde 401', async () => {
     })
     assert.equal(res.status, 401)
   } finally {
-    server.close()
+    await closeServer(server)
   }
 })

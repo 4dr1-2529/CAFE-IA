@@ -1,7 +1,6 @@
-import { test, describe, before, after } from 'node:test'
+import { test, describe, before } from 'node:test'
 import assert from 'node:assert/strict'
 import { createApp } from '../src/app.js'
-import { closePool } from '../src/infrastructure/database/pool.js'
 
 let token = null
 let app
@@ -9,7 +8,11 @@ let baseUrl
 let server
 
 async function api(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  const headers = {
+    'Content-Type': 'application/json',
+    Connection: 'close',
+    ...options.headers,
+  }
   if (token) headers.Authorization = `Bearer ${token}`
   const res = await fetch(`${baseUrl}${path}`, { ...options, headers })
   const text = await res.text()
@@ -28,12 +31,6 @@ describe('Integración API PMV2', { skip: process.env.SKIP_INTEGRATION === '1' }
         resolve(server)
       })
     })
-  })
-
-  after(async () => {
-    if (!server) return
-    await new Promise((resolve) => server.close(resolve))
-    await closePool()
   })
 
   test('login admin', async () => {

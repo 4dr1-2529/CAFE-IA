@@ -17,6 +17,151 @@ function toCount(row, field = 'c') {
   return Number(v) || 0
 }
 
+function buildDashboardCards(isAdmin, ctx) {
+  const {
+    totalClientes,
+    totalProductores,
+    totalLotes,
+    conTraz,
+    sinTraz,
+    conIa,
+    sinIa,
+    lotesAgg,
+    calidadAgg,
+    predAgg,
+    reportesAgg,
+    auditoriaAgg,
+    lotesPendientesCliente,
+  } = ctx
+
+  if (isAdmin) {
+    return {
+      totalClientes,
+      totalUsuarios: totalClientes,
+      totalProductores: toCount(totalProductores),
+      totalLotes,
+      lotesConTrazabilidad: conTraz,
+      lotesSinTrazabilidad: sinTraz || Math.max(0, totalLotes - conTraz),
+      lotesConIA: conIa,
+      lotesSinIA: sinIa || Math.max(0, totalLotes - conIa),
+      produccionTotalKg: Number(lotesAgg?.kg) || 0,
+      promedioCalidad: Math.round(Number(calidadAgg?.promedio) || 0),
+      prediccionesIA: toCount(predAgg, 'total'),
+      reportesGenerados: toCount(reportesAgg),
+      accionesAuditoria: toCount(auditoriaAgg),
+      lotesActivos: Number(lotesAgg?.activos) || 0,
+    }
+  }
+
+  return {
+    misProductores: toCount(totalProductores),
+    misLotes: totalLotes,
+    misLotesActivos: Number(lotesAgg?.activos) || 0,
+    misLotesConTrazabilidad: conTraz,
+    misLotesSinTrazabilidad: sinTraz || Math.max(0, totalLotes - conTraz),
+    misLotesConIA: conIa,
+    misLotesSinIA: sinIa || Math.max(0, totalLotes - conIa),
+    miProduccionKg: Number(lotesAgg?.kg) || 0,
+    miPromedioCalidad: Math.round(Number(calidadAgg?.promedio) || 0),
+    misPrediccionesIA: Number(predAgg?.total) || 0,
+    misReportes: Number(reportesAgg?.c) || 0,
+    lotesActivos: Number(lotesAgg?.activos) || 0,
+    misPendientes: Array.isArray(lotesPendientesCliente) ? lotesPendientesCliente.length : 0,
+  }
+}
+
+function buildDashboardIndicadores(isAdmin, ctx) {
+  const {
+    productorMayorProd,
+    productorMejorCalidad,
+    mejorLote,
+    lotesRiesgo,
+    ultimaPrediccion,
+    usuarioMasActivo,
+    moduloMasUsado,
+    produccionMes,
+    clienteMayorProduccion,
+    mejorLoteUser,
+    peorLoteUser,
+    ultimoRegistroProd,
+  } = ctx
+
+  if (isAdmin) {
+    return {
+      productorMayorProduccion: productorMayorProd || null,
+      productorMejorCalidad: productorMejorCalidad || null,
+      mejorLote: mejorLote || null,
+      loteRiesgoAlto: lotesRiesgo[0] || null,
+      ultimaPrediccionIA: ultimaPrediccion || null,
+      usuarioMasActivo: usuarioMasActivo || null,
+      moduloMasUsado: moduloMasUsado || null,
+      produccionMesActual: Number(produccionMes?.kg) || 0,
+      clienteMayorProduccion: clienteMayorProduccion || null,
+    }
+  }
+
+  return {
+    miMejorLote: mejorLoteUser || mejorLote || null,
+    miLoteMenorCalidad: peorLoteUser || null,
+    miUltimaPrediccionIA: ultimaPrediccion || null,
+    miProduccionMes: Number(produccionMes?.kg) || 0,
+    miUltimoRegistroProduccion: ultimoRegistroProd || null,
+  }
+}
+
+function buildDashboardGraficas(ctx) {
+  const {
+    produccionMensual,
+    calidadMensual,
+    estadosLotes,
+    prediccionesResultado,
+    produccionPorProductor,
+    actividadPorUsuario,
+    distribucionCalidad,
+  } = ctx
+
+  return {
+    produccionPorMes: (produccionMensual || []).reverse().map((r) => ({
+      mes: r.mes,
+      produccion: Number(r.kg) || 0,
+    })),
+    calidadPorMes: (calidadMensual || []).reverse().map((r) => ({
+      mes: r.mes,
+      promedio: Number(r.promedio) || 0,
+    })),
+    lotesPorEstado: estadosLotes || [],
+    prediccionesPorResultado: prediccionesResultado || [],
+    produccionPorProductor: (produccionPorProductor || []).map((r) => ({
+      productor: r.productor,
+      kg: Number(r.kg) || 0,
+    })),
+    actividadPorUsuario: actividadPorUsuario || [],
+    distribucionCalidad: distribucionCalidad || [],
+  }
+}
+
+function buildDashboardTablas(ctx) {
+  const {
+    ultimosLotes,
+    ultimosProductores,
+    ultimasAcciones,
+    lotesBajaCalidad,
+    lotesRiesgoTabla,
+    controlesRecientes,
+    prediccionesRecientes,
+  } = ctx
+
+  return {
+    ultimosLotes: ultimosLotes || [],
+    ultimosProductores: ultimosProductores || [],
+    ultimasAcciones: ultimasAcciones || [],
+    lotesBajaCalidad: lotesBajaCalidad || [],
+    lotesRiesgoAlto: lotesRiesgoTabla || [],
+    misControlesCalidad: controlesRecientes || [],
+    misPredicciones: prediccionesRecientes || [],
+  }
+}
+
 export class DashboardRepository {
   static async getAdminDashboard() {
     return DashboardRepository._build(null, true)
@@ -380,89 +525,53 @@ export class DashboardRepository {
     const sinIa = toCount(lotesSinIA)
     const totalClientes = isAdmin ? toCount(totalClientesRow) : 0
 
-    const cards = isAdmin
-      ? {
-          totalClientes,
-          totalUsuarios: totalClientes,
-          totalProductores: toCount(totalProductores),
-          totalLotes,
-          lotesConTrazabilidad: conTraz,
-          lotesSinTrazabilidad: sinTraz || Math.max(0, totalLotes - conTraz),
-          lotesConIA: conIa,
-          lotesSinIA: sinIa || Math.max(0, totalLotes - conIa),
-          produccionTotalKg: Number(lotesAgg?.kg) || 0,
-          promedioCalidad: Math.round(Number(calidadAgg?.promedio) || 0),
-          prediccionesIA: toCount(predAgg, 'total'),
-          reportesGenerados: toCount(reportesAgg),
-          accionesAuditoria: toCount(auditoriaAgg),
-          lotesActivos: Number(lotesAgg?.activos) || 0,
-        }
-      : {
-          misProductores: toCount(totalProductores),
-          misLotes: totalLotes,
-          misLotesActivos: Number(lotesAgg?.activos) || 0,
-          misLotesConTrazabilidad: conTraz,
-          misLotesSinTrazabilidad: sinTraz || Math.max(0, totalLotes - conTraz),
-          misLotesConIA: conIa,
-          misLotesSinIA: sinIa || Math.max(0, totalLotes - conIa),
-          miProduccionKg: Number(lotesAgg?.kg) || 0,
-          miPromedioCalidad: Math.round(Number(calidadAgg?.promedio) || 0),
-          misPrediccionesIA: Number(predAgg?.total) || 0,
-          misReportes: Number(reportesAgg?.c) || 0,
-          lotesActivos: Number(lotesAgg?.activos) || 0,
-          misPendientes: Array.isArray(lotesPendientesCliente) ? lotesPendientesCliente.length : 0,
-        }
-
-    const indicadores = isAdmin
-      ? {
-          productorMayorProduccion: productorMayorProd || null,
-          productorMejorCalidad: productorMejorCalidad || null,
-          mejorLote: mejorLote || null,
-          loteRiesgoAlto: lotesRiesgo[0] || null,
-          ultimaPrediccionIA: ultimaPrediccion || null,
-          usuarioMasActivo: usuarioMasActivo || null,
-          moduloMasUsado: moduloMasUsado || null,
-          produccionMesActual: Number(produccionMes?.kg) || 0,
-          clienteMayorProduccion: clienteMayorProduccion || null,
-        }
-      : {
-          miMejorLote: mejorLoteUser || mejorLote || null,
-          miLoteMenorCalidad: peorLoteUser || null,
-          miUltimaPrediccionIA: ultimaPrediccion || null,
-          miProduccionMes: Number(produccionMes?.kg) || 0,
-          miUltimoRegistroProduccion: ultimoRegistroProd || null,
-        }
+    const ctx = {
+      totalClientes,
+      totalProductores,
+      totalLotes,
+      conTraz,
+      sinTraz,
+      conIa,
+      sinIa,
+      lotesAgg,
+      calidadAgg,
+      predAgg,
+      reportesAgg,
+      auditoriaAgg,
+      lotesPendientesCliente,
+      productorMayorProd,
+      productorMejorCalidad,
+      mejorLote,
+      lotesRiesgo,
+      ultimaPrediccion,
+      usuarioMasActivo,
+      moduloMasUsado,
+      produccionMes,
+      clienteMayorProduccion,
+      mejorLoteUser,
+      peorLoteUser,
+      ultimoRegistroProd,
+      produccionMensual,
+      calidadMensual,
+      estadosLotes,
+      prediccionesResultado,
+      produccionPorProductor,
+      actividadPorUsuario,
+      distribucionCalidad,
+      ultimosLotes,
+      ultimosProductores,
+      ultimasAcciones,
+      lotesBajaCalidad,
+      lotesRiesgoTabla,
+      controlesRecientes,
+      prediccionesRecientes,
+    }
 
     return {
-      cards,
-      indicadores,
-      graficas: {
-        produccionPorMes: (produccionMensual || []).reverse().map((r) => ({
-          mes: r.mes,
-          produccion: Number(r.kg) || 0,
-        })),
-        calidadPorMes: (calidadMensual || []).reverse().map((r) => ({
-          mes: r.mes,
-          promedio: Number(r.promedio) || 0,
-        })),
-        lotesPorEstado: estadosLotes || [],
-        prediccionesPorResultado: prediccionesResultado || [],
-        produccionPorProductor: (produccionPorProductor || []).map((r) => ({
-          productor: r.productor,
-          kg: Number(r.kg) || 0,
-        })),
-        actividadPorUsuario: actividadPorUsuario || [],
-        distribucionCalidad: distribucionCalidad || [],
-      },
-      tablas: {
-        ultimosLotes: ultimosLotes || [],
-        ultimosProductores: ultimosProductores || [],
-        ultimasAcciones: ultimasAcciones || [],
-        lotesBajaCalidad: lotesBajaCalidad || [],
-        lotesRiesgoAlto: lotesRiesgoTabla || [],
-        misControlesCalidad: controlesRecientes || [],
-        misPredicciones: prediccionesRecientes || [],
-      },
+      cards: buildDashboardCards(isAdmin, ctx),
+      indicadores: buildDashboardIndicadores(isAdmin, ctx),
+      graficas: buildDashboardGraficas(ctx),
+      tablas: buildDashboardTablas(ctx),
       alertasIA: alertasIA || [],
       ultimaPrediccionDestacada: ultimaPrediccion || null,
       trazabilidadActiva: conTraz,
