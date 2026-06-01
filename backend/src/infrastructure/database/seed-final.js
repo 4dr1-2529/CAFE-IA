@@ -128,6 +128,86 @@ function pickPrediccion(puntaje) {
   return { calidad: 'Baja', riesgoPct: 58, nivel: 'alto' }
 }
 
+async function seedTrazabilidadLote(stats, loteId, codigoLote, fechaCosecha, parcela, userId) {
+  let orden = 1
+  for (const etapa of ETAPAS_TRAZA) {
+    await execute(
+      `INSERT INTO trazabilidad (lote_id, etapa, descripcion, fecha, ubicacion, estado, orden, usuario_registro_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [loteId, etapa, `${etapa} — ${codigoLote}`, fechaCosecha, parcela, orden <= 4 ? 'Completado' : 'En proceso', orden++, userId]
+    )
+    stats.trazabilidad++
+  }
+}
+
+async function seedCalidadLote(stats, ctx) {
+  const { loteId, userId, puntaje, estadoLote, humedad, p, l } = ctx
+  const calidadFinal = pickCalidad(puntaje)
+  await execute(
+    `INSERT INTO control_calidad (lote_id, user_id, evaluador_id, aroma, sabor, cuerpo, acidez, dulzor, balance, puntaje_taza, calidad_final, estado, observaciones, fecha_evaluacion)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Evaluado', ?, CURDATE())`,
+    [loteId, userId, userId, 7 + (puntaje % 3), 7.5 + (puntaje % 2), 7 + (l % 3), 7.2 + (p % 2), 7.8, 7.5, puntaje, calidadFinal, `Evaluación demo · ${estadoLote} · humedad ${humedad}% · ${calidadFinal}`]
+  )
+  stats.calidad++
+}
+
+async function seedIaLote(stats, ctx) {
+  const { loteId, userId, puntaje, globalLote, humedad, temp, altitud, proceso, variedad, estadoLote, codigoLote } = ctx
+  const pred = pickPrediccion(puntaje)
+  const confianza = 72 + (globalLote % 25)
+  const predIns = await execute(
+    `INSERT INTO predicciones_ia (lote_id, user_id, humedad, temperatura, altitud, tipo_secado, variedad_cafe, calidad_grano, calidad_predicha, confianza, porcentaje_riesgo, recomendacion, factores_influyentes, fecha_prediccion, modelo, origen, version_modelo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, 'Buena', ?, ?, ?, ?, ?, CURDATE(), ?, 'usuario', 'v2.0')`,
+    [loteId, userId, humedad, temp, altitud, proceso, variedad, pred.calidad, confianza, pred.riesgoPct, `Riesgo ${pred.nivel}: monitorear secado y humedad en etapa ${estadoLote}.`, JSON.stringify([{ factor: 'Humedad', impacto: pred.nivel === 'bajo' ? 'Positivo' : 'Neutral', nivel_riesgo: pred.nivel }]), 'Modelo predictivo heurístico v2.0']
+  )
+  stats.predicciones++
+  if (pred.riesgoPct >= 40) {
+    await execute(
+      `INSERT INTO alertas_ia (lote_id, prediccion_id, tipo_alerta, severidad, mensaje, fecha_alerta)
+       VALUES (?, ?, 'RIESGO_CALIDAD', ?, ?, CURDATE())`,
+      [loteId, predIns.insertId, pred.riesgoPct >= 50 ? 'alta' : 'media', `Alerta demo: riesgo ${pred.riesgoPct}% en ${codigoLote}`]
+    ).catch(() => {})
+    stats.alertas++
+  }
+}
+
+async function createLoteDemo(stats, demo, cliente) {
+  const {
+    globalLote, productorId, userId, codigoLote, estadoLote, variedad, proceso, kg, humedad, temp, altitud,
+    fechaCosecha, conTrazabilidad, conIA, puntaje, p, l, nombres, apellidos, parcela,
+  } = demo
+
+  const loteIns = await execute(
+    `INSERT INTO lotes (codigo_lote, productor_id, user_id, variedad_cafe, fecha_cosecha, cantidad_kg, estado, humedad, temperatura, altitud, tipo_secado, calidad_grano, qr_codigo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Buena', ?)`,
+    [codigoLote, productorId, userId, variedad, fechaCosecha, kg, estadoLote, humedad, temp, altitud, proceso, `CAFE-${globalLote}`]
+  )
+  const loteId = loteIns.insertId
+  stats.lotes++
+
+  await execute(`INSERT INTO inventario (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?, ?, CURDATE())`, [loteId, kg]).catch(() => {})
+  await execute(
+    `INSERT INTO produccion (lote_id, user_id, fecha_registro, cantidad_kg, humedad, temperatura, tipo_proceso, observaciones)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [loteId, userId, fechaCosecha, kg, humedad, temp, proceso, `Producción demo · ${codigoLote} · ${nombres} ${apellidos}`]
+  )
+  stats.produccion++
+
+  if (conTrazabilidad) {
+    await seedTrazabilidadLote(stats, loteId, codigoLote, fechaCosecha, parcela, userId)
+  }
+
+  const calidadCtx = { loteId, userId, puntaje, estadoLote, humedad, p, l }
+  await seedCalidadLote(stats, calidadCtx)
+
+  if (conIA) {
+    const iaCtx = { loteId, userId, puntaje, globalLote, humedad, temp, altitud, proceso, variedad, estadoLote, codigoLote }
+    await seedIaLote(stats, iaCtx)
+  }
+
+  await logAuditoria(stats, userId, `${cliente.nombres}`, 'CREAR_LOTE', 'lotes', loteId, `Lote ${codigoLote} — ${nombres} ${apellidos}`)
+}
+
 async function crearClientes(stats, clienteRolId, passwordHash) {
   const ids = []
   for (const c of CLIENTES) {
@@ -170,73 +250,28 @@ async function seedAll(stats, clientes, adminId) {
 
       for (let l = 1; l <= 6; l++) {
         globalLote++
-        const codigoLote = `L${String(globalLote).padStart(3, '0')}`
-        const estadoLote = ETAPAS_LOTE[(globalLote - 1) % 6]
-        const variedad = VARIEDADES[(globalLote + p) % VARIEDADES.length]
-        const proceso = PROCESOS[(globalLote + l) % PROCESOS.length]
-        const kg = 90 + ((globalLote * 17 + productorId * 11) % 380)
-        const humedad = 10.2 + (globalLote % 5) * 0.35
-        const temp = 17 + (globalLote % 6)
-        const fechaCosecha = `2026-${String(((globalLote - 1) % 12) + 1).padStart(2, '0')}-${String(((globalLote + l) % 25) + 1).padStart(2, '0')}`
-        const conTrazabilidad = globalLote <= 120
-        const conIA = globalLote <= 110
-        const puntaje = 70 + ((globalLote * 13 + l * 7) % 26)
-
-        const loteIns = await execute(
-          `INSERT INTO lotes (codigo_lote, productor_id, user_id, variedad_cafe, fecha_cosecha, cantidad_kg, estado, humedad, temperatura, altitud, tipo_secado, calidad_grano, qr_codigo)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Buena', ?)`,
-          [codigoLote, productorId, userId, variedad, fechaCosecha, kg, estadoLote, humedad, temp, altitud, proceso, `CAFE-${globalLote}`]
-        )
-        const loteId = loteIns.insertId
-        stats.lotes++
-
-        await execute(`INSERT INTO inventario (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?, ?, CURDATE())`, [loteId, kg]).catch(() => {})
-        await execute(
-          `INSERT INTO produccion (lote_id, user_id, fecha_registro, cantidad_kg, humedad, temperatura, tipo_proceso, observaciones)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [loteId, userId, fechaCosecha, kg, humedad, temp, proceso, `Producción demo · ${codigoLote} · ${nombres} ${apellidos}`]
-        )
-        stats.produccion++
-
-        if (conTrazabilidad) {
-          let orden = 1
-          for (const etapa of ETAPAS_TRAZA) {
-            await execute(
-              `INSERT INTO trazabilidad (lote_id, etapa, descripcion, fecha, ubicacion, estado, orden, usuario_registro_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-              [loteId, etapa, `${etapa} — ${codigoLote}`, fechaCosecha, parcela, orden <= 4 ? 'Completado' : 'En proceso', orden++, userId]
-            )
-            stats.trazabilidad++
-          }
-        }
-
-        const calidadFinal = pickCalidad(puntaje)
-        await execute(
-          `INSERT INTO control_calidad (lote_id, user_id, evaluador_id, aroma, sabor, cuerpo, acidez, dulzor, balance, puntaje_taza, calidad_final, estado, observaciones, fecha_evaluacion)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Evaluado', ?, CURDATE())`,
-          [loteId, userId, userId, 7 + (puntaje % 3), 7.5 + (puntaje % 2), 7 + (l % 3), 7.2 + (p % 2), 7.8, 7.5, puntaje, calidadFinal, `Evaluación demo · ${estadoLote} · humedad ${humedad}% · ${calidadFinal}`]
-        )
-        stats.calidad++
-
-        if (conIA) {
-          const pred = pickPrediccion(puntaje)
-          const confianza = 72 + (globalLote % 25)
-          const predIns = await execute(
-            `INSERT INTO predicciones_ia (lote_id, user_id, humedad, temperatura, altitud, tipo_secado, variedad_cafe, calidad_grano, calidad_predicha, confianza, porcentaje_riesgo, recomendacion, factores_influyentes, fecha_prediccion, modelo, origen, version_modelo)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'Buena', ?, ?, ?, ?, ?, CURDATE(), ?, 'usuario', 'v2.0')`,
-            [loteId, userId, humedad, temp, altitud, proceso, variedad, pred.calidad, confianza, pred.riesgoPct, `Riesgo ${pred.nivel}: monitorear secado y humedad en etapa ${estadoLote}.`, JSON.stringify([{ factor: 'Humedad', impacto: pred.nivel === 'bajo' ? 'Positivo' : 'Neutral', nivel_riesgo: pred.nivel }]), 'Modelo predictivo heurístico v2.0']
-          )
-          stats.predicciones++
-          if (pred.riesgoPct >= 40) {
-            await execute(
-              `INSERT INTO alertas_ia (lote_id, prediccion_id, tipo_alerta, severidad, mensaje, fecha_alerta)
-               VALUES (?, ?, 'RIESGO_CALIDAD', ?, ?, CURDATE())`,
-              [loteId, predIns.insertId, pred.riesgoPct >= 50 ? 'alta' : 'media', `Alerta demo: riesgo ${pred.riesgoPct}% en ${codigoLote}`]
-            ).catch(() => {})
-            stats.alertas++
-          }
-        }
-        await logAuditoria(stats, userId, `${cliente.nombres}`, 'CREAR_LOTE', 'lotes', loteId, `Lote ${codigoLote} — ${nombres} ${apellidos}`)
+        await createLoteDemo(stats, {
+          globalLote,
+          productorId,
+          userId,
+          codigoLote: `L${String(globalLote).padStart(3, '0')}`,
+          estadoLote: ETAPAS_LOTE[(globalLote - 1) % 6],
+          variedad: VARIEDADES[(globalLote + p) % VARIEDADES.length],
+          proceso: PROCESOS[(globalLote + l) % PROCESOS.length],
+          kg: 90 + ((globalLote * 17 + productorId * 11) % 380),
+          humedad: 10.2 + (globalLote % 5) * 0.35,
+          temp: 17 + (globalLote % 6),
+          altitud,
+          fechaCosecha: `2026-${String(((globalLote - 1) % 12) + 1).padStart(2, '0')}-${String(((globalLote + l) % 25) + 1).padStart(2, '0')}`,
+          conTrazabilidad: globalLote <= 120,
+          conIA: globalLote <= 110,
+          puntaje: 70 + ((globalLote * 13 + l * 7) % 26),
+          p,
+          l,
+          nombres,
+          apellidos,
+          parcela,
+        }, cliente)
       }
     }
   }

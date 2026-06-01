@@ -5,63 +5,75 @@ import { assertReportType } from '../../shared/sqlScope.js'
 import { queryScoped, queryOneScoped } from '../../shared/scopedQuery.js'
 import { TRAZA_LOTES_GLOBAL, TRAZA_LOTES_SCOPED } from '../../shared/trazabilidadSql.js'
 
+function reportTitle(alcance, globalLabel, personalLabel) {
+  return alcance === 'GLOBAL' ? globalLabel : personalLabel
+}
+
+async function buildProduccionReport(userId, headerMeta) {
+  const resumen = await queryOneScoped(userId, R.EXPORT_PROD_RESUMEN_GLOBAL, R.EXPORT_PROD_RESUMEN_SCOPED)
+  const rows = await queryScoped(userId, R.EXPORT_PROD_ROWS_GLOBAL, R.EXPORT_PROD_ROWS_SCOPED)
+  return {
+    titulo: reportTitle(headerMeta.alcance, 'Reporte global de Producción', 'Mi reporte de Producción'),
+    ...headerMeta,
+    resumen,
+    rows,
+    columns: ['Código', 'Variedad', 'Kg', 'Cosecha', 'Estado'],
+  }
+}
+
+async function buildCalidadReport(userId, headerMeta) {
+  const rows = await queryScoped(userId, R.EXPORT_CALIDAD_GLOBAL, R.EXPORT_CALIDAD_SCOPED)
+  return {
+    titulo: reportTitle(headerMeta.alcance, 'Reporte global de Calidad', 'Mi reporte de Calidad'),
+    ...headerMeta,
+    rows,
+    columns: ['Lote', 'Puntaje', 'Calidad', 'Fecha'],
+  }
+}
+
+async function buildIaReport(userId, headerMeta) {
+  const rows = await queryScoped(userId, R.EXPORT_IA_GLOBAL, R.EXPORT_IA_SCOPED)
+  return {
+    titulo: reportTitle(headerMeta.alcance, 'Reporte global IA / Predicciones', 'Mi reporte IA / Predicciones'),
+    ...headerMeta,
+    rows,
+    columns: ['Lote', 'Calidad predicha', 'Confianza %', 'Riesgo %', 'Fecha'],
+  }
+}
+
+async function buildTrazabilidadReport(userId, headerMeta) {
+  const rows = await queryScoped(userId, TRAZA_LOTES_GLOBAL, TRAZA_LOTES_SCOPED)
+  return {
+    titulo: reportTitle(headerMeta.alcance, 'Reporte global de Trazabilidad', 'Mi reporte de Trazabilidad'),
+    ...headerMeta,
+    rows,
+    columns: userId
+      ? ['Lote', 'Productor', 'Etapa actual', 'Estado', 'Última fecha', 'Ubicación']
+      : ['Lote', 'Productor', 'Cliente', 'Etapa actual', 'Estado', 'Última fecha', 'Ubicación'],
+  }
+}
+
+const REPORT_BUILDERS = {
+  produccion: buildProduccionReport,
+  calidad: buildCalidadReport,
+  ia: buildIaReport,
+  trazabilidad: buildTrazabilidadReport,
+}
+
 export class ReportExportService {
   static async buildReportData(tipo, userId = null, meta = {}) {
     const tipoNorm = assertReportType(tipo)
-    const fecha = new Date().toLocaleString('es-PE')
-    const alcance = meta.alcance || (userId ? 'PERSONAL' : 'GLOBAL')
+    const builder = REPORT_BUILDERS[tipoNorm]
+    if (!builder) throw Object.assign(new Error('Tipo de reporte inválido'), { status: 400 })
+
     const headerMeta = {
-      fecha,
-      alcance,
+      fecha: new Date().toLocaleString('es-PE'),
+      alcance: meta.alcance || (userId ? 'PERSONAL' : 'GLOBAL'),
       rol: meta.rol || (userId ? 'CLIENTE' : 'ADMIN'),
       usuario: meta.email || meta.nombre || '—',
     }
 
-    if (tipoNorm === 'produccion') {
-      const resumen = await queryOneScoped(
-        userId,
-        R.EXPORT_PROD_RESUMEN_GLOBAL,
-        R.EXPORT_PROD_RESUMEN_SCOPED
-      )
-      const rows = await queryScoped(userId, R.EXPORT_PROD_ROWS_GLOBAL, R.EXPORT_PROD_ROWS_SCOPED)
-      return {
-        titulo: alcance === 'GLOBAL' ? 'Reporte global de Producción' : 'Mi reporte de Producción',
-        ...headerMeta,
-        resumen,
-        rows,
-        columns: ['Código', 'Variedad', 'Kg', 'Cosecha', 'Estado'],
-      }
-    }
-    if (tipoNorm === 'calidad') {
-      const rows = await queryScoped(userId, R.EXPORT_CALIDAD_GLOBAL, R.EXPORT_CALIDAD_SCOPED)
-      return {
-        titulo: alcance === 'GLOBAL' ? 'Reporte global de Calidad' : 'Mi reporte de Calidad',
-        ...headerMeta,
-        rows,
-        columns: ['Lote', 'Puntaje', 'Calidad', 'Fecha'],
-      }
-    }
-    if (tipoNorm === 'ia') {
-      const rows = await queryScoped(userId, R.EXPORT_IA_GLOBAL, R.EXPORT_IA_SCOPED)
-      return {
-        titulo: alcance === 'GLOBAL' ? 'Reporte global IA / Predicciones' : 'Mi reporte IA / Predicciones',
-        ...headerMeta,
-        rows,
-        columns: ['Lote', 'Calidad predicha', 'Confianza %', 'Riesgo %', 'Fecha'],
-      }
-    }
-    if (tipoNorm === 'trazabilidad') {
-      const rows = await queryScoped(userId, TRAZA_LOTES_GLOBAL, TRAZA_LOTES_SCOPED)
-      return {
-        titulo: alcance === 'GLOBAL' ? 'Reporte global de Trazabilidad' : 'Mi reporte de Trazabilidad',
-        ...headerMeta,
-        rows,
-        columns: userId
-          ? ['Lote', 'Productor', 'Etapa actual', 'Estado', 'Última fecha', 'Ubicación']
-          : ['Lote', 'Productor', 'Cliente', 'Etapa actual', 'Estado', 'Última fecha', 'Ubicación'],
-      }
-    }
-    throw Object.assign(new Error('Tipo de reporte inválido'), { status: 400 })
+    return builder(userId, headerMeta)
   }
 
   static toPdf(tipo, data) {
