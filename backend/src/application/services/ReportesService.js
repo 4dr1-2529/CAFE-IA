@@ -4,15 +4,15 @@ import { ActionLogService } from './ActionLogService.js'
 import { RoleHelper } from '../../shared/RoleHelper.js'
 import { wrapReportesResponse } from '../../shared/reportesResponse.js'
 
-const EXPORT_TIPOS = new Set(['produccion', 'calidad', 'trazabilidad', 'ia', 'predicciones'])
+const EXPORT_TIPOS = new Set(['produccion', 'calidad', 'trazabilidad', 'ia'])
 
 function normalizeExportTipo(tipo) {
   const t = String(tipo || '').toLowerCase()
-  if (t === 'predicciones') return 'ia'
-  if (!EXPORT_TIPOS.has(t)) {
+  const canonical = t === 'predicciones' ? 'ia' : t
+  if (!EXPORT_TIPOS.has(canonical)) {
     throw Object.assign(new Error('Tipo de reporte inválido'), { status: 400 })
   }
-  return t === 'predicciones' ? 'ia' : t
+  return canonical
 }
 
 export class ReportesService {

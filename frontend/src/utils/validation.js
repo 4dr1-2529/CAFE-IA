@@ -1,4 +1,5 @@
 /** Validaciones reutilizables PMV2 */
+import { isValidEmail } from './inputValidation.js'
 
 export function required(value, label) {
   if (value === undefined || value === null || String(value).trim() === '') {
@@ -16,9 +17,7 @@ export function numberRange(value, min, max, label) {
 
 export function email(value) {
   if (!value) return null
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim())) {
-    return 'Correo electrónico no válido'
-  }
+  if (!isValidEmail(value)) return 'Correo electrónico no válido'
   return null
 }
 

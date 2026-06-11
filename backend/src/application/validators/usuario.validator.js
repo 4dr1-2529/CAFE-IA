@@ -1,4 +1,5 @@
 import { ROLES } from '../../shared/RoleHelper.js'
+import { isValidEmail, isValidPhone } from '../../shared/inputValidation.js'
 
 const ROLES_PERMITIDOS = new Set([ROLES.ADMIN, ROLES.CLIENTE])
 
@@ -9,21 +10,17 @@ export function validateCreateUsuario(body = {}) {
   if (!body.password || String(body.password).length < 6) errors.push('contraseña debe tener al menos 6 caracteres')
   if (body.rol && !ROLES_PERMITIDOS.has(body.rol)) errors.push('rol debe ser admin o cliente')
   if (!body.rol) errors.push('rol es obligatorio')
-  if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email))) errors.push('email no válido')
-  if (body.telefono && !/^\d+$/.test(String(body.telefono).replaceAll(/\s/g, ''))) {
-    errors.push('teléfono solo debe contener números')
-  }
+  if (body.email && !isValidEmail(body.email)) errors.push('email no válido')
+  if (body.telefono && !isValidPhone(body.telefono)) errors.push('teléfono solo debe contener números')
   return errors
 }
 
 export function validateUpdateUsuario(body = {}) {
   const errors = []
   if (body.nombres !== undefined && !String(body.nombres).trim()) errors.push('nombre no puede estar vacío')
-  if (body.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(body.email))) errors.push('email no válido')
+  if (body.email !== undefined && !isValidEmail(body.email)) errors.push('email no válido')
   if (body.rol && !ROLES_PERMITIDOS.has(body.rol)) errors.push('rol debe ser admin o cliente')
-  if (body.telefono && !/^\d+$/.test(String(body.telefono).replaceAll(/\s/g, ''))) {
-    errors.push('teléfono solo debe contener números')
-  }
+  if (body.telefono && !isValidPhone(body.telefono)) errors.push('teléfono solo debe contener números')
   return errors
 }
 

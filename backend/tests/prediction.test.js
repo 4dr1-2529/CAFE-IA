@@ -18,7 +18,7 @@ describe('PredictionEngine v2', () => {
     assert.ok(r.confianza >= 65)
     assert.ok(r.porcentaje_riesgo >= 0)
     assert.ok(Array.isArray(r.factores))
-    assert.ok(r.alertas.length >= 0)
+    assert.ok(Array.isArray(r.alertas))
   })
 
   test('detecta riesgo con humedad crítica', () => {

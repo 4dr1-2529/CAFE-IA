@@ -46,10 +46,10 @@ export function assertMysqlEnv() {
 /** Configuración MySQL: únicamente process.env.MYSQL* (sin localhost/root fallback). */
 export function getMysqlConfig() {
   assertMysqlEnv()
-  const ssl =
-    process.env.MYSQL_SSL === 'true' || process.env.RAILWAY_ENVIRONMENT
-      ? { rejectUnauthorized: false }
-      : undefined
+  const useSsl = process.env.MYSQL_SSL === 'true' || Boolean(process.env.RAILWAY_ENVIRONMENT)
+  const ssl = useSsl
+    ? { rejectUnauthorized: process.env.MYSQL_SSL_REJECT_UNAUTHORIZED === 'true' }
+    : undefined
 
   return {
     host: process.env.MYSQLHOST,

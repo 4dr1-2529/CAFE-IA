@@ -4,12 +4,22 @@ loadEnv()
 
 const db = getMysqlConfig()
 
+function resolveJwtSecret() {
+  const secret = process.env.JWT_SECRET?.trim()
+  if (secret) return secret
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET es obligatorio en producción. Defínalo en las variables de entorno.')
+  }
+  console.warn('[env] JWT_SECRET no definido; usando valor temporal solo para desarrollo local.')
+  return 'dev-only-jwt-secret-set-JWT_SECRET-in-env'
+}
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 3029,
   db,
   jwt: {
-    secret: process.env.JWT_SECRET || 'cafe_sostenible_dev_secret_change_in_production',
+    secret: resolveJwtSecret(),
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },

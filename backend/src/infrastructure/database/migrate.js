@@ -14,17 +14,18 @@ function readSql(filename) {
 }
 
 function connectionBase(overrides = {}) {
-  const base = {
-    host: process.env.MYSQLHOST,
-    port: Number(process.env.MYSQLPORT),
-    user: process.env.MYSQLUSER,
-    password: process.env.MYSQLPASSWORD,
-    multipleStatements: true,
+  return {
+    host: env.db.host,
+    port: env.db.port,
+    user: env.db.user,
+    password: env.db.password,
+    ...(env.db.ssl ? { ssl: env.db.ssl } : {}),
+    ...overrides,
   }
-  if (process.env.MYSQL_SSL === 'true' || process.env.RAILWAY_ENVIRONMENT) {
-    base.ssl = { rejectUnauthorized: false }
-  }
-  return { ...base, ...overrides }
+}
+
+function schemaConnectionBase(overrides = {}) {
+  return connectionBase({ multipleStatements: true, ...overrides })
 }
 
 async function queryTableCount(conn) {
@@ -60,7 +61,7 @@ export async function initDatabase() {
 
   if (env.db.railway) {
     adminConn = await mysql.createConnection(
-      connectionBase({ database: process.env.MYSQLDATABASE })
+      schemaConnectionBase({ database: process.env.MYSQLDATABASE })
     )
     try {
       await applySchemaIfNeeded(adminConn)
@@ -68,7 +69,7 @@ export async function initDatabase() {
       await adminConn.end()
     }
   } else {
-    adminConn = await mysql.createConnection(connectionBase())
+    adminConn = await mysql.createConnection(schemaConnectionBase())
     try {
       await adminConn.query(
         `CREATE DATABASE IF NOT EXISTS \`${process.env.MYSQLDATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
@@ -103,7 +104,11 @@ async function testConnection() {
 }
 
 async function seedCatalogsAndAdmin() {
-  const hash = await bcrypt.hash('admin123', 10)
+  const seedPassword = process.env.ADMIN_SEED_PASSWORD?.trim()
+  if (!seedPassword) {
+    console.warn('[seed] ADMIN_SEED_PASSWORD no definido; se omite usuario admin inicial.')
+  }
+
   await execute(
     `INSERT INTO roles (codigo, nombre, descripcion) VALUES
      ('admin','Administrador','Control total del sistema'),
@@ -113,14 +118,17 @@ async function seedCatalogsAndAdmin() {
 
   const [roles] = await getPool().execute(`SELECT id, codigo FROM roles`)
   const adminRole = roles.find((r) => r.codigo === 'admin')
-  if (!adminRole) return
-
-  await execute(
-    `INSERT INTO usuarios (rol_id, email, password_hash, nombres, apellidos, activo)
-     VALUES (?, 'admin@cafeai.com', ?, 'Admin', 'Sistema', 1)
-     ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), activo=1`,
-    [adminRole.id, hash]
-  ).catch(() => {})
+  if (adminRole && seedPassword) {
+    const hash = await bcrypt.hash(seedPassword, 10)
+    await execute(
+      `INSERT INTO usuarios (rol_id, email, password_hash, nombres, apellidos, activo)
+       VALUES (?, 'admin@cafeai.com', ?, 'Admin', 'Sistema', 1)
+       ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), activo=1`,
+      [adminRole.id, hash]
+    ).catch(() => {})
+  } else if (!adminRole) {
+    return
+  }
 
   await execute(
     `INSERT IGNORE INTO variedades_cafe (codigo, nombre, puntaje_base) VALUES

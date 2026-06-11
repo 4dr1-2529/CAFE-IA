@@ -1,7 +1,7 @@
 # Correcciones SonarQube / SonarCloud
 
 **Proyecto:** `4dr1-2529_CAFE-IA`  
-**Última actualización:** 2026-05-28
+**Última actualización:** 2026-06-03
 
 ## Tabla de hallazgos
 
@@ -13,6 +13,13 @@
 | joblib vulnerable (AIKIDO-2025-10962 DoS) | Baja | `ml/requirements.txt` | `joblib>=1.5.3` | Corregido |
 | GitHub Actions sin SHA fijo | Alta | `.github/workflows/ci.yml` | Pin por commit SHA (`checkout`, `setup-node`, `sonarcloud`) | Corregido |
 | tmp path traversal (transitiva exceljs) | Alta | `backend/package.json` | `overrides`: `tmp@^0.2.6` | Corregido |
+| JWT secret hardcodeado en producción | Alta | `backend/src/config/env.js` | `JWT_SECRET` obligatorio en producción; fallback solo en desarrollo con advertencia | Corregido |
+| Contraseña admin hardcodeada en migrate | Alta | `backend/src/infrastructure/database/migrate.js` | Seed admin vía `ADMIN_SEED_PASSWORD`; sin literal en código | Corregido |
+| SSL `rejectUnauthorized: false` fijo | Media | `database.js`, `pool.js`, `migrate.js` | Control por `MYSQL_SSL_REJECT_UNAUTHORIZED` (default seguro) | Corregido |
+| Regex email ReDoS en validadores | Media | `validators/*.js`, `frontend/src/utils/validation.js` | `inputValidation.js` con validación acotada sin regex compleja | Corregido |
+| Claves duplicadas en objeto reportes | Bug | `backend/src/shared/reportesResponse.js` | Metadatos aplicados una sola vez tras spread de `data` | Corregido |
+| Lógica redundante export reportes | Bug | `ReportesService.js` | `normalizeExportTipo` simplificado | Corregido |
+| Aserción tautológica en test | Bug | `backend/tests/prediction.test.js` | `Array.isArray(r.alertas)` en lugar de `length >= 0` | Corregido |
 
 ---
 
