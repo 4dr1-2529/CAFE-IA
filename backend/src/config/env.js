@@ -1,23 +1,30 @@
-import crypto from 'node:crypto'
 import { loadEnv, getMysqlConfig } from './database.js'
 
 loadEnv()
 
 const db = getMysqlConfig()
-
-let devJwtSecret
+const MIN_JWT_SECRET_LEN = 32
 
 function resolveJwtSecret() {
   const secret = process.env.JWT_SECRET?.trim()
-  if (secret) return secret
+  if (!secret) {
+    throw new Error('JWT_SECRET es obligatorio. Copie backend/.env.example a backend/.env y defina un secreto.')
+  }
+  if (secret.length < MIN_JWT_SECRET_LEN) {
+    throw new Error(`JWT_SECRET debe tener al menos ${MIN_JWT_SECRET_LEN} caracteres.`)
+  }
+  return secret
+}
+
+function parseCorsOrigins() {
+  const raw = process.env.CORS_ORIGINS?.trim()
+  if (raw) {
+    return raw.split(',').map((s) => s.trim()).filter(Boolean)
+  }
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('JWT_SECRET es obligatorio en producción. Defínalo en las variables de entorno.')
+    throw new Error('CORS_ORIGINS es obligatorio en producción.')
   }
-  if (!devJwtSecret) {
-    console.warn('[env] JWT_SECRET no definido; generando secreto efímero para desarrollo local.')
-    devJwtSecret = crypto.randomBytes(32).toString('hex')
-  }
-  return devJwtSecret
+  return ['http://localhost:5174', 'http://127.0.0.1:5174']
 }
 
 export const env = {
@@ -29,10 +36,7 @@ export const env = {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
-  corsOrigins: (process.env.CORS_ORIGINS || 'http://localhost:5174,http://127.0.0.1:5174,https://cafe-ia-inky.vercel.app')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean),
+  corsOrigins: parseCorsOrigins(),
   requireAuth: process.env.REQUIRE_AUTH === 'true',
   allowPublicRegister: process.env.ALLOW_PUBLIC_REGISTER === 'true',
 }

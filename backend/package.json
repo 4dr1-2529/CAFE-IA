@@ -13,6 +13,7 @@
     "db:verify:dashboard": "node scripts/verifyDashboardData.js",
     "db:docs": "node scripts/generateDbDocs.js",
     "db:docs:full": "node scripts/generateDbDocs.js -- --full",
+    "db:docs:png": "node scripts/exportDbDocPng.js",
     "seed:final": "node scripts/reset-and-seed-final.js",
     "test": "node --test --test-concurrency=1 --test-force-exit tests/**/*.test.js"
   },

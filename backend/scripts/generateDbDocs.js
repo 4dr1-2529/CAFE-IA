@@ -41,7 +41,7 @@ async function main() {
   }
 
   const images = await exportMermaidImages(parsed, live)
-  console.log(`[db:docs] Imágenes en ${ARQUITECTURA_DIR}: ${images.length} PNG`)
+  console.log(`[db:docs] Diagramas Mermaid en ${ARQUITECTURA_DIR}: ${images.length} archivos (.mmd/.md)`)
 
   console.log('\n--- Resumen ---')
   console.log(`Tablas: ${parsed.tables.length}`)

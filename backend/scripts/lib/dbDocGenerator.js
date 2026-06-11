@@ -1,11 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const KROKI_MERMAID_PNG = 'https://kroki.io/mermaid/png'
-const MAX_KROKI_BYTES = 10 * 1024 * 1024
 export const SCHEMA_PATH = path.join(__dirname, '../../sql/schema.sql')
 export const DOCS_DIR = path.join(__dirname, '../../../docs/base-datos')
 export const ARQUITECTURA_DIR = path.join(
@@ -330,31 +327,6 @@ export function getDerGlobalMermaid(parsed) {
   return `erDiagram\n${sortLines(rels).join('\n')}`
 }
 
-async function renderPngViaKroki(body, pngPath) {
-  assertPathUnderDir(pngPath, ARQUITECTURA_DIR)
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 60000)
-  try {
-    const res = await fetch(KROKI_MERMAID_PNG, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body,
-      signal: controller.signal,
-    })
-    if (!res.ok) {
-      const errText = await res.text()
-      throw new Error(`Kroki ${res.status}: ${errText.slice(0, 120)}`)
-    }
-    const buffer = Buffer.from(await res.arrayBuffer())
-    if (buffer.length > MAX_KROKI_BYTES) {
-      throw new Error('Respuesta Kroki excede tamaño máximo permitido')
-    }
-    fs.writeFileSync(pngPath, buffer)
-  } finally {
-    clearTimeout(timer)
-  }
-}
-
 function assertPathUnderDir(filePath, dir) {
   const resolved = path.resolve(filePath)
   const base = path.resolve(dir)
@@ -362,40 +334,6 @@ function assertPathUnderDir(filePath, dir) {
     throw new Error(`Ruta fuera del directorio permitido: ${filePath}`)
   }
   return resolved
-}
-
-function defaultChromePath() {
-  const candidates = [
-    process.env.PUPPETEER_EXECUTABLE_PATH,
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium',
-  ]
-  return candidates.find((p) => p && fs.existsSync(p))
-}
-
-function renderPngViaMmdc(mmdPath, pngPath, width) {
-  assertPathUnderDir(mmdPath, ARQUITECTURA_DIR)
-  assertPathUnderDir(pngPath, ARQUITECTURA_DIR)
-  const args = ['-i', mmdPath, '-o', pngPath, '-w', String(width), '-b', 'white']
-  const env = { ...process.env, PUPPETEER_SKIP_DOWNLOAD: 'true' }
-  const chrome = defaultChromePath()
-  if (chrome) env.PUPPETEER_EXECUTABLE_PATH = chrome
-  const cwd = path.join(__dirname, '../..')
-  const opts = { stdio: 'pipe', cwd, timeout: 120000, env, windowsHide: true }
-  const mmdcWin = path.join(__dirname, '../../node_modules/.bin/mmdc.cmd')
-  const mmdcUnix = path.join(__dirname, '../../node_modules/.bin/mmdc')
-  if (fs.existsSync(mmdcWin)) {
-    execFileSync(mmdcWin, args, opts)
-    return
-  }
-  if (fs.existsSync(mmdcUnix)) {
-    execFileSync(mmdcUnix, args, opts)
-    return
-  }
-  execFileSync('npx', ['-y', '@mermaid-js/mermaid-cli@11.4.0', ...args], opts)
 }
 
 export async function exportMermaidImages(parsed, live) {
@@ -406,19 +344,16 @@ export async function exportMermaidImages(parsed, live) {
       file: 'der-modulos-base-datos',
       title: 'DER por módulos — Base de datos CAFE-IA',
       body: buildDerResumidoMermaid(),
-      width: 2000,
     },
     {
       file: 'der-relaciones-completas',
       title: 'DER completo — 39 tablas',
       body: getDerGlobalMermaid(parsed),
-      width: 3200,
     },
     {
       file: 'arquitectura-solucion-cafe-ia',
       title: 'Arquitectura de la solución — Café Sostenible AI',
       body: buildArquitecturaSolucionMermaid(),
-      width: 1600,
     },
   ]
 
@@ -428,10 +363,8 @@ export async function exportMermaidImages(parsed, live) {
       throw new Error(`Nombre de diagrama no permitido: ${spec.file}`)
     }
     const mmdPath = path.join(ARQUITECTURA_DIR, `${spec.file}.mmd`)
-    const pngPath = path.join(ARQUITECTURA_DIR, `${spec.file}.png`)
     const mdPath = path.join(ARQUITECTURA_DIR, `${spec.file}.md`)
     assertPathUnderDir(mmdPath, ARQUITECTURA_DIR)
-    assertPathUnderDir(pngPath, ARQUITECTURA_DIR)
     assertPathUnderDir(mdPath, ARQUITECTURA_DIR)
     fs.writeFileSync(mmdPath, spec.body, 'utf8')
     fs.writeFileSync(
@@ -439,22 +372,11 @@ export async function exportMermaidImages(parsed, live) {
       `# ${spec.title}\n\n> Generado: ${date}${live?.ok ? ` · MySQL \`${live.dbName}\` validado` : ''}\n\n\`\`\`mermaid\n${spec.body}\n\`\`\`\n\n![${spec.title}](./${spec.file}.png)\n`,
       'utf8'
     )
-    try {
-      try {
-        renderPngViaMmdc(mmdPath, pngPath, spec.width)
-      } catch (mmdcErr) {
-        console.warn(`[db:docs] mmdc falló (${spec.file}), intentando Kroki:`, mmdcErr.message?.slice(0, 120))
-        await renderPngViaKroki(spec.body, pngPath)
-        console.log(`[db:docs] PNG (Kroki): ${pngPath}`)
-      }
-      if (fs.existsSync(pngPath)) {
-        exported.push(pngPath)
-        console.log(`[db:docs] PNG: ${pngPath}`)
-      }
-    } catch (err) {
-      console.warn(`[db:docs] No se pudo exportar ${spec.file}.png:`, err.message?.slice(0, 200))
-    }
+    exported.push(mmdPath, mdPath)
+    console.log(`[db:docs] Mermaid: ${mmdPath}`)
   }
+
+  console.log('[db:docs] PNG: ejecute `npm run db:docs:png` para exportar imágenes con mmdc local.')
 
   const readme = `# Arquitectura de la solución planteada — CAFE-IA
 
@@ -474,9 +396,10 @@ export async function exportMermaidImages(parsed, live) {
 \`\`\`bash
 cd backend
 npm run db:docs:full
+npm run db:docs:png
 \`\`\`
 
-Incluye exportación PNG a esta carpeta.
+\`db:docs:full\` genera Markdown y Mermaid. \`db:docs:png\` exporta PNG con mmdc local.
 `
   fs.writeFileSync(path.join(ARQUITECTURA_DIR, 'README.md'), readme, 'utf8')
   return exported

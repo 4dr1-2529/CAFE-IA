@@ -23,6 +23,13 @@ jobs:
       - run: npm test --prefix backend
         env:
           SKIP_INTEGRATION: '1'
+          NODE_ENV: test
+          JWT_SECRET: ci_jwt_secret_para_tests_automatizados_min_32
+          MYSQLHOST: 127.0.0.1
+          MYSQLPORT: '3306'
+          MYSQLUSER: root
+          MYSQLPASSWORD: ''
+          MYSQLDATABASE: cafe_sostenible_test
 
   frontend:
     runs-on: ubuntu-latest
