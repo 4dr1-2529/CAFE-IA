@@ -1,8 +1,11 @@
+import crypto from 'node:crypto'
 import { loadEnv, getMysqlConfig } from './database.js'
 
 loadEnv()
 
 const db = getMysqlConfig()
+
+let devJwtSecret
 
 function resolveJwtSecret() {
   const secret = process.env.JWT_SECRET?.trim()
@@ -10,8 +13,11 @@ function resolveJwtSecret() {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('JWT_SECRET es obligatorio en producción. Defínalo en las variables de entorno.')
   }
-  console.warn('[env] JWT_SECRET no definido; usando valor temporal solo para desarrollo local.')
-  return 'dev-only-jwt-secret-set-JWT_SECRET-in-env'
+  if (!devJwtSecret) {
+    console.warn('[env] JWT_SECRET no definido; generando secreto efímero para desarrollo local.')
+    devJwtSecret = crypto.randomBytes(32).toString('hex')
+  }
+  return devJwtSecret
 }
 
 export const env = {

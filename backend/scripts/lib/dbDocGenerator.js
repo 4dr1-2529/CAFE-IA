@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const KROKI_MERMAID_PNG = 'https://kroki.io/mermaid/png'
+const MAX_KROKI_BYTES = 10 * 1024 * 1024
 export const SCHEMA_PATH = path.join(__dirname, '../../sql/schema.sql')
 export const DOCS_DIR = path.join(__dirname, '../../../docs/base-datos')
 export const ARQUITECTURA_DIR = path.join(
@@ -325,16 +327,37 @@ export function getDerGlobalMermaid(parsed) {
 }
 
 async function renderPngViaKroki(body, pngPath) {
-  const res = await fetch('https://kroki.io/mermaid/png', {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body,
-  })
-  if (!res.ok) {
-    const errText = await res.text()
-    throw new Error(`Kroki ${res.status}: ${errText.slice(0, 120)}`)
+  assertPathUnderDir(pngPath, ARQUITECTURA_DIR)
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 60000)
+  try {
+    const res = await fetch(KROKI_MERMAID_PNG, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body,
+      signal: controller.signal,
+    })
+    if (!res.ok) {
+      const errText = await res.text()
+      throw new Error(`Kroki ${res.status}: ${errText.slice(0, 120)}`)
+    }
+    const buffer = Buffer.from(await res.arrayBuffer())
+    if (buffer.length > MAX_KROKI_BYTES) {
+      throw new Error('Respuesta Kroki excede tamaño máximo permitido')
+    }
+    fs.writeFileSync(pngPath, buffer)
+  } finally {
+    clearTimeout(timer)
   }
-  fs.writeFileSync(pngPath, Buffer.from(await res.arrayBuffer()))
+}
+
+function assertPathUnderDir(filePath, dir) {
+  const resolved = path.resolve(filePath)
+  const base = path.resolve(dir)
+  if (resolved !== base && !resolved.startsWith(`${base}${path.sep}`)) {
+    throw new Error(`Ruta fuera del directorio permitido: ${filePath}`)
+  }
+  return resolved
 }
 
 function defaultChromePath() {
@@ -350,19 +373,25 @@ function defaultChromePath() {
 }
 
 function renderPngViaMmdc(mmdPath, pngPath, width) {
-  const mmdcWin = path.join(__dirname, '../../node_modules/.bin/mmdc.cmd')
-  const mmdcUnix = path.join(__dirname, '../../node_modules/.bin/mmdc')
-  const mmdc = fs.existsSync(mmdcWin) ? mmdcWin : fs.existsSync(mmdcUnix) ? mmdcUnix : null
-  const bin = mmdc ? `"${mmdc}"` : 'npx -y @mermaid-js/mermaid-cli@11.4.0'
+  assertPathUnderDir(mmdPath, ARQUITECTURA_DIR)
+  assertPathUnderDir(pngPath, ARQUITECTURA_DIR)
+  const args = ['-i', mmdPath, '-o', pngPath, '-w', String(width), '-b', 'white']
   const env = { ...process.env, PUPPETEER_SKIP_DOWNLOAD: 'true' }
   const chrome = defaultChromePath()
   if (chrome) env.PUPPETEER_EXECUTABLE_PATH = chrome
-  execSync(`${bin} -i "${mmdPath}" -o "${pngPath}" -w ${width} -b white`, {
-    stdio: 'pipe',
-    cwd: path.join(__dirname, '../..'),
-    timeout: 120000,
-    env,
-  })
+  const cwd = path.join(__dirname, '../..')
+  const opts = { stdio: 'pipe', cwd, timeout: 120000, env, windowsHide: true }
+  const mmdcWin = path.join(__dirname, '../../node_modules/.bin/mmdc.cmd')
+  const mmdcUnix = path.join(__dirname, '../../node_modules/.bin/mmdc')
+  if (fs.existsSync(mmdcWin)) {
+    execFileSync(mmdcWin, args, opts)
+    return
+  }
+  if (fs.existsSync(mmdcUnix)) {
+    execFileSync(mmdcUnix, args, opts)
+    return
+  }
+  execFileSync('npx', ['-y', '@mermaid-js/mermaid-cli@11.4.0', ...args], opts)
 }
 
 export async function exportMermaidImages(parsed, live) {
@@ -391,9 +420,15 @@ export async function exportMermaidImages(parsed, live) {
 
   const exported = []
   for (const spec of specs) {
+    if (!/^[a-z0-9-]+$/.test(spec.file)) {
+      throw new Error(`Nombre de diagrama no permitido: ${spec.file}`)
+    }
     const mmdPath = path.join(ARQUITECTURA_DIR, `${spec.file}.mmd`)
     const pngPath = path.join(ARQUITECTURA_DIR, `${spec.file}.png`)
     const mdPath = path.join(ARQUITECTURA_DIR, `${spec.file}.md`)
+    assertPathUnderDir(mmdPath, ARQUITECTURA_DIR)
+    assertPathUnderDir(pngPath, ARQUITECTURA_DIR)
+    assertPathUnderDir(mdPath, ARQUITECTURA_DIR)
     fs.writeFileSync(mmdPath, spec.body, 'utf8')
     fs.writeFileSync(
       mdPath,
@@ -403,7 +438,8 @@ export async function exportMermaidImages(parsed, live) {
     try {
       try {
         renderPngViaMmdc(mmdPath, pngPath, spec.width)
-      } catch {
+      } catch (mmdcErr) {
+        console.warn(`[db:docs] mmdc falló (${spec.file}), intentando Kroki:`, mmdcErr.message?.slice(0, 120))
         await renderPngViaKroki(spec.body, pngPath)
         console.log(`[db:docs] PNG (Kroki): ${pngPath}`)
       }
@@ -506,7 +542,9 @@ export function writeAllDocs(parsed, live, opts = {}) {
     })
   }
   for (const [name, content] of Object.entries(files)) {
-    fs.writeFileSync(path.join(DOCS_DIR, name), content, 'utf8')
+    const target = path.join(DOCS_DIR, name)
+    assertPathUnderDir(target, DOCS_DIR)
+    fs.writeFileSync(target, content, 'utf8')
   }
   return { files: Object.keys(files), parsed, live }
 }

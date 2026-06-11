@@ -20,6 +20,9 @@
 | Claves duplicadas en objeto reportes | Bug | `backend/src/shared/reportesResponse.js` | Metadatos aplicados una sola vez tras spread de `data` | Corregido |
 | Lógica redundante export reportes | Bug | `ReportesService.js` | `normalizeExportTipo` simplificado | Corregido |
 | Aserción tautológica en test | Bug | `backend/tests/prediction.test.js` | `Array.isArray(r.alertas)` en lugar de `length >= 0` | Corregido |
+| JWT dev hardcodeado / execSync shell | Alta | `env.js`, `dbDocGenerator.js` | Secreto efímero con `crypto`; `execFileSync` sin shell | Corregido |
+| SQL DDL / multipleStatements en migrate | Alta | `migrate.js` | `mysql.escapeId`, statements uno a uno, seed con logs | Corregido |
+| Variable auditDesc sin uso / formato inválido | Bug | `ReportesService.js` | `normalizeExportFormato` + auditoría con `auditDesc` | Corregido |
 
 ---
 

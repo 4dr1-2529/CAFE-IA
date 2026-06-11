@@ -5,6 +5,7 @@ import { RoleHelper } from '../../shared/RoleHelper.js'
 import { wrapReportesResponse } from '../../shared/reportesResponse.js'
 
 const EXPORT_TIPOS = new Set(['produccion', 'calidad', 'trazabilidad', 'ia'])
+const EXPORT_FORMATOS = new Set(['pdf', 'excel', 'xlsx'])
 
 function normalizeExportTipo(tipo) {
   const t = String(tipo || '').toLowerCase()
@@ -13,6 +14,14 @@ function normalizeExportTipo(tipo) {
     throw Object.assign(new Error('Tipo de reporte inválido'), { status: 400 })
   }
   return canonical
+}
+
+function normalizeExportFormato(formato) {
+  const f = String(formato || '').toLowerCase()
+  if (!EXPORT_FORMATOS.has(f)) {
+    throw Object.assign(new Error('Formato no soportado. Use pdf o excel'), { status: 400 })
+  }
+  return f
 }
 
 export class ReportesService {
@@ -54,6 +63,7 @@ export class ReportesService {
   static async export(tipo, formato, meta = {}) {
     RoleHelper.requireAuth(meta.user)
     const tipoNorm = normalizeExportTipo(tipo)
+    const formatoNorm = normalizeExportFormato(formato)
     const userId = RoleHelper.scopeUserId(meta.user)
     const isAdmin = RoleHelper.isAdmin(meta.user)
     const alcance = isAdmin ? 'GLOBAL' : 'PERSONAL'
@@ -67,31 +77,28 @@ export class ReportesService {
     if (!data || plain === '{}' || plain === '[]') {
       throw Object.assign(new Error('No hay datos para exportar el reporte solicitado'), { status: 400 })
     }
-    const auditDesc = `${isAdmin ? 'ADMIN' : 'CLIENTE'} generó reporte ${alcance} ${tipoNorm} ${formato.toUpperCase()}`
-    if (formato === 'pdf') {
+    const auditDesc = `${isAdmin ? 'ADMIN' : 'CLIENTE'} generó reporte ${alcance} ${tipoNorm} ${formatoNorm.toUpperCase()}`
+    if (formatoNorm === 'pdf') {
       await ActionLogService.fromMeta(meta, {
-        accion: isAdmin ? 'EXPORTAR_REPORTE_PDF' : 'EXPORTAR_REPORTE_PDF',
+        accion: 'EXPORTAR_REPORTE_PDF',
         modulo: 'reportes',
-        descripcion: `${meta.user?.nombre || 'Usuario'} exportó reporte ${tipoNorm} en PDF`,
+        descripcion: auditDesc,
         entidad: 'reportes',
         resultado: 'exito',
       })
       return { buffer: await ReportExportService.toPdf(tipoNorm, data), contentType: 'application/pdf', ext: 'pdf' }
     }
-    if (formato === 'excel' || formato === 'xlsx') {
-      await ActionLogService.fromMeta(meta, {
-        accion: isAdmin ? 'EXPORTAR_REPORTE_EXCEL' : 'EXPORTAR_REPORTE_EXCEL',
-        modulo: 'reportes',
-        descripcion: `${meta.user?.nombre || 'Usuario'} exportó reporte ${tipoNorm} en Excel`,
-        entidad: 'reportes',
-        resultado: 'exito',
-      })
-      return {
-        buffer: await ReportExportService.toExcel(tipoNorm, data),
-        contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ext: 'xlsx',
-      }
+    await ActionLogService.fromMeta(meta, {
+      accion: 'EXPORTAR_REPORTE_EXCEL',
+      modulo: 'reportes',
+      descripcion: auditDesc,
+      entidad: 'reportes',
+      resultado: 'exito',
+    })
+    return {
+      buffer: await ReportExportService.toExcel(tipoNorm, data),
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      ext: 'xlsx',
     }
-    throw Object.assign(new Error('Formato no soportado. Use pdf o excel'), { status: 400 })
   }
 }

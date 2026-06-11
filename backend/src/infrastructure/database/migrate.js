@@ -5,12 +5,18 @@ import mysql from 'mysql2/promise'
 import bcrypt from 'bcryptjs'
 import { env } from '../../config/env.js'
 import { logDatabaseTarget } from '../../config/database.js'
+import { assertValidDbName } from '../../shared/sqlIdentifier.js'
 import { getPool, query, queryOne, execute } from './pool.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const SQL_DIR = path.join(__dirname, '../../../sql')
 
 function readSql(filename) {
-  return fs.readFileSync(path.join(__dirname, '../../../sql', filename), 'utf8')
+  const safeName = path.basename(filename)
+  if (!/^[a-zA-Z0-9._-]+$/.test(safeName)) {
+    throw new Error('Nombre SQL no permitido')
+  }
+  return fs.readFileSync(path.join(SQL_DIR, safeName), 'utf8')
 }
 
 function connectionBase(overrides = {}) {
@@ -24,8 +30,21 @@ function connectionBase(overrides = {}) {
   }
 }
 
-function schemaConnectionBase(overrides = {}) {
-  return connectionBase({ multipleStatements: true, ...overrides })
+function splitSqlStatements(sql) {
+  return sql
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !s.startsWith('--'))
+}
+
+async function executeSchemaStatements(conn, sql) {
+  for (const statement of splitSqlStatements(sql)) {
+    await conn.query(statement)
+  }
+}
+
+function logSeedWarning(label, err) {
+  console.warn(`[seed] ${label}:`, err?.message || err)
 }
 
 async function queryTableCount(conn) {
@@ -44,12 +63,13 @@ async function applySchemaIfNeeded(conn) {
   const tables = await queryTableCount(conn)
   if (tables >= 5) return false
 
+  const dbName = assertValidDbName(process.env.MYSQLDATABASE)
   const schema = readSql('schema.sql')
   const cleaned = schema
     .replaceAll(/CREATE DATABASE[^;]+;/gi, '')
     .replaceAll(/USE\s+[^;]+;/gi, '')
-  await conn.query(`USE \`${process.env.MYSQLDATABASE}\``)
-  await conn.query(cleaned)
+  await conn.query(`USE ${mysql.escapeId(dbName)}`)
+  await executeSchemaStatements(conn, cleaned)
   console.log('Esquema MySQL aplicado desde schema.sql')
   return true
 }
@@ -61,7 +81,7 @@ export async function initDatabase() {
 
   if (env.db.railway) {
     adminConn = await mysql.createConnection(
-      schemaConnectionBase({ database: process.env.MYSQLDATABASE })
+      connectionBase({ database: assertValidDbName(process.env.MYSQLDATABASE) })
     )
     try {
       await applySchemaIfNeeded(adminConn)
@@ -69,10 +89,11 @@ export async function initDatabase() {
       await adminConn.end()
     }
   } else {
-    adminConn = await mysql.createConnection(schemaConnectionBase())
+    adminConn = await mysql.createConnection(connectionBase())
     try {
+      const dbName = assertValidDbName(process.env.MYSQLDATABASE)
       await adminConn.query(
-        `CREATE DATABASE IF NOT EXISTS \`${process.env.MYSQLDATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+        `CREATE DATABASE IF NOT EXISTS ${mysql.escapeId(dbName)} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
       )
       await applySchemaIfNeeded(adminConn)
     } finally {
@@ -91,7 +112,7 @@ export async function initDatabase() {
     await ensureDemoLotes()
   }
   await execute(`UPDATE lotes SET qr_codigo = CONCAT('CAFE-', id) WHERE qr_codigo IS NULL OR qr_codigo = ''`).catch(
-    () => {}
+    (err) => logSeedWarning('qr_codigo', err)
   )
   console.log('[MySQL] Conectado y inicializado correctamente')
 }
@@ -114,7 +135,7 @@ async function seedCatalogsAndAdmin() {
      ('admin','Administrador','Control total del sistema'),
      ('cliente','Cliente','Gestiona sus productores y lotes')
      ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), descripcion=VALUES(descripcion)`
-  ).catch(() => {})
+  ).catch((err) => logSeedWarning('roles', err))
 
   const [roles] = await getPool().execute(`SELECT id, codigo FROM roles`)
   const adminRole = roles.find((r) => r.codigo === 'admin')
@@ -125,38 +146,22 @@ async function seedCatalogsAndAdmin() {
        VALUES (?, 'admin@cafeai.com', ?, 'Admin', 'Sistema', 1)
        ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), activo=1`,
       [adminRole.id, hash]
-    ).catch(() => {})
-  } else if (!adminRole) {
+    ).catch((err) => logSeedWarning('admin', err))
     return
   }
 
   await execute(
     `INSERT IGNORE INTO variedades_cafe (codigo, nombre, puntaje_base) VALUES
      ('ARB','Arabica',85),('TYP','Typica',88),('BOU','Bourbon',86),('CAT','Caturra',82),('CTM','Catimor',78)`
-  ).catch(() => {})
-
-  await execute(
-    `INSERT IGNORE INTO procesos_secado (codigo, nombre, dias_estimados) VALUES
+  ).catch((err) => logSeedWarning('variedades_cafe', err)) (codigo, nombre, dias_estimados) VALUES
      ('NAT','Natural',14),('LAV','Lavado',10),('HON','Honey',12)`
-  ).catch(() => {})
-
-  await execute(
-    `INSERT IGNORE INTO estados_lote (codigo, nombre, orden, color) VALUES
+  ).catch((err) => logSeedWarning('procesos_secado', err)) (codigo, nombre, orden, color) VALUES
      ('PROD','Produccion',1,'#3B82F6'),('SEC','Secado',2,'#F59E0B'),('CAL','Calidad',3,'#8B5CF6'),('ALM','Almacenamiento',4,'#6366F1'),('COM','Comercializacion',5,'#10B981')`
-  ).catch(() => {})
-
-  await execute(
-    `INSERT IGNORE INTO criterios_calidad (codigo, nombre, peso) VALUES
+  ).catch((err) => logSeedWarning('estados_lote', err)) (codigo, nombre, peso) VALUES
      ('ARO','Aroma',1.2),('SAB','Sabor',1.5),('CUE','Cuerpo',1.0),('ACI','Acidez',1.0),('DUL','Dulzor',0.8),('BAL','Balance',1.0)`
-  ).catch(() => {})
-
-  await execute(
-    `INSERT IGNORE INTO configuraciones (clave, valor, tipo) VALUES
+  ).catch((err) => logSeedWarning('criterios_calidad', err)) (clave, valor, tipo) VALUES
      ('app.nombre','Café Sostenible AI','string'),('ia.modelo_version','v2.0-heuristic','string')`
-  ).catch(() => {})
-}
-
-async function ensureDemoData() {
+  ).catch((err) => logSeedWarning('configuraciones', err))
   const count = await queryOne('SELECT COUNT(*) AS c FROM productores WHERE deleted_at IS NULL')
   if (Number(count?.c) > 0) return
 
@@ -190,11 +195,7 @@ async function ensureDemoData() {
       `INSERT INTO productores (distrito_id, codigo_productor, nombres, apellidos, dni, telefono, correo, parcela, ubicacion, altitud, estado)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')`,
       [distId, ...p]
-    ).catch(() => {})
-  }
-}
-
-async function ensureDemoLotes() {
+    ).catch((err) => logSeedWarning('productores demo', err))
   const count = await queryOne('SELECT COUNT(*) AS c FROM lotes WHERE deleted_at IS NULL')
   if (Number(count?.c) > 0) return
 
@@ -226,11 +227,7 @@ async function ensureDemoLotes() {
       await execute(
         `INSERT INTO trazabilidad (lote_id, etapa, descripcion, fecha, ubicacion, estado, orden) VALUES (?,?,?,?,?,?,?)`,
         [ins.insertId, etapa, desc, dias === 0 ? l[3] : null, productor.parcela || productor.ubicacion || '', estado, orden++]
-      ).catch(() => {})
-    }
-    await execute(`INSERT INTO inventario (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?,?,CURDATE())`, [
+      ).catch((err) => logSeedWarning('trazabilidad demo', err)) (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?,?,CURDATE())`, [
       ins.insertId,
       l[4],
-    ]).catch(() => {})
-  }
-}
+    ]).catch((err) => logSeedWarning('inventario demo', err))
