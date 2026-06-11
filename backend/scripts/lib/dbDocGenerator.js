@@ -54,41 +54,141 @@ const TABLE_META = {
 
 const LOGICAL_NO_FK = [{ table: 'predicciones_ia', column: 'lote_id', ref: 'lotes(id)' }]
 
+function splitLines(text) {
+  return text.split('\n')
+}
+
+function extractPrimaryKey(body) {
+  const upper = body.toUpperCase()
+  const marker = 'AUTO_INCREMENT'
+  const idx = upper.indexOf(marker)
+  if (idx === -1) return null
+  const lineStart = body.lastIndexOf('\n', idx) + 1
+  const lineEnd = body.indexOf('\n', idx)
+  const line = body.slice(lineStart, lineEnd === -1 ? body.length : lineEnd).trim()
+  const firstToken = line.split(/\s+/)[0]
+  return /^\w+$/.test(firstToken) ? firstToken : null
+}
+
+function extractIndexNames(body) {
+  const names = []
+  for (const line of splitLines(body)) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const upper = trimmed.toUpperCase()
+    if (upper.startsWith('UNIQUE KEY ')) {
+      const name = trimmed.split(/\s+/)[2]
+      if (name && /^\w+$/.test(name)) names.push(name)
+    } else if (upper.startsWith('INDEX ')) {
+      const name = trimmed.split(/\s+/)[1]
+      if (name && /^\w+$/.test(name)) names.push(name)
+    }
+  }
+  return names
+}
+
+function hasDeletedAtColumn(body) {
+  return splitLines(body).some((line) => line.trim().split(/\s+/)[0]?.toLowerCase() === 'deleted_at')
+}
+
+function parseConstraintLine(line) {
+  const trimmed = line.trim()
+  if (!trimmed.toUpperCase().startsWith('CONSTRAINT ')) return null
+  const fkMarker = ' FOREIGN KEY '
+  const fkIdx = trimmed.toUpperCase().indexOf(fkMarker)
+  if (fkIdx === -1) return null
+  const name = trimmed.slice('CONSTRAINT '.length, fkIdx).trim()
+  const afterFk = trimmed.slice(fkIdx + fkMarker.length)
+  const colOpen = afterFk.indexOf('(')
+  const colClose = afterFk.indexOf(')')
+  if (colOpen === -1 || colClose === -1) return null
+  const column = afterFk.slice(colOpen + 1, colClose).trim()
+  const refMarker = 'REFERENCES '
+  const refIdx = afterFk.toUpperCase().indexOf(refMarker)
+  if (refIdx === -1) return null
+  const refPart = afterFk.slice(refIdx + refMarker.length)
+  const refOpen = refPart.indexOf('(')
+  const refClose = refPart.indexOf(')')
+  if (refOpen === -1 || refClose === -1) return null
+  return {
+    name,
+    table: null,
+    column,
+    refTable: refPart.slice(0, refOpen).trim(),
+    refColumn: refPart.slice(refOpen + 1, refClose).trim(),
+    onDelete: refPart.slice(refClose + 1).trim().replace(/\s+/g, ' ') || '—',
+  }
+}
+
+function parseAlterFkLine(line) {
+  const trimmed = line.trim()
+  if (!trimmed.toUpperCase().startsWith('ALTER TABLE ')) return null
+  const addMarker = ' ADD CONSTRAINT '
+  const addIdx = trimmed.toUpperCase().indexOf(addMarker)
+  if (addIdx === -1) return null
+  const table = trimmed.slice('ALTER TABLE '.length, addIdx).trim()
+  const fk = parseConstraintLine(trimmed.slice(addIdx + ' ADD '.length))
+  if (!fk) return null
+  return { ...fk, table }
+}
+
+function extractTables(sql) {
+  const tables = []
+  const marker = 'CREATE TABLE IF NOT EXISTS '
+  let searchFrom = 0
+  while (true) {
+    const idx = sql.indexOf(marker, searchFrom)
+    if (idx === -1) break
+    const startName = idx + marker.length
+    let nameEnd = startName
+    while (nameEnd < sql.length && /\w/.test(sql[nameEnd])) nameEnd++
+    const name = sql.slice(startName, nameEnd)
+    if (!name) break
+    let pos = nameEnd
+    while (pos < sql.length && sql[pos] !== '(') pos++
+    if (pos >= sql.length) break
+    let depth = 1
+    let i = pos + 1
+    while (i < sql.length && depth > 0) {
+      if (sql[i] === '(') depth++
+      else if (sql[i] === ')') depth--
+      i++
+    }
+    const body = sql.slice(pos + 1, i - 1)
+    if (sql.slice(i, i + 30).toUpperCase().includes('ENGINE')) {
+      tables.push({ name, body })
+    }
+    searchFrom = i
+  }
+  return tables
+}
+
+function extractInlineFks(sql) {
+  const fks = []
+  for (const line of splitLines(sql)) {
+    const fk = parseConstraintLine(line)
+    if (fk) fks.push(fk)
+  }
+  return fks
+}
+
+function extractAlterFks(sql) {
+  const fks = []
+  for (const line of splitLines(sql)) {
+    const fk = parseAlterFkLine(line)
+    if (fk) fks.push(fk)
+  }
+  return fks
+}
+
 export function readSchemaSql() {
   return fs.readFileSync(SCHEMA_PATH, 'utf8')
 }
 
 export function parseSchema(sql) {
-  const tables = [...sql.matchAll(/CREATE TABLE IF NOT EXISTS (\w+)\s*\(([\s\S]*?)\)\s*ENGINE/gi)].map((m) => ({
-    name: m[1],
-    body: m[2],
-  }))
-
-  const fks = [
-    ...sql.matchAll(
-      /CONSTRAINT (\w+) FOREIGN KEY \(([^)]+)\) REFERENCES (\w+)\((\w+)\)([^,\n)]*)/gi
-    ),
-  ].map((m) => ({
-    name: m[1],
-    table: null,
-    column: m[2].trim(),
-    refTable: m[3],
-    refColumn: m[4],
-    onDelete: (m[5] || '').replace(/\s+/g, ' ').trim() || '—',
-  }))
-
-  const alterFks = [
-    ...sql.matchAll(
-      /ALTER TABLE (\w+) ADD CONSTRAINT (\w+)\s+FOREIGN KEY \(([^)]+)\) REFERENCES (\w+)\((\w+)\)([^;]*)/gi
-    ),
-  ].map((m) => ({
-    name: m[2],
-    table: m[1],
-    column: m[3].trim(),
-    refTable: m[4],
-    refColumn: m[5],
-    onDelete: (m[6] || '').replace(/\s+/g, ' ').trim() || '—',
-  }))
+  const tables = extractTables(sql)
+  const fks = extractInlineFks(sql)
+  const alterFks = extractAlterFks(sql)
 
   for (const t of tables) {
     const body = t.body
@@ -97,10 +197,10 @@ export function parseSchema(sql) {
       if (body.includes(`CONSTRAINT ${fk.name}`)) fk.table = t.name
     }
     t.pk =
-      body.match(/(\w+)\s+INT\s+UNSIGNED\s+AUTO_INCREMENT\s+PRIMARY\s+KEY/i)?.[1] ||
+      extractPrimaryKey(body) ||
       (t.name === 'rol_permisos' ? '(rol_id, permiso_id)' : 'id')
-    t.indexes = [...body.matchAll(/(?:UNIQUE KEY|INDEX)\s+(\w+)/gi)].map((x) => x[1])
-    t.hasDeletedAt = /deleted_at/i.test(body)
+    t.indexes = extractIndexNames(body)
+    t.hasDeletedAt = hasDeletedAtColumn(body)
   }
 
   for (const fk of fks) {
