@@ -9,6 +9,7 @@ cafe-cursor/
 ├── backend/
 │   ├── sql/
 │   │   ├── schema.sql                 # 39 tablas MySQL (utf8mb4)
+│   ├── docs/base-datos/               # Modelo conceptual, lógico, físico, DER
 │   │   ├── seeds.sql                  # Datos iniciales catálogos
 │   │   └── views.sql                  # Vistas analíticas dashboard
 │   ├── src/
