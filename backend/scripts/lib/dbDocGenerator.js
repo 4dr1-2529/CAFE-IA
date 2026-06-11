@@ -237,6 +237,10 @@ export function buildPhysical(parsed, live) {
   return md
 }
 
+function sortLines(lines) {
+  return [...lines].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }))
+}
+
 function mermaidEntity(name) {
   return name.replace(/`/g, '')
 }
@@ -253,7 +257,7 @@ export function buildDer(parsed, live) {
     rels.add(`    ${mermaidEntity(r.ref.split('(')[0])} ||--o{ ${mermaidEntity(r.table)} : "${r.column}"`)
   }
 
-  const mermaidBody = `erDiagram\n${[...rels].sort().join('\n')}`
+  const mermaidBody = `erDiagram\n${sortLines(rels).join('\n')}`
   let md = `# Diagrama Entidad-Relación (DER) — Café Sostenible AI\n\n${sourceLine(live)}\n\n---\n\n`
   md += `## DER global\n\n\`\`\`mermaid\n${mermaidBody}\n\`\`\`\n\n## Entidades\n\n`
   md += tables.map((t) => `- \`${t.name}\``).join('\n')
@@ -323,7 +327,7 @@ export function getDerGlobalMermaid(parsed) {
   for (const r of LOGICAL_NO_FK) {
     rels.add(`    ${mermaidEntity(r.ref.split('(')[0])} ||--o{ ${mermaidEntity(r.table)} : "${r.column}"`)
   }
-  return `erDiagram\n${[...rels].sort().join('\n')}`
+  return `erDiagram\n${sortLines(rels).join('\n')}`
 }
 
 async function renderPngViaKroki(body, pngPath) {
