@@ -147,21 +147,37 @@ async function seedCatalogsAndAdmin() {
        ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), activo=1`,
       [adminRole.id, hash]
     ).catch((err) => logSeedWarning('admin', err))
+  } else if (!adminRole) {
     return
   }
 
   await execute(
     `INSERT IGNORE INTO variedades_cafe (codigo, nombre, puntaje_base) VALUES
      ('ARB','Arabica',85),('TYP','Typica',88),('BOU','Bourbon',86),('CAT','Caturra',82),('CTM','Catimor',78)`
-  ).catch((err) => logSeedWarning('variedades_cafe', err)) (codigo, nombre, dias_estimados) VALUES
+  ).catch((err) => logSeedWarning('variedades_cafe', err))
+
+  await execute(
+    `INSERT IGNORE INTO procesos_secado (codigo, nombre, dias_estimados) VALUES
      ('NAT','Natural',14),('LAV','Lavado',10),('HON','Honey',12)`
-  ).catch((err) => logSeedWarning('procesos_secado', err)) (codigo, nombre, orden, color) VALUES
+  ).catch((err) => logSeedWarning('procesos_secado', err))
+
+  await execute(
+    `INSERT IGNORE INTO estados_lote (codigo, nombre, orden, color) VALUES
      ('PROD','Produccion',1,'#3B82F6'),('SEC','Secado',2,'#F59E0B'),('CAL','Calidad',3,'#8B5CF6'),('ALM','Almacenamiento',4,'#6366F1'),('COM','Comercializacion',5,'#10B981')`
-  ).catch((err) => logSeedWarning('estados_lote', err)) (codigo, nombre, peso) VALUES
+  ).catch((err) => logSeedWarning('estados_lote', err))
+
+  await execute(
+    `INSERT IGNORE INTO criterios_calidad (codigo, nombre, peso) VALUES
      ('ARO','Aroma',1.2),('SAB','Sabor',1.5),('CUE','Cuerpo',1.0),('ACI','Acidez',1.0),('DUL','Dulzor',0.8),('BAL','Balance',1.0)`
-  ).catch((err) => logSeedWarning('criterios_calidad', err)) (clave, valor, tipo) VALUES
+  ).catch((err) => logSeedWarning('criterios_calidad', err))
+
+  await execute(
+    `INSERT IGNORE INTO configuraciones (clave, valor, tipo) VALUES
      ('app.nombre','Café Sostenible AI','string'),('ia.modelo_version','v2.0-heuristic','string')`
   ).catch((err) => logSeedWarning('configuraciones', err))
+}
+
+async function ensureDemoData() {
   const count = await queryOne('SELECT COUNT(*) AS c FROM productores WHERE deleted_at IS NULL')
   if (Number(count?.c) > 0) return
 
@@ -196,6 +212,10 @@ async function seedCatalogsAndAdmin() {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Activo')`,
       [distId, ...p]
     ).catch((err) => logSeedWarning('productores demo', err))
+  }
+}
+
+async function ensureDemoLotes() {
   const count = await queryOne('SELECT COUNT(*) AS c FROM lotes WHERE deleted_at IS NULL')
   if (Number(count?.c) > 0) return
 
@@ -227,7 +247,11 @@ async function seedCatalogsAndAdmin() {
       await execute(
         `INSERT INTO trazabilidad (lote_id, etapa, descripcion, fecha, ubicacion, estado, orden) VALUES (?,?,?,?,?,?,?)`,
         [ins.insertId, etapa, desc, dias === 0 ? l[3] : null, productor.parcela || productor.ubicacion || '', estado, orden++]
-      ).catch((err) => logSeedWarning('trazabilidad demo', err)) (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?,?,CURDATE())`, [
+      ).catch((err) => logSeedWarning('trazabilidad demo', err))
+    }
+    await execute(`INSERT INTO inventario (lote_id, cantidad_disponible_kg, fecha_actualizacion) VALUES (?,?,CURDATE())`, [
       ins.insertId,
       l[4],
     ]).catch((err) => logSeedWarning('inventario demo', err))
+  }
+}
