@@ -1,0 +1,19 @@
+{
+  "fecha_ejecucion": "2026-05-28T20:46:42.851Z",
+  "endpoint": "https://cafe-sostenible-api-production-03ad.up.railway.app/api/health",
+  "total_requests": 500,
+  "requests_exitosos": 500,
+  "requests_fallidos": 0,
+  "tiempo_promedio_ms": 443.05,
+  "tiempo_minimo_ms": 182,
+  "tiempo_maximo_ms": 2699,
+  "tiempo_p95_ms": 2614,
+  "tiempo_promedio_exitosos_ms": 443.05,
+  "duracion_total_segundos": 4.75,
+  "requests_por_minuto": 6320,
+  "disponibilidad_porcentaje": 100,
+  "concurrencia_usuarios": 50,
+  "cumple_objetivo_tiempo_2s": true,
+  "cumple_objetivo_rpm_300": true,
+  "cumple_objetivo_disponibilidad_99": true
+}

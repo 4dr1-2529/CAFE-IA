@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-05-28T17:32:24.216Z",
+  "baseUrl": "http://localhost:5174",
+  "browser": "electron",
+  "totalTests": 13,
+  "totalPassed": 13,
+  "totalFailed": 0,
+  "totalDuration": 348678,
+  "runs": [
+    {
+      "spec": "PF-01-login-admin.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-02-login-cliente.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-03-dashboard-admin.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-04-dashboard-cliente.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-05-productores.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-06-registro-produccion.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-07-trazabilidad.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-08-modulo-ia.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-09-reportes.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-10-chatbot.cy.js",
+      "tests": 1,
+      "passes": 1,
+      "failures": 0
+    },
+    {
+      "spec": "PF-11-roles.cy.js",
+      "tests": 3,
+      "passes": 3,
+      "failures": 0
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+﻿# npm audit report
+
+@babel/core  <=7.29.0
+@babel/core: Arbitrary File Read via sourceMappingURL Comment - https://github.com/advisories/GHSA-4x5r-pxfx-6jf8
+fix available via `npm audit fix`
+node_modules/@babel/core
+
+esbuild  <=0.24.2
+Severity: moderate
+esbuild enables any website to send any requests to the development server and read the response - https://github.com/advisories/GHSA-67mh-4wv8-2f99
+fix available via `npm audit fix --force`
+Will install vite@8.1.0, which is a breaking change
+node_modules/esbuild
+  vite  <=6.4.2
+  Depends on vulnerable versions of esbuild
+  node_modules/vite
+
+js-yaml  <=4.1.1
+Severity: moderate
+JS-YAML: Quadratic-complexity DoS in merge key handling via repeated aliases - https://github.com/advisories/GHSA-h67p-54hq-rp68
+fix available via `npm audit fix`
+node_modules/js-yaml
+
+react-router  6.7.0 - 6.30.3
+Severity: moderate
+React Router's same-origin redirect with path starting // causes open redirect via protocol-relative URL reinterpretation - https://github.com/advisories/GHSA-2j2x-hqr9-3h42
+fix available via `npm audit fix`
+node_modules/react-router
+  react-router-dom  6.6.3-pre.0 - 6.30.3
+  Depends on vulnerable versions of react-router
+  node_modules/react-router-dom
+
+
+6 vulnerabilities (1 low, 4 moderate, 1 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

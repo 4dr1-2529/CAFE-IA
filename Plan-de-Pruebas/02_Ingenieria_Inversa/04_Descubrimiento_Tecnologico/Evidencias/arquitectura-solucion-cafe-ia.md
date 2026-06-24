@@ -1,0 +1,25 @@
+# Arquitectura de la solución — Café Sostenible AI
+
+> Generado: 2026-06-04 · MySQL `cafe_sostenible` validado
+
+```mermaid
+flowchart TB
+    subgraph presentacion["Capa de presentación"]
+        FE["Frontend React + Vite<br/>Dashboard, lotes, IA, reportes"]
+    end
+    subgraph aplicacion["Capa de aplicación - Hexagonal"]
+        API["Backend Node.js + Express<br/>JWT, REST API, 11 repositorios"]
+        IA["Módulo IA<br/>Predicciones, alertas, recomendaciones"]
+    end
+    subgraph datos["Capa de datos"]
+        DB[("MySQL cafe_sostenible<br/>39 tablas · utf8mb4")]
+        VIEWS["Vistas v_lotes_resumen<br/>v_dashboard_kpis"]
+    end
+    FE -->|"HTTPS / REST + JWT"| API
+    API --> IA
+    API --> DB
+    IA --> DB
+    DB --- VIEWS
+```
+
+![Arquitectura de la solución — Café Sostenible AI](./arquitectura-solucion-cafe-ia.png)

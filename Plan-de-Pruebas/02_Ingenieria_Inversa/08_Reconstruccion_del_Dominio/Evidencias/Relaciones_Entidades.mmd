@@ -1,0 +1,17 @@
+flowchart LR
+    regiones --> provincias --> distritos
+    roles --> usuarios
+    usuarios --> productores
+    usuarios --> lotes
+    productores --> lotes
+    fincas -.->|FK opcional| lotes
+    lotes --> trazabilidad
+    lotes --> control_calidad
+    lotes --> predicciones_ia
+    lotes --> produccion
+    lotes --> inventario
+    usuarios --> auditoria_logs
+    usuarios --> sesiones
+    variedades_cafe -.-> lotes
+    procesos_secado -.-> lotes
+    estados_lote -.-> lotes

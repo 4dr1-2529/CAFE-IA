@@ -1,0 +1,18 @@
+﻿{
+    "body":  {
+                 "ok":  true,
+                 "revision":  "mysql-hexagonal-v2.6.1-usuarios-limit",
+                 "port":  8080,
+                 "pid":  25,
+                 "database":  "railway",
+                 "dbHost":  "mysql.railway.internal",
+                 "railway":  true,
+                 "routes":  [
+                                "GET /api/dashboard",
+                                "GET /api/usuarios",
+                                "GET /api/auth/usuarios"
+                            ]
+             },
+    "timestamp":  "2026-06-24T16:12:50.2229975Z",
+    "status_code":  200
+}

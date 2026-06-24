@@ -1,0 +1,167 @@
+﻿
+> cafe-sostenible-backend@2.0.0 test
+> node --test --test-concurrency=1 --test-force-exit tests/**/*.test.js
+
+TAP version 13
+# MYSQLHOST= 127.0.0.1
+# MYSQLUSER= root
+# MYSQLPORT= 3306
+# MYSQLDATABASE= cafe_sostenible
+# Subtest: GET /api/ruta-inexistente responde 404
+ok 1 - GET /api/ruta-inexistente responde 404
+  ---
+  duration_ms: 212.1089
+  type: 'test'
+  ...
+# Subtest: POST /api/lotes sin token responde 401
+ok 2 - POST /api/lotes sin token responde 401
+  ---
+  duration_ms: 92.2002
+  type: 'test'
+  ...
+# Subtest: CalidadService
+    # Subtest: computeScores: excelente >= 85
+    ok 1 - computeScores: excelente >= 85
+      ---
+      duration_ms: 2.7421
+      type: 'test'
+      ...
+    # Subtest: computeScores: regular con notas bajas
+    ok 2 - computeScores: regular con notas bajas
+      ---
+      duration_ms: 0.3155
+      type: 'test'
+      ...
+    # Subtest: computeScores: buena entre 75 y 84
+    ok 3 - computeScores: buena entre 75 y 84
+      ---
+      duration_ms: 0.254
+      type: 'test'
+      ...
+    1..3
+ok 3 - CalidadService
+  ---
+  duration_ms: 6.7005
+  type: 'suite'
+  ...
+# MYSQLHOST= 127.0.0.1
+# MYSQLUSER= root
+# MYSQLPORT= 3306
+# MYSQLDATABASE= cafe_sostenible
+# Subtest: GET /api/health responde ok
+ok 4 - GET /api/health responde ok
+  ---
+  duration_ms: 119.8077
+  type: 'test'
+  ...
+# MYSQLHOST= 127.0.0.1
+# MYSQLUSER= root
+# MYSQLPORT= 3306
+# MYSQLDATABASE= cafe_sostenible
+# MYSQLHOST= 127.0.0.1
+# MYSQLUSER= root
+# MYSQLPORT= 3306
+# MYSQLDATABASE= cafe_sostenible
+# Migraci├│n: roles ADMIN/CLIENTE aplicada
+# Subtest: Integraci├│n API PMV2
+    # Subtest: login admin
+    ok 1 - login admin
+      ---
+      duration_ms: 347.5682
+      type: 'test'
+      ...
+    # Subtest: GET /lotes con JWT
+    ok 2 - GET /lotes con JWT
+      ---
+      duration_ms: 31.5467
+      type: 'test'
+      ...
+    # Subtest: POST /lotes sin token responde 401
+    ok 3 - POST /lotes sin token responde 401
+      ---
+      duration_ms: 16.2323
+      type: 'test'
+      ...
+    # Subtest: POST /lotes inv├ílido responde 400
+    ok 4 - POST /lotes inv├ílido responde 400
+      ---
+      duration_ms: 14.6912
+      type: 'test'
+      ...
+    # Subtest: GET /dashboard/metrics
+    ok 5 - GET /dashboard/metrics
+      ---
+      duration_ms: 286.7496
+      type: 'test'
+      ...
+    1..5
+ok 5 - Integraci├│n API PMV2
+  ---
+  duration_ms: 990.1178
+  type: 'suite'
+  ...
+# Subtest: PredictionEngine v2
+    # Subtest: predice calidad alta con variables ├│ptimas
+    ok 1 - predice calidad alta con variables ├│ptimas
+      ---
+      duration_ms: 2.1392
+      type: 'test'
+      ...
+    # Subtest: detecta riesgo con humedad cr├¡tica
+    ok 2 - detecta riesgo con humedad cr├¡tica
+      ---
+      duration_ms: 0.3518
+      type: 'test'
+      ...
+    1..2
+ok 6 - PredictionEngine v2
+  ---
+  duration_ms: 4.5952
+  type: 'suite'
+  ...
+# Subtest: Validators
+    # Subtest: lote: rechaza body vac├¡o
+    ok 1 - lote: rechaza body vac├¡o
+      ---
+      duration_ms: 3.0871
+      type: 'test'
+      ...
+    # Subtest: lote: acepta body v├ílido
+    ok 2 - lote: acepta body v├ílido
+      ---
+      duration_ms: 1.1258
+      type: 'test'
+      ...
+    # Subtest: calidad: valida rango 1-10
+    ok 3 - calidad: valida rango 1-10
+      ---
+      duration_ms: 0.7955
+      type: 'test'
+      ...
+    # Subtest: productor: exige nombres y correo
+    ok 4 - productor: exige nombres y correo
+      ---
+      duration_ms: 0.5434
+      type: 'test'
+      ...
+    # Subtest: trazabilidad: exige lote_id y etapa
+    ok 5 - trazabilidad: exige lote_id y etapa
+      ---
+      duration_ms: 0.4615
+      type: 'test'
+      ...
+    1..5
+ok 7 - Validators
+  ---
+  duration_ms: 9.8297
+  type: 'suite'
+  ...
+1..7
+# tests 18
+# suites 4
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15048.4851

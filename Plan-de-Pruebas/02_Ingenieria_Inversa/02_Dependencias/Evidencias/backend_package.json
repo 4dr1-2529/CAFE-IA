@@ -1,0 +1,40 @@
+{
+  "name": "cafe-sostenible-backend",
+  "version": "2.0.0",
+  "description": "Backend hexagonal MySQL + JWT - Café Sostenible AI",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:seed": "node scripts/seed-demo.js",
+    "db:seed:pmv2": "node scripts/seed-pmv2.js",
+    "db:seed:multiusuario": "node scripts/seedMultiusuarioPMV2.js",
+    "db:seed:pendientes": "node scripts/seedPendientesPMV2.js",
+    "db:verify:dashboard": "node scripts/verifyDashboardData.js",
+    "db:docs": "node scripts/generateDbDocs.js",
+    "db:docs:full": "node scripts/generateDbDocs.js -- --full",
+    "db:docs:png": "node scripts/exportDbDocPng.js",
+    "seed:final": "node scripts/reset-and-seed-final.js",
+    "test": "node --test --test-concurrency=1 --test-force-exit tests/**/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.9.2",
+    "pdfkit": "^0.15.0"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.4.0",
+    "supertest": "^6.3.4"
+  },
+  "overrides": {
+    "tmp": "^0.2.6",
+    "uuid": "^11.1.1"
+  }
+}

@@ -1,0 +1,30 @@
+﻿# Diagrama Comunicacion Modulos — CAFE-IA
+
+**Fecha:** 2026-06-24
+
+```mermaid
+flowchart TB
+    API["/api Router index.js"]
+
+    API --> AUTH["/auth"]
+    API --> USR["/usuarios"]
+    API --> DASH["/dashboard"]
+    API --> PROD["/productores"]
+    API --> LOT["/lotes"]
+    API --> PRD["/produccion"]
+    API --> TRZ["/trazabilidad"]
+    API --> CAL["/control-calidad"]
+    API --> PIA["/predicciones"]
+    API --> REP["/reportes"]
+    API --> BOT["/chatbot"]
+    API --> AUD["/auditoria"]
+    API --> BDD["/base-datos"]
+    API --> ADM["/admin"]
+
+    PROD -.->|productor_id| LOT
+    LOT -.->|lote_id| TRZ
+    LOT -.->|lote_id| CAL
+    LOT -.->|lote_id| PIA
+    LOT -.->|lote_id| REP
+    AUTH -.->|JWT| USR & DASH & PROD & LOT
+```

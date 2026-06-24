@@ -1,0 +1,19 @@
+﻿# npm audit report
+
+dompurify  <=3.4.10
+Severity: moderate
+DOMPurify: Trusted Types policy survives `clearConfig()` and can poison later `RETURN_TRUSTED_TYPE` output - https://github.com/advisories/GHSA-vxr8-fq34-vvx9
+DOMPurify: Permanent `ALLOWED_ATTR` pollution via `setConfig()` bypassing the hook clone-guard (incomplete fix of the 3.4.7 hook-pollution patch) - https://github.com/advisories/GHSA-cmwh-pvxp-8882
+fix available via `npm audit fix`
+node_modules/dompurify
+
+form-data  4.0.0 - 4.0.5
+Severity: high
+form-data: CRLF injection in form-data via unescaped multipart field names and filenames - https://github.com/advisories/GHSA-hmw2-7cc7-3qxx
+fix available via `npm audit fix`
+node_modules/form-data
+
+2 vulnerabilities (1 moderate, 1 high)
+
+To address all issues, run:
+  npm audit fix

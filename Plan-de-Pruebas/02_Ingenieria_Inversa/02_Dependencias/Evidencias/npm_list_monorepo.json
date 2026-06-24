@@ -1,0 +1,16 @@
+﻿{
+  "version": "2.0.0",
+  "name": "cafe-sostenible",
+  "dependencies": {
+    "cross-env": {
+      "version": "7.0.3",
+      "resolved": "https://registry.npmjs.org/cross-env/-/cross-env-7.0.3.tgz",
+      "overridden": false
+    },
+    "cypress": {
+      "version": "13.17.0",
+      "resolved": "https://registry.npmjs.org/cypress/-/cypress-13.17.0.tgz",
+      "overridden": false
+    }
+  }
+}

@@ -1,0 +1,34 @@
+﻿# Diagrama Componentes — CAFE-IA
+
+**Fecha:** 2026-06-24
+
+```mermaid
+flowchart LR
+    subgraph FE["Frontend React"]
+        P[Pages x15]
+        C[Components ui/features]
+        CTX[Context Auth/Theme/Toast]
+        CLI[client.js fetch]
+        P --> C
+        P --> CLI
+        CTX --> P
+    end
+
+    subgraph BE["Backend Express"]
+        R[Routes x14]
+        MW[Middleware auth/rbac/audit]
+        CT[Controllers x13]
+        SV[Services x17]
+        RP[Repositories x11]
+        DOM[PredictionEngine]
+        R --> MW --> CT --> SV --> RP
+        SV --> DOM
+    end
+
+    subgraph BD["MySQL"]
+        SQL[(schema.sql 39 tablas)]
+    end
+
+    CLI -->|HTTPS /api| R
+    RP --> SQL
+```

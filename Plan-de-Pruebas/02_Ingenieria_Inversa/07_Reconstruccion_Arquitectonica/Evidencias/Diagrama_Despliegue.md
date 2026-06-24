@@ -1,0 +1,30 @@
+﻿# Diagrama Despliegue — CAFE-IA
+
+**Fecha:** 2026-06-24
+
+```mermaid
+flowchart TB
+    subgraph Dev["Desarrollo local"]
+        Vite[Vite :5174]
+        Node[Node :3029]
+        XAMPP[(MySQL local)]
+        Vite --> Node --> XAMPP
+    end
+
+    subgraph GitHub["GitHub"]
+        Repo[4dr1-2529/CAFE-IA]
+        CI[Actions CI<br/>test + build + Sonar]
+        Repo --> CI
+    end
+
+    subgraph Prod["ProducciÃ³n"]
+        Vercel[Vercel CDN<br/>dist/ SPA]
+        RailwayAPI[Railway Web Service<br/>npm start]
+        RailwayDB[(Railway MySQL 8)]
+        Vercel -->|VITE_API_URL| RailwayAPI
+        RailwayAPI --> RailwayDB
+    end
+
+    Repo -->|deploy| Vercel
+    Repo -->|deploy| RailwayAPI
+```

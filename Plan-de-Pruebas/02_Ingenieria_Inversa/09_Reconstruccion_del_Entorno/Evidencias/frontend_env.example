@@ -1,0 +1,13 @@
+# Backend Railway / local (sin /api al final)
+VITE_API_URL=https://cafe-sostenible-api-production-03ad.up.railway.app
+
+# Frontend producción (referencia — Vercel asigna el dominio)
+# https://cafe-ia-inky.vercel.app
+
+# Compatibilidad legacy (opcional)
+# VITE_API_BASE_URL=http://localhost:3029
+
+# Desarrollo local
+# VITE_API_URL=http://localhost:3029
+
+VITE_SHOW_DEMO_CREDENTIALS=false
