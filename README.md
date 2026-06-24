@@ -1,8 +1,11 @@
 # Café Sostenible AI · CAFE-IA
 
-**Sistema de trazabilidad inteligente para café sostenible** — monorepo full-stack con arquitectura hexagonal, MySQL, JWT/RBAC, IA predictiva, reportes exportables y despliegue en **Railway + Vercel**.
+**Sistema de trazabilidad inteligente para café sostenible** — plataforma full-stack con arquitectura hexagonal, MySQL, JWT/RBAC, IA predictiva, chatbot, reportes exportables y despliegue en **Railway + Vercel**.
+
+**Versión actual:** **PMV3 · Integrado** (consolida PMV1 + PMV2 con mejoras visuales en la web)
 
 [![GitHub](https://img.shields.io/badge/GitHub-4dr1--2529%2FCAFE--IA-181717?logo=github)](https://github.com/4dr1-2529/CAFE-IA)
+[![PMV3](https://img.shields.io/badge/PMV3-Integrado-amber)](PMV3_MEJORAS.md)
 [![Node](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js)]()
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)]()
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)]()
@@ -14,30 +17,100 @@
 
 ---
 
-## Enlaces
+## Enlaces rápidos
 
 | Recurso | URL |
 |---------|-----|
 | **Repositorio GitHub** | [github.com/4dr1-2529/CAFE-IA](https://github.com/4dr1-2529/CAFE-IA) |
-| **API producción (Railway)** | [cafe-sostenible-api-production-03ad.up.railway.app/api/health](https://cafe-sostenible-api-production-03ad.up.railway.app/api/health) |
 | **Frontend (Vercel)** | [cafe-ia-inky.vercel.app](https://cafe-ia-inky.vercel.app) |
+| **Resumen PMV3** | [cafe-ia-inky.vercel.app/resumen-pmv3](https://cafe-ia-inky.vercel.app/resumen-pmv3) |
+| **API producción (Railway)** | [cafe-sostenible-api-production-03ad.up.railway.app/api/health](https://cafe-sostenible-api-production-03ad.up.railway.app/api/health) |
+| **Documentación PMV3** | [PMV3_MEJORAS.md](PMV3_MEJORAS.md) |
+
+### Credenciales demo (producción)
+
+```text
+Admin:   admin@cafeai.com  / admin123
+Cliente: cliente1@cafeai.com / mbappe29
+```
 
 ---
 
 ## ¿Qué hace este proyecto?
 
-Plataforma web para gestionar la cadena del café desde el productor hasta la comercialización:
+Plataforma web para gestionar la cadena del café desde el productor hasta la comercialización, con trazabilidad por etapas, control de calidad sensorial, predicción IA y reportes exportables.
 
-- **Productores y fincas** — registro, geografía (región/provincia/distrito), datos de parcela.
-- **Lotes y producción** — cosecha, humedad, temperatura, tipo de secado, códigos QR.
-- **Trazabilidad** — línea de tiempo por etapas (producción → secado → calidad → almacén → venta).
-- **Control de calidad** — evaluación sensorial con criterios ponderados (aroma, sabor, cuerpo…).
-- **IA predictiva** — motor heurístico v2 que estima puntaje y clasificación del lote.
-- **Chatbot** — asistente con intents sobre lotes, productores y métricas del sistema.
-- **Dashboard** — KPIs y gráficos con Recharts.
-- **Reportes** — exportación PDF y Excel.
-- **Auditoría** — registro de acciones (solo admin).
-- **Multiusuario** — roles `admin` (alcance global) y `cliente` (datos filtrados por `user_id`).
+| Capacidad | Descripción |
+|-----------|-------------|
+| **Productores y lotes** | Registro, códigos automáticos, geografía y datos de parcela |
+| **Producción** | Cosecha, humedad, temperatura, tipo de secado, cantidad en kg |
+| **Trazabilidad** | Línea de tiempo visual por lote con % de avance y etapas completadas |
+| **Control de calidad** | Evaluación Q Grader con indicadores, recomendación y validaciones |
+| **IA predictiva** | Motor heurístico v2 — calidad, probabilidad de riesgo, variables y recomendación |
+| **Chatbot IA** | Asistente con intents sobre producción, lotes, calidad, reportes y auditoría |
+| **Dashboard** | KPIs en tiempo real desde MySQL y gráficos Recharts |
+| **Reportes** | Exportación PDF/Excel + **Resumen PMV3** consolidado |
+| **Auditoría** | Historial de acciones con tabla detallada (solo admin) |
+| **Multiusuario** | Roles `admin` (global) y `cliente` (filtrado por `user_id`) |
+
+---
+
+## Evolución PMV1 → PMV2 → PMV3
+
+```text
+PMV1 (Operaciones)          PMV2 (Inteligencia)           PMV3 (Integrado)
+─────────────────────       ─────────────────────         ─────────────────────
+Login · Dashboard           Chatbot IA                    PMV1 + PMV2 unificados
+Productores · Lotes         Auditoría / Historial         KPIs visuales en dashboard
+Producción · Trazabilidad   Módulo IA / ML                Timeline con % de avance
+Control calidad             Reportes mejorados            Calidad con recomendaciones
+Reportes · Base de datos    Multiusuario ADMIN/CLIENTE    Resumen PMV3 + tabla mejoras
+                            Dataset demo ampliado         Navegación por grupos
+                                                          Evidencias PMV1/2/3
+```
+
+| Versión | Alcance | Estado |
+|---------|---------|--------|
+| **PMV1** | Gestión base: login, dashboard, productores, lotes, producción, trazabilidad, calidad, reportes, BD | Completado |
+| **PMV2** | IA, chatbot, auditoría, reportes exportables, roles ADMIN/CLIENTE | Completado |
+| **PMV3** | Integración visual, KPIs, timeline, IA explicable, Resumen PMV3, UX unificada | Completado |
+
+Detalle de mejoras PMV3: **[PMV3_MEJORAS.md](PMV3_MEJORAS.md)**
+
+---
+
+## Módulos y rutas de la aplicación
+
+### Navegación (sidebar PMV3)
+
+| Grupo | Módulos |
+|-------|---------|
+| **Gestión** | Dashboard, Productores, Usuarios *(admin)* |
+| **Operaciones** | Registro Producción, Trazabilidad, Control Calidad, Base de Datos *(admin)* |
+| **Inteligencia** | Módulo IA, Chatbot IA, Reportes, **Resumen PMV3**, Auditoría *(admin)* |
+| **Evidencias** *(admin)* | Evidencias PMV |
+| **Sistema** *(admin)* | Arquitectura, Historias de Usuario |
+
+### Rutas principales
+
+| Ruta | Módulo | Versión |
+|------|--------|---------|
+| `/login` | Autenticación | PMV1 |
+| `/` | Dashboard con KPIs PMV3 | PMV3 |
+| `/productores` | Productores | PMV1 |
+| `/registro` | Registro de producción / lotes | PMV1 |
+| `/trazabilidad` | Trazabilidad + línea de tiempo | PMV3 |
+| `/calidad` | Control de calidad | PMV3 |
+| `/ia` | Módulo IA / Machine Learning | PMV2+PMV3 |
+| `/chatbot-ia` | Chatbot IA | PMV2+PMV3 |
+| `/reportes` | Reportes + pestaña Resumen PMV3 | PMV3 |
+| `/resumen-pmv3` | Vista dedicada Resumen PMV3 | PMV3 |
+| `/basedatos` | Base de datos *(admin)* | PMV1 |
+| `/auditoria` | Auditoría / historial *(admin)* | PMV2+PMV3 |
+| `/usuarios` | Gestión de usuarios *(admin)* | PMV1 |
+| `/evidencias` | Evidencias PMV *(admin)* | PMV3 |
+| `/arquitectura` | Arquitectura del sistema *(admin)* | — |
+| `/historias` | Historias de usuario HU01–HU12 *(admin)* | — |
 
 ---
 
@@ -49,27 +122,25 @@ Plataforma web para gestionar la cadena del café desde el productor hasta la co
 |-----------|------------|-----|
 | Runtime | **Node.js 20+** (ES Modules) | Servidor API |
 | Framework | **Express 4** | Rutas REST, middleware |
-| Base de datos | **MySQL 8** + **mysql2** | Pool de conexiones, prepared statements |
-| Autenticación | **jsonwebtoken** + **bcryptjs** | JWT, refresh en tabla `sesiones` |
-| Seguridad | **helmet**, **express-rate-limit**, **cors** | Hardening HTTP, 500 req/15 min |
+| Base de datos | **MySQL 8** + **mysql2** | Pool, prepared statements |
+| Autenticación | **jsonwebtoken** + **bcryptjs** | JWT, refresh en `sesiones` |
+| Seguridad | **helmet**, **express-rate-limit**, **cors** | Hardening HTTP |
 | Reportes | **pdfkit**, **exceljs** | Export PDF/Excel |
-| Config | **dotenv** | Variables de entorno |
 | Tests | **Node.js test runner** + **supertest** | 6 suites automatizadas |
-| Arquitectura | **Hexagonal** (ports & adapters) | domain → application → infrastructure → interfaces |
+| Arquitectura | **Hexagonal** | domain → application → infrastructure → interfaces |
 
 ### Frontend (`frontend/`)
 
 | Categoría | Tecnología | Uso |
 |-----------|------------|-----|
 | UI | **React 18** | Componentes, hooks, Context API |
-| Build | **Vite 5** | Dev server (puerto 5174), HMR, build producción |
-| Estilos | **Tailwind CSS 3** | Utility-first, `darkMode: 'class'` |
-| Routing | **React Router 6** | SPA, lazy loading de páginas |
+| Build | **Vite 5** | Dev server (puerto 5174), HMR |
+| Estilos | **Tailwind CSS 3** | Utility-first, modo oscuro |
+| Routing | **React Router 6** | SPA, lazy loading |
 | Gráficos | **Recharts** | Dashboard analítico |
 | Iconos | **Lucide React** | UI consistente |
 | QR | **react-qr-code** | Códigos QR por lote |
-| HTTP | `fetch` + cliente propio | JWT en `localStorage`, refresh automático |
-| Calidad | **ESLint** + **Prettier** | Lint y formato |
+| HTTP | Cliente propio + JWT | Refresh automático |
 
 ### DevOps y calidad
 
@@ -78,8 +149,8 @@ Plataforma web para gestionar la cadena del café desde el productor hasta la co
 | **GitHub Actions** | CI: tests backend, build frontend, SonarCloud, npm audit |
 | **SonarCloud** | Análisis estático de código |
 | **Railway** | API backend + MySQL en producción |
-| **Vercel** | Hosting SPA (root: `frontend/`) |
-| **Cypress 13** | 11 pruebas E2E funcionales (`testing/`) |
+| **Vercel** | Hosting SPA (`frontend/`) |
+| **Cypress 13** | 11 pruebas E2E (`testing/`) |
 | **JMeter** | Pruebas de carga (`testing/metricas/jmeter/`) |
 
 ### Machine Learning (`ml/` — evidencia académica)
@@ -87,7 +158,7 @@ Plataforma web para gestionar la cadena del café desde el productor hasta la co
 | Tecnología | Uso |
 |------------|-----|
 | **Python 3.10+** | Scripts de entrenamiento |
-| **Scikit-learn** | `RandomForestClassifier` sobre dataset de café |
+| **Scikit-learn** | `RandomForestClassifier` |
 | **Producción** | `PredictionEngine.js` (heurística v2 en Node.js) |
 
 > El módulo Python es evidencia universitaria; la API en producción usa el motor JavaScript del dominio.
@@ -121,19 +192,6 @@ Plataforma web para gestionar la cadena del café desde el productor hasta la co
 10. Respuesta JSON { ok: true, data: [...] } → React renderiza la tabla
 ```
 
-### Arranque del backend (`server.js`)
-
-Al iniciar, el backend:
-
-1. Lee variables `MYSQL*` y `JWT_SECRET` desde el entorno.
-2. Ejecuta `initDatabase()` en `migrate.js`:
-   - Aplica `schema.sql` si hay menos de 5 tablas.
-   - Corre migraciones incrementales (`apply-migrations.js`).
-   - Siembra catálogos (variedades, procesos, estados, criterios).
-   - Crea usuario admin si `ADMIN_SEED_PASSWORD` está definido.
-   - Opcionalmente carga datos demo PMV2.
-3. Levanta Express en `0.0.0.0:PORT` (3029 local, 8080 en Railway).
-
 ### Autenticación
 
 ```text
@@ -147,7 +205,7 @@ Peticiones → Header Authorization: Bearer <token>
 
 | Rol | Alcance |
 |-----|---------|
-| `admin` | Todos los productores, lotes, usuarios, auditoría |
+| `admin` | Todos los productores, lotes, usuarios, auditoría, evidencias |
 | `cliente` | Solo registros con su `user_id` |
 
 ---
@@ -161,53 +219,34 @@ CAFE-IA/                                    ← Raíz GitHub
 │
 ├── backend/                                # API REST · Node.js · Express · MySQL
 │   ├── server.js                           # Entrada: init DB + listen HTTP
-│   ├── sql/
-│   │   ├── schema.sql                      # 39 tablas (utf8mb4)
-│   │   ├── seeds.sql                       # Catálogos de referencia
-│   │   ├── views.sql                       # Vistas analíticas
-│   │   └── migrations/                     # Migraciones SQL incrementales
+│   ├── sql/                                # schema.sql (39 tablas), seeds, migrations
 │   ├── scripts/                            # Seeds PMV2, docs BD, verificación
-│   ├── tests/                              # 6 suites (health, integration, IA…)
+│   ├── tests/                              # 6 suites automatizadas
 │   └── src/
 │       ├── app.js                          # Express, Helmet, CORS, rate-limit
-│       ├── config/                         # env.js · database.js
 │       ├── domain/                         # PredictionEngine.js (IA heurística)
-│       ├── application/
-│       │   ├── services/                   # 17 servicios de casos de uso
-│       │   └── validators/                 # DTOs por entidad
-│       ├── infrastructure/
-│       │   ├── database/                   # pool, migrate, seeds
-│       │   └── repositories/               # 11 repositorios MySQL
-│       ├── interfaces/http/
-│       │   ├── controllers/                # 12 controllers REST
-│       │   ├── middleware/                 # auth · rbac · validate · audit
-│       │   └── routes/                     # 13 módulos de rutas
-│       └── shared/                         # AppError, RoleHelper, asyncHandler…
+│       ├── application/services/           # 17+ servicios de casos de uso
+│       ├── infrastructure/repositories/    # 11 repositorios MySQL
+│       └── interfaces/http/                # controllers, middleware, routes
 │
 ├── frontend/                               # SPA React · Vite · Tailwind
 │   ├── vercel.json                         # Deploy Vercel + VITE_API_URL
-│   ├── vite.config.js
-│   ├── tailwind.config.js
 │   └── src/
-│       ├── pages/                          # 15 vistas (lazy-loaded)
-│       │   ├── auth/                       # Login
-│       │   ├── dashboard/                  # KPIs y gráficos
-│       │   ├── productores/ · produccion/ · trazabilidad/ · calidad/
-│       │   ├── ia/                         # Módulo IA + Chatbot
-│       │   ├── reportes/
-│       │   └── sistema/                    # Usuarios, BD, Auditoría, HU…
-│       ├── layouts/MainLayout.jsx          # Sidebar PMV1 / PMV2 / Sistema
+│       ├── pages/                          # 16+ vistas (lazy-loaded)
+│       ├── layouts/MainLayout.jsx          # Sidebar PMV3 · Integrado
+│       ├── components/common/              # Pmv3IntegrationBanner, Pmv3ImprovementNotice
+│       ├── constants/pmv3Content.js        # Contenido PMV3 compartido
 │       ├── routes/AppRoutes.jsx
 │       ├── context/                        # Auth · Theme · Toast
-│       ├── components/ui/                  # Button, Card, DataTable, KpiCard…
-│       ├── services/api/                   # Cliente REST + JWT
-│       └── constants/                      # routes.js · projectStructure.js
+│       └── services/api/                   # Cliente REST + JWT
 │
 ├── ml/                                     # Evidencia ML (Python / Scikit-learn)
-├── testing/                                # Cypress E2E + métricas JMeter/Prometheus
+├── testing/                                # Cypress E2E + métricas JMeter
 ├── docs/                                   # Documentación técnica y académica
-├── Reporte-Calidad-Software/               # Reporte FURPS+, OWASP, SonarCloud, evidencias
+├── Plan-de-Pruebas/                        # FURPS+, OWASP, ingeniería inversa, ICACIT
+├── Reporte-Calidad-Software/               # Reporte FURPS+, OWASP, SonarCloud
 │
+├── PMV3_MEJORAS.md                         # Documentación de mejoras PMV3
 ├── INICIAR.bat                             # Arranque rápido Windows
 ├── package.json                            # Scripts monorepo
 ├── sonar-project.properties
@@ -228,7 +267,7 @@ CAFE-IA/                                    ← Raíz GitHub
                             │
 ┌───────────────────────────▼─────────────────────────────┐
 │  APPLICATION — Services · Validators                    │
-│  AuthService, LoteService, PrediccionService, …         │
+│  AuthService, LoteService, PrediccionService, Chatbot…  │
 └───────────────────────────┬─────────────────────────────┘
                             │
 ┌───────────────────────────▼─────────────────────────────┐
@@ -242,71 +281,6 @@ CAFE-IA/                                    ← Raíz GitHub
                             ▼
                     MySQL (39 tablas)
 ```
-
-**Capas y responsabilidades:**
-
-| Capa | Carpeta | Responsabilidad |
-|------|---------|-----------------|
-| Interfaces | `interfaces/http/` | HTTP, controllers, middleware, rutas |
-| Application | `application/services/` | Orquestar casos de uso, validar DTOs |
-| Domain | `domain/` | Reglas de negocio sin dependencias externas |
-| Infrastructure | `infrastructure/` | MySQL, migraciones, seeds |
-| Shared | `shared/` | Utilidades transversales |
-
----
-
-## Arquitectura frontend
-
-```text
-main.jsx
-  └── App.jsx
-        ├── AuthContext      → sesión, login/logout, rol
-        ├── ThemeContext     → modo claro/oscuro (Tailwind class)
-        ├── ToastContext     → notificaciones
-        └── AppRoutes.jsx
-              ├── LoginPage
-              └── MainLayout (sidebar + outlet)
-                    └── pages/* (lazy import con React.lazy)
-                          └── services/api/client.js → Railway API
-```
-
-| Patrón | Implementación |
-|--------|----------------|
-| Estado global | React Context (auth, tema, toasts) |
-| Rutas protegidas | `ProtectedShell` + `AdminRoute` |
-| API | Cliente centralizado con JWT, timeout 8s, unwrap `{ ok, data }` |
-| UI | Componentes reutilizables en `components/ui/` |
-| Tema | Tailwind + `chartTheme.js` para Recharts |
-
----
-
-## Módulos funcionales
-
-### PMV1 — Operaciones core
-
-| Módulo | Vista | API principal |
-|--------|-------|---------------|
-| Login | `/login` | `POST /api/auth/login` |
-| Dashboard | `/` | `GET /api/dashboard` · `/metrics` |
-| Productores | `/productores` | `GET/POST/PUT/DELETE /api/productores` |
-| Registro producción | `/registro` | `POST /api/lotes` · `/api/produccion` |
-| Trazabilidad | `/trazabilidad` | `GET/POST /api/trazabilidad` |
-| Control calidad | `/calidad` | `GET/POST /api/control-calidad` |
-| Reportes | `/reportes` | `GET /api/reportes/*` · export PDF/Excel |
-| Base de datos | `/basedatos` | `GET /api/base-datos` |
-| Usuarios *(admin)* | `/usuarios` | `GET/POST/PUT /api/usuarios` |
-
-### PMV2 — Mejoras inteligentes
-
-| Módulo | Vista | API principal |
-|--------|-------|---------------|
-| Módulo IA | `/ia` | `POST /api/predicciones/ejecutar` |
-| Chatbot IA | `/chatbot-ia` | `POST /api/chatbot` |
-| Auditoría *(admin)* | `/auditoria` | `GET/POST /api/auditoria` |
-
-### Sistema *(solo admin)*
-
-Evidencias PMV · Arquitectura · Historias de Usuario
 
 ---
 
@@ -380,18 +354,11 @@ cd frontend && npm run dev
 | Backend API | http://localhost:3029/api |
 | Health check | http://localhost:3029/api/health |
 
-### Credenciales demo
-
-```text
-Admin:   admin@cafeai.com  / admin123
-Cliente: cliente1@cafeai.com / mbappe29
-```
-
-> El admin solo se crea al arrancar si `ADMIN_SEED_PASSWORD` está definido en el `.env` del backend.
-
 ---
 
-## Seed PMV2 (25 lotes demo)
+## Seed y datos de prueba
+
+### Seed PMV2 (25 lotes demo)
 
 ```bash
 cd backend
@@ -402,7 +369,7 @@ npm run db:seed:pmv2
 
 Genera 5 productores × 5 lotes con trazabilidad, calidad y predicciones. Ver [docs/PMV2.md](docs/PMV2.md).
 
-Scripts adicionales:
+### Scripts adicionales
 
 ```bash
 npm run db:seed:multiusuario   # Dataset multiusuario PMV2
@@ -419,7 +386,8 @@ npm run seed:final               # Reset + seed completo
 |--------|----------|-------------|
 | POST | `/api/auth/login` | Login JWT |
 | GET | `/api/auth/me` | Sesión actual |
-| GET | `/api/dashboard/metrics` | KPIs dashboard |
+| GET | `/api/dashboard` | KPIs dashboard (PMV3) |
+| GET | `/api/dashboard/metrics` | Métricas adicionales |
 | GET/POST | `/api/productores` | CRUD productores |
 | GET/POST | `/api/lotes` | Lotes |
 | GET/POST | `/api/produccion` | Producción |
@@ -427,7 +395,7 @@ npm run seed:final               # Reset + seed completo
 | GET/POST | `/api/control-calidad` | Calidad sensorial |
 | POST | `/api/predicciones/ejecutar` | Predicción IA |
 | GET | `/api/reportes/export/:tipo/:formato` | PDF / Excel |
-| POST | `/api/chatbot` | Chatbot IA |
+| POST | `/api/chatbot` | Chatbot IA (PMV3 intents) |
 | GET/POST | `/api/auditoria` | Auditoría (admin) |
 | GET | `/api/base-datos/:tabla` | Consulta tablas |
 | GET | `/api/health` | Estado del servicio |
@@ -531,12 +499,6 @@ ADMIN_SEED_PASSWORD=admin123
 CORS_ORIGINS=https://cafe-ia-inky.vercel.app
 ```
 
-> Usar solo variables `MYSQL*`. No definir `DB_HOST`, `DB_USER` u otras variantes legacy.
-
-### Railway — MySQL
-
-Crear servicio MySQL en el mismo proyecto y vincular las variables al backend con referencias `${{MySQL.MYSQLHOST}}`, etc.
-
 ### Vercel — Frontend
 
 | Configuración | Valor |
@@ -558,9 +520,18 @@ Ya configurada en `frontend/vercel.json` para builds automáticos.
 
 | Componente | URL |
 |------------|-----|
-| API | https://cafe-sostenible-api-production-03ad.up.railway.app |
 | Frontend | https://cafe-ia-inky.vercel.app |
+| Resumen PMV3 | https://cafe-ia-inky.vercel.app/resumen-pmv3 |
+| API | https://cafe-sostenible-api-production-03ad.up.railway.app |
 | Health | https://cafe-sostenible-api-production-03ad.up.railway.app/api/health |
+
+### Verificar PMV3 en producción
+
+1. Login en https://cafe-ia-inky.vercel.app
+2. Sidebar: **PMV3 · Integrado** y grupos Gestión / Operaciones / Inteligencia
+3. Dashboard: banner PMV3 + KPIs (productores, lotes trazables, evaluaciones, predicciones, auditoría)
+4. Abrir `/resumen-pmv3` — tarjetas PMV1/PMV2/PMV3 + tabla de mejoras
+5. Chatbot: *«¿Qué mejoras incluye el PMV3?»*
 
 ---
 
@@ -579,31 +550,35 @@ Configuración: [.github/workflows/ci.yml](.github/workflows/ci.yml) · [docs/SO
 
 ---
 
-## Reporte de calidad de software
+## Documentación del proyecto
 
-Carpeta [Reporte-Calidad-Software/](Reporte-Calidad-Software/) con análisis FURPS+, OWASP Top 10, SonarCloud, Cypress, JMeter y plan de mejoras.
-
-| Documento | Contenido |
-|-----------|-----------|
-| [README](Reporte-Calidad-Software/README.md) | Índice del reporte |
-| `05_Evaluacion_FURPS+.md` | Funcionalidad, usabilidad, rendimiento… |
-| `06_Evaluacion_OWASP.md` | Seguridad web |
-| `07_Analisis_SonarQube.md` | Calidad de código |
-| `11_Plan_Mejoras.md` | Acciones correctivas |
-
----
-
-## Documentación adicional
+### Aplicación y PMV3
 
 | Documento | Contenido |
 |-----------|-----------|
-| [ESTRUCTURA_PROYECTO.md](docs/ESTRUCTURA_PROYECTO.md) | Árbol de carpetas detallado |
-| [DOCUMENTACION_TECNICA.md](docs/DOCUMENTACION_TECNICA.md) | Arquitectura, API, JWT |
-| [PMV2.md](docs/PMV2.md) | Evolución PMV1 → PMV2 |
-| [MATRIZ_PRUEBAS_HU.md](docs/MATRIZ_PRUEBAS_HU.md) | Historias de usuario y pruebas |
-| [DATOS_PRUEBA_PMV2.md](docs/DATOS_PRUEBA_PMV2.md) | Dataset multiusuario |
-| [EDT_SCRUM_GANTT.md](docs/EDT_SCRUM_GANTT.md) | Planificación Scrum |
-| [AUDITORIA_TECNICA.md](docs/AUDITORIA_TECNICA.md) | Auditoría técnica PMV |
+| [PMV3_MEJORAS.md](PMV3_MEJORAS.md) | Objetivo, mejoras, rutas, cómo probar, evidencias visuales |
+| [docs/PMV2.md](docs/PMV2.md) | Evolución PMV1 → PMV2 |
+| [docs/DOCUMENTACION_TECNICA.md](docs/DOCUMENTACION_TECNICA.md) | Arquitectura, API, JWT |
+| [docs/ESTRUCTURA_PROYECTO.md](docs/ESTRUCTURA_PROYECTO.md) | Árbol de carpetas detallado |
+| [docs/MATRIZ_PRUEBAS_HU.md](docs/MATRIZ_PRUEBAS_HU.md) | Historias de usuario y pruebas |
+| [docs/AUDITORIA_TECNICA.md](docs/AUDITORIA_TECNICA.md) | Auditoría técnica PMV |
+
+### Calidad y evaluación
+
+| Carpeta | Contenido |
+|---------|-----------|
+| [Reporte-Calidad-Software/](Reporte-Calidad-Software/) | FURPS+, OWASP, SonarCloud, Cypress, JMeter |
+| [Plan-de-Pruebas/](Plan-de-Pruebas/) | Evaluación FURPS+, OWASP, ingeniería inversa, ICACIT |
+| [Plan-de-Pruebas/01_FURPS_OWASP/](Plan-de-Pruebas/01_FURPS_OWASP/) | Auditorías FURPS+ y OWASP |
+| [Plan-de-Pruebas/02_Ingenieria_Inversa/](Plan-de-Pruebas/02_Ingenieria_Inversa/) | Ingeniería inversa del sistema |
+| [Plan-de-Pruebas/03_ICACIT/](Plan-de-Pruebas/03_ICACIT/) | Metodología ICACIT y auditoría final |
+
+### Machine Learning
+
+| Documento | Contenido |
+|-----------|-----------|
+| [ml/README.md](ml/README.md) | Entrenamiento Scikit-learn |
+| [testing/README_GENERAL.md](testing/README_GENERAL.md) | Pruebas E2E y métricas |
 
 ---
 
@@ -616,7 +591,7 @@ npm run frontend        # Inicia Vite dev
 npm run build           # Build producción frontend
 npm run test            # Tests backend
 npm run test:e2e        # Cypress E2E
-npm run db:seed:pmv2    # Seed 25 lotes
+npm run db:seed:pmv2    # Seed 25 lotes demo
 npm run metricas        # Métricas de rendimiento
 ```
 
@@ -630,10 +605,24 @@ pip install -r requirements.txt
 python train_model.py
 ```
 
-Entrena `RandomForestClassifier` (Scikit-learn) sobre `data/dataset_cafe.csv`. Ver [ml/README.md](ml/README.md).
+Entrena `RandomForestClassifier` (Scikit-learn) sobre `data/dataset_cafe.csv`.
+
+---
+
+## Contribuir
+
+1. Fork del repositorio [4dr1-2529/CAFE-IA](https://github.com/4dr1-2529/CAFE-IA)
+2. Crear rama: `git checkout -b feature/mi-mejora`
+3. Commit: `git commit -m "feat: descripción de la mejora"`
+4. Push: `git push origin feature/mi-mejora`
+5. Abrir Pull Request hacia `main`
 
 ---
 
 ## Licencia
 
 MIT — Proyecto académico **Café Sostenible AI** · repositorio [CAFE-IA](https://github.com/4dr1-2529/CAFE-IA).
+
+---
+
+**Café Sostenible AI** · PMV3 Integrado · Trazabilidad · Calidad · Inteligencia Artificial
