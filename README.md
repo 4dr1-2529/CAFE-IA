@@ -5,6 +5,8 @@
 [![GitHub](https://img.shields.io/badge/GitHub-4dr1--2529%2FCAFE--IA-181717?logo=github)](https://github.com/4dr1-2529/CAFE-IA)
 [![Node](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js)]()
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)]()
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite)]()
+[![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss)]()
 [![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql)]()
 [![Express](https://img.shields.io/badge/Express-4-000000?logo=express)]()
 [![Arquitectura](https://img.shields.io/badge/Arquitectura-Hexagonal-8B5CF6)]()
@@ -17,106 +19,264 @@
 | Recurso | URL |
 |---------|-----|
 | **Repositorio GitHub** | [github.com/4dr1-2529/CAFE-IA](https://github.com/4dr1-2529/CAFE-IA) |
-| **API producción (Railway)** | [cafe-sostenible-api-production-03ad.up.railway.app](https://cafe-sostenible-api-production-03ad.up.railway.app/api/health) |
+| **API producción (Railway)** | [cafe-sostenible-api-production-03ad.up.railway.app/api/health](https://cafe-sostenible-api-production-03ad.up.railway.app/api/health) |
 | **Frontend (Vercel)** | [cafe-ia-inky.vercel.app](https://cafe-ia-inky.vercel.app) |
 
 ---
 
-## Descripción
+## ¿Qué hace este proyecto?
 
-Plataforma web para gestionar la cadena del café: productores, lotes, producción, trazabilidad por etapas, control de calidad sensorial, predicción IA, dashboard analítico, reportes PDF/Excel, chatbot y auditoría.
+Plataforma web para gestionar la cadena del café desde el productor hasta la comercialización:
 
-**Roles:** `admin` (alcance global) y `cliente` (datos propios filtrados por `user_id`).
+- **Productores y fincas** — registro, geografía (región/provincia/distrito), datos de parcela.
+- **Lotes y producción** — cosecha, humedad, temperatura, tipo de secado, códigos QR.
+- **Trazabilidad** — línea de tiempo por etapas (producción → secado → calidad → almacén → venta).
+- **Control de calidad** — evaluación sensorial con criterios ponderados (aroma, sabor, cuerpo…).
+- **IA predictiva** — motor heurístico v2 que estima puntaje y clasificación del lote.
+- **Chatbot** — asistente con intents sobre lotes, productores y métricas del sistema.
+- **Dashboard** — KPIs y gráficos con Recharts.
+- **Reportes** — exportación PDF y Excel.
+- **Auditoría** — registro de acciones (solo admin).
+- **Multiusuario** — roles `admin` (alcance global) y `cliente` (datos filtrados por `user_id`).
 
 ---
 
-## Estructura del repositorio (GitHub)
+## Stack tecnológico
 
-El proyecto está organizado como **monorepo** en la raíz del repositorio `CAFE-IA`:
+### Backend (`backend/`)
+
+| Categoría | Tecnología | Uso |
+|-----------|------------|-----|
+| Runtime | **Node.js 20+** (ES Modules) | Servidor API |
+| Framework | **Express 4** | Rutas REST, middleware |
+| Base de datos | **MySQL 8** + **mysql2** | Pool de conexiones, prepared statements |
+| Autenticación | **jsonwebtoken** + **bcryptjs** | JWT, refresh en tabla `sesiones` |
+| Seguridad | **helmet**, **express-rate-limit**, **cors** | Hardening HTTP, 500 req/15 min |
+| Reportes | **pdfkit**, **exceljs** | Export PDF/Excel |
+| Config | **dotenv** | Variables de entorno |
+| Tests | **Node.js test runner** + **supertest** | 6 suites automatizadas |
+| Arquitectura | **Hexagonal** (ports & adapters) | domain → application → infrastructure → interfaces |
+
+### Frontend (`frontend/`)
+
+| Categoría | Tecnología | Uso |
+|-----------|------------|-----|
+| UI | **React 18** | Componentes, hooks, Context API |
+| Build | **Vite 5** | Dev server (puerto 5174), HMR, build producción |
+| Estilos | **Tailwind CSS 3** | Utility-first, `darkMode: 'class'` |
+| Routing | **React Router 6** | SPA, lazy loading de páginas |
+| Gráficos | **Recharts** | Dashboard analítico |
+| Iconos | **Lucide React** | UI consistente |
+| QR | **react-qr-code** | Códigos QR por lote |
+| HTTP | `fetch` + cliente propio | JWT en `localStorage`, refresh automático |
+| Calidad | **ESLint** + **Prettier** | Lint y formato |
+
+### DevOps y calidad
+
+| Herramienta | Uso |
+|-------------|-----|
+| **GitHub Actions** | CI: tests backend, build frontend, SonarCloud, npm audit |
+| **SonarCloud** | Análisis estático de código |
+| **Railway** | API backend + MySQL en producción |
+| **Vercel** | Hosting SPA (root: `frontend/`) |
+| **Cypress 13** | 11 pruebas E2E funcionales (`testing/`) |
+| **JMeter** | Pruebas de carga (`testing/metricas/jmeter/`) |
+
+### Machine Learning (`ml/` — evidencia académica)
+
+| Tecnología | Uso |
+|------------|-----|
+| **Python 3.10+** | Scripts de entrenamiento |
+| **Scikit-learn** | `RandomForestClassifier` sobre dataset de café |
+| **Producción** | `PredictionEngine.js` (heurística v2 en Node.js) |
+
+> El módulo Python es evidencia universitaria; la API en producción usa el motor JavaScript del dominio.
+
+---
+
+## Cómo funciona el sistema
+
+### Vista general
 
 ```text
-CAFE-IA/                              ← Raíz del repositorio GitHub
+┌─────────────┐     HTTPS + JWT      ┌──────────────────┐     mysql2 pool     ┌─────────────┐
+│   Vercel    │  ──────────────────► │  Railway API     │  ─────────────────► │  Railway    │
+│  React SPA  │  ◄────────────────── │  Express :8080   │  ◄───────────────── │  MySQL 8    │
+│  (frontend) │     JSON REST        │  (backend)       │     SQL / 39 tablas │             │
+└─────────────┘                      └──────────────────┘                     └─────────────┘
+```
+
+### Flujo de una petición (ejemplo: listar lotes)
+
+```text
+1. Usuario abre /trazabilidad en el navegador
+2. React Router carga TrazabilidadPage (lazy)
+3. La página llama a api.get('/lotes') vía services/api/client.js
+4. El cliente añade header Authorization: Bearer <JWT>
+5. Express recibe GET /api/lotes
+6. Middleware auth.js valida el token
+7. Middleware rbac.js (readGuard) verifica permisos del rol
+8. LoteController → LoteService → LoteRepository
+9. Repository ejecuta SQL con filtro por user_id si es cliente
+10. Respuesta JSON { ok: true, data: [...] } → React renderiza la tabla
+```
+
+### Arranque del backend (`server.js`)
+
+Al iniciar, el backend:
+
+1. Lee variables `MYSQL*` y `JWT_SECRET` desde el entorno.
+2. Ejecuta `initDatabase()` en `migrate.js`:
+   - Aplica `schema.sql` si hay menos de 5 tablas.
+   - Corre migraciones incrementales (`apply-migrations.js`).
+   - Siembra catálogos (variedades, procesos, estados, criterios).
+   - Crea usuario admin si `ADMIN_SEED_PASSWORD` está definido.
+   - Opcionalmente carga datos demo PMV2.
+3. Levanta Express en `0.0.0.0:PORT` (3029 local, 8080 en Railway).
+
+### Autenticación
+
+```text
+Login → POST /api/auth/login (email + password)
+      → AuthService verifica bcrypt
+      → Emite access JWT + refresh token (tabla sesiones)
+      → Frontend guarda token en localStorage
+Peticiones → Header Authorization: Bearer <token>
+401        → Cliente intenta refresh; si falla → logout y /login
+```
+
+| Rol | Alcance |
+|-----|---------|
+| `admin` | Todos los productores, lotes, usuarios, auditoría |
+| `cliente` | Solo registros con su `user_id` |
+
+---
+
+## Estructura del repositorio
+
+```text
+CAFE-IA/                                    ← Raíz GitHub
 │
-├── .github/
-│   └── workflows/
-│       └── ci.yml                    # CI: tests backend, build frontend, SonarCloud
+├── .github/workflows/ci.yml                # CI: backend, frontend, SonarCloud, audit
 │
-├── backend/                          # API REST · Node.js · Express · MySQL
-│   ├── server.js                     # Punto de entrada
+├── backend/                                # API REST · Node.js · Express · MySQL
+│   ├── server.js                           # Entrada: init DB + listen HTTP
 │   ├── sql/
-│   │   ├── schema.sql                # 39 tablas MySQL (utf8mb4)
-│   │   ├── seeds.sql                 # Catálogos iniciales
-│   │   ├── views.sql                 # Vistas analíticas
-│   │   └── migrations/               # Migraciones incrementales
-│   ├── scripts/                      # Seeds PMV2, verificación, utilidades
-│   ├── tests/                        # 6 suites Node test + Supertest
+│   │   ├── schema.sql                      # 39 tablas (utf8mb4)
+│   │   ├── seeds.sql                       # Catálogos de referencia
+│   │   ├── views.sql                       # Vistas analíticas
+│   │   └── migrations/                     # Migraciones SQL incrementales
+│   ├── scripts/                            # Seeds PMV2, docs BD, verificación
+│   ├── tests/                              # 6 suites (health, integration, IA…)
 │   └── src/
-│       ├── app.js                    # Express, Helmet, rate-limit, CORS
-│       ├── config/                   # env.js · database.js
-│       ├── domain/                   # PredictionEngine.js (IA heurística v2)
+│       ├── app.js                          # Express, Helmet, CORS, rate-limit
+│       ├── config/                         # env.js · database.js
+│       ├── domain/                         # PredictionEngine.js (IA heurística)
 │       ├── application/
-│       │   ├── services/             # 17 servicios de casos de uso
-│       │   └── validators/           # DTOs por entidad
+│       │   ├── services/                   # 17 servicios de casos de uso
+│       │   └── validators/                 # DTOs por entidad
 │       ├── infrastructure/
-│       │   ├── database/             # pool, migrate, seeds, schemaHelpers
-│       │   └── repositories/         # 11 repositorios MySQL
+│       │   ├── database/                   # pool, migrate, seeds
+│       │   └── repositories/               # 11 repositorios MySQL
 │       ├── interfaces/http/
-│       │   ├── controllers/          # 12 controllers REST
-│       │   ├── middleware/           # auth.js · rbac.js · validate.js
-│       │   └── routes/               # 13 módulos + index.js
-│       └── shared/                   # AppError, RoleHelper, asyncHandler…
+│       │   ├── controllers/                # 12 controllers REST
+│       │   ├── middleware/                 # auth · rbac · validate · audit
+│       │   └── routes/                     # 13 módulos de rutas
+│       └── shared/                         # AppError, RoleHelper, asyncHandler…
 │
-├── frontend/                         # SPA React · Vite · Tailwind
-│   ├── vercel.json                   # Deploy Vercel + VITE_API_URL
+├── frontend/                               # SPA React · Vite · Tailwind
+│   ├── vercel.json                         # Deploy Vercel + VITE_API_URL
 │   ├── vite.config.js
-│   ├── tailwind.config.js            # darkMode: 'class'
+│   ├── tailwind.config.js
 │   └── src/
-│       ├── pages/                    # 15 vistas lazy-loaded
-│       │   ├── auth/                 # Login
-│       │   ├── dashboard/            # KPIs y gráficos
-│       │   ├── productores/
-│       │   ├── produccion/
-│       │   ├── trazabilidad/
-│       │   ├── calidad/
-│       │   ├── ia/                   # Módulo IA + Chatbot
+│       ├── pages/                          # 15 vistas (lazy-loaded)
+│       │   ├── auth/                       # Login
+│       │   ├── dashboard/                  # KPIs y gráficos
+│       │   ├── productores/ · produccion/ · trazabilidad/ · calidad/
+│       │   ├── ia/                         # Módulo IA + Chatbot
 │       │   ├── reportes/
-│       │   └── sistema/              # Usuarios, BD, Auditoría, Evidencias, Arquitectura, HU
-│       ├── layouts/MainLayout.jsx    # Sidebar PMV1 / PMV2 / Sistema
+│       │   └── sistema/                    # Usuarios, BD, Auditoría, HU…
+│       ├── layouts/MainLayout.jsx          # Sidebar PMV1 / PMV2 / Sistema
 │       ├── routes/AppRoutes.jsx
-│       ├── context/                  # AuthContext · ThemeContext · ToastContext
-│       ├── components/ui/            # PageHeader, KpiCard, FormField, Skeleton…
-│       ├── services/api/             # Cliente REST + JWT
-│       └── constants/                # routes.js · projectStructure.js
+│       ├── context/                        # Auth · Theme · Toast
+│       ├── components/ui/                  # Button, Card, DataTable, KpiCard…
+│       ├── services/api/                   # Cliente REST + JWT
+│       └── constants/                      # routes.js · projectStructure.js
 │
-├── ml/                               # Evidencia ML universitaria (Python)
-│   ├── train_model.py                # RandomForest · Scikit-learn
-│   ├── data/dataset_cafe.csv
-│   └── requirements.txt
+├── ml/                                     # Evidencia ML (Python / Scikit-learn)
+├── testing/                                # Cypress E2E + métricas JMeter/Prometheus
+├── docs/                                   # Documentación técnica y académica
+├── Reporte-Calidad-Software/               # Reporte FURPS+, OWASP, SonarCloud, evidencias
 │
-├── testing/                          # Pruebas E2E Cypress
-│   ├── cypress/e2e/                  # PF-01 … PF-11 (11 specs)
-│   └── metricas/                     # Scripts Prometheus/Grafana/JMeter
-│
-├── docs/                             # Documentación académica y técnica
-│   ├── ESTRUCTURA_PROYECTO.md
-│   ├── DOCUMENTACION_TECNICA.md
-│   ├── PMV2.md
-│   ├── MATRIZ_PRUEBAS_HU.md
-│   ├── DATOS_PRUEBA_PMV2.md
-│   ├── ESQUEMA_RELACIONAL.md
-│   ├── AUDITORIA_TECNICA.md
-│   ├── EDT_SCRUM_GANTT.md
-│   └── SONARCLOUD.md
-│
-├── INICIAR.bat                       # Arranque rápido Windows
-├── SUBIR_GITHUB.bat
-├── package.json                      # Scripts monorepo (install:all, test, build…)
-├── render.yaml                       # Config alternativa Render
+├── INICIAR.bat                             # Arranque rápido Windows
+├── package.json                            # Scripts monorepo
 ├── sonar-project.properties
-└── README.md                         # Este archivo
+└── README.md                               # Este archivo
 ```
 
 > Árbol interactivo en la app: menú **Sistema → Arquitectura** (`/arquitectura`).
+
+---
+
+## Arquitectura hexagonal (backend)
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  INTERFACES (HTTP)                                      │
+│  Controllers · Routes · JWT · RBAC · Helmet · audit     │
+└───────────────────────────┬─────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────┐
+│  APPLICATION — Services · Validators                    │
+│  AuthService, LoteService, PrediccionService, …         │
+└───────────────────────────┬─────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────┐
+│  DOMAIN — lógica de negocio pura                        │
+│  PredictionEngine · RoleHelper · CodeGenerator          │
+└───────────────────────────▲─────────────────────────────┘
+                            │
+┌───────────────────────────┴─────────────────────────────┐
+│  INFRASTRUCTURE — Repositories · pool.js · migrate.js   │
+└───────────────────────────┬─────────────────────────────┘
+                            ▼
+                    MySQL (39 tablas)
+```
+
+**Capas y responsabilidades:**
+
+| Capa | Carpeta | Responsabilidad |
+|------|---------|-----------------|
+| Interfaces | `interfaces/http/` | HTTP, controllers, middleware, rutas |
+| Application | `application/services/` | Orquestar casos de uso, validar DTOs |
+| Domain | `domain/` | Reglas de negocio sin dependencias externas |
+| Infrastructure | `infrastructure/` | MySQL, migraciones, seeds |
+| Shared | `shared/` | Utilidades transversales |
+
+---
+
+## Arquitectura frontend
+
+```text
+main.jsx
+  └── App.jsx
+        ├── AuthContext      → sesión, login/logout, rol
+        ├── ThemeContext     → modo claro/oscuro (Tailwind class)
+        ├── ToastContext     → notificaciones
+        └── AppRoutes.jsx
+              ├── LoginPage
+              └── MainLayout (sidebar + outlet)
+                    └── pages/* (lazy import con React.lazy)
+                          └── services/api/client.js → Railway API
+```
+
+| Patrón | Implementación |
+|--------|----------------|
+| Estado global | React Context (auth, tema, toasts) |
+| Rutas protegidas | `ProtectedShell` + `AdminRoute` |
+| API | Cliente centralizado con JWT, timeout 8s, unwrap `{ ok, data }` |
+| UI | Componentes reutilizables en `components/ui/` |
+| Tema | Tailwind + `chartTheme.js` para Recharts |
 
 ---
 
@@ -150,42 +310,14 @@ Evidencias PMV · Arquitectura · Historias de Usuario
 
 ---
 
-## Arquitectura hexagonal (backend)
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│  INTERFACES (HTTP)                                      │
-│  12 Controllers · 13 Routes · JWT · RBAC · Helmet       │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────┐
-│  APPLICATION — 17 Services · Validators                 │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-┌───────────────────────────▼─────────────────────────────┐
-│  DOMAIN — PredictionEngine · RoleHelper · CodeGenerator │
-└───────────────────────────▲─────────────────────────────┘
-                            │
-┌───────────────────────────┴─────────────────────────────┐
-│  INFRASTRUCTURE — 11 Repositories · pool.js · migrate   │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-                            ▼
-                    MySQL Railway (39 tablas)
-```
-
-**Frontend:** React 18 → React Router → Context API → `services/api/client.js` → API REST
-
----
-
 ## Requisitos
 
 | Herramienta | Versión |
 |-------------|---------|
-| Node.js | 18+ (CI usa 20) |
+| Node.js | 18+ (CI y producción usan 20) |
 | MySQL | 8+ (XAMPP local o Railway) |
 | npm | 9+ |
-| Python *(opcional, ml/)* | 3.10+ |
+| Python *(opcional, `ml/`)* | 3.10+ |
 
 ---
 
@@ -216,10 +348,19 @@ MYSQLUSER=root
 MYSQLPASSWORD=
 MYSQLDATABASE=cafe_sostenible
 JWT_SECRET=tu_secreto_minimo_32_caracteres
+ADMIN_SEED_PASSWORD=admin123
 CORS_ORIGINS=http://localhost:5174
 ```
 
-### 3. Iniciar
+### 3. Configurar frontend (opcional en local)
+
+```bash
+cd frontend
+copy .env.example .env
+# VITE_API_URL=http://localhost:3029
+```
+
+### 4. Iniciar
 
 **Windows:** doble clic en `INICIAR.bat`
 
@@ -246,6 +387,8 @@ Admin:   admin@cafeai.com  / admin123
 Cliente: cliente1@cafeai.com / mbappe29
 ```
 
+> El admin solo se crea al arrancar si `ADMIN_SEED_PASSWORD` está definido en el `.env` del backend.
+
 ---
 
 ## Seed PMV2 (25 lotes demo)
@@ -263,7 +406,9 @@ Scripts adicionales:
 
 ```bash
 npm run db:seed:multiusuario   # Dataset multiusuario PMV2
-npm run db:seed:pendientes     # Lotes pendientes de IA/calidad
+npm run db:seed:pendientes       # Lotes pendientes de IA/calidad
+npm run db:docs                  # Generar documentación de BD
+npm run seed:final               # Reset + seed completo
 ```
 
 ---
@@ -285,6 +430,7 @@ npm run db:seed:pendientes     # Lotes pendientes de IA/calidad
 | POST | `/api/chatbot` | Chatbot IA |
 | GET/POST | `/api/auditoria` | Auditoría (admin) |
 | GET | `/api/base-datos/:tabla` | Consulta tablas |
+| GET | `/api/health` | Estado del servicio |
 
 Documentación completa: [docs/DOCUMENTACION_TECNICA.md](docs/DOCUMENTACION_TECNICA.md)
 
@@ -296,10 +442,11 @@ Documentación completa: [docs/DOCUMENTACION_TECNICA.md](docs/DOCUMENTACION_TECN
 |-----------|----------------|
 | Autenticación | JWT (`AuthService` · `jsonwebtoken`) |
 | Autorización | RBAC — `readGuard` · `writeGuard` · `adminGuard` |
-| Roles | `admin` · `cliente` (legacy: supervisor/productor → cliente) |
+| Roles | `admin` · `cliente` |
 | HTTP hardening | Helmet · rate-limit 500 req/15 min |
-| CORS | Orígenes configurables + `*.vercel.app` |
+| CORS | Orígenes en `CORS_ORIGINS` + `*.vercel.app` automático |
 | Contraseñas | bcrypt · refresh tokens en tabla `sesiones` |
+| SQL | Prepared statements · `assertValidDbName` · `mysql.escapeId` |
 
 ---
 
@@ -311,11 +458,11 @@ Documentación completa: [docs/DOCUMENTACION_TECNICA.md](docs/DOCUMENTACION_TECN
 | Tablas | **39** (`backend/sql/schema.sql`) |
 | Charset | utf8mb4_unicode_ci |
 | Migración | Automática al iniciar (`migrate.js`) |
-| Producción | Railway MySQL (`mysql.railway.internal`) |
+| Producción | Railway MySQL |
 
 Módulos: geografía, seguridad, productores, lotes, producción, trazabilidad, calidad, IA, reportes, inventario, auditoría.
 
-Esquema relacional: [docs/ESQUEMA_RELACIONAL.md](docs/ESQUEMA_RELACIONAL.md)
+Esquema relacional: [docs/ESQUEMA_RELACIONAL.md](docs/ESQUEMA_RELACIONAL.md) · [docs/base-datos/](docs/base-datos/)
 
 ---
 
@@ -350,40 +497,70 @@ Matriz HU: [docs/MATRIZ_PRUEBAS_HU.md](docs/MATRIZ_PRUEBAS_HU.md)
 
 ---
 
-## ML (evidencia universitaria)
-
-```bash
-cd ml
-pip install -r requirements.txt
-python train_model.py
-```
-
-Entrena `RandomForestClassifier` (Scikit-learn) sobre `data/dataset_cafe.csv`. El motor en producción usa `PredictionEngine.js` (heurística v2); el módulo Python es evidencia académica complementaria.
-
----
-
-## Despliegue
+## Despliegue en producción
 
 ```text
-GitHub (push main)
+git push main (GitHub)
        │
-       ├──────────────────┬──────────────────┐
-       ▼                  ▼                  ▼
-   Railway            Railway            Vercel
-   Backend API        MySQL              Frontend SPA
-   Express :8080      39 tablas          React build
+       ├────────────────────┬────────────────────┐
+       ▼                    ▼                    ▼
+   Railway              Railway               Vercel
+   Backend API          MySQL                 Frontend SPA
+   Root: backend/       Servicio vinculado    Root: frontend/
+   PORT automático      Variables MYSQL*      VITE_API_URL
 ```
 
-| Componente | Plataforma | Configuración |
-|------------|------------|---------------|
-| Backend API | **Railway** | Auto-deploy desde GitHub · variables `MYSQL*` |
-| MySQL | **Railway** | Servicio vinculado al backend |
-| Frontend | **Vercel** | [cafe-ia-inky.vercel.app](https://cafe-ia-inky.vercel.app) · Root: `frontend/` |
-| CI/CD | **GitHub Actions** | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
+### Railway — Backend API
 
-**API producción:** `https://cafe-sostenible-api-production-03ad.up.railway.app`
+| Configuración | Valor |
+|---------------|-------|
+| Root Directory | `backend` |
+| Start Command | `npm start` (→ `node server.js`) |
+| Puerto | Railway asigna `PORT` automáticamente |
 
-**Frontend producción:** [https://cafe-ia-inky.vercel.app](https://cafe-ia-inky.vercel.app)
+**Variables obligatorias en Railway:**
+
+```env
+MYSQLHOST=<referencia al servicio MySQL>
+MYSQLPORT=3306
+MYSQLUSER=root
+MYSQLPASSWORD=<generado por Railway>
+MYSQLDATABASE=railway
+JWT_SECRET=<mínimo 32 caracteres>
+ADMIN_SEED_PASSWORD=admin123
+CORS_ORIGINS=https://cafe-ia-inky.vercel.app
+```
+
+> Usar solo variables `MYSQL*`. No definir `DB_HOST`, `DB_USER` u otras variantes legacy.
+
+### Railway — MySQL
+
+Crear servicio MySQL en el mismo proyecto y vincular las variables al backend con referencias `${{MySQL.MYSQLHOST}}`, etc.
+
+### Vercel — Frontend
+
+| Configuración | Valor |
+|---------------|-------|
+| Root Directory | `frontend` |
+| Framework | Vite |
+| Build Command | `npm run build` |
+| Output | `dist` |
+
+**Variable de entorno:**
+
+```env
+VITE_API_URL=https://cafe-sostenible-api-production-03ad.up.railway.app
+```
+
+Ya configurada en `frontend/vercel.json` para builds automáticos.
+
+### URLs de producción
+
+| Componente | URL |
+|------------|-----|
+| API | https://cafe-sostenible-api-production-03ad.up.railway.app |
+| Frontend | https://cafe-ia-inky.vercel.app |
+| Health | https://cafe-sostenible-api-production-03ad.up.railway.app/api/health |
 
 ---
 
@@ -391,16 +568,32 @@ GitHub (push main)
 
 En cada push o PR a `main` / `develop`:
 
-- Tests backend (`npm test`)
-- Build frontend (`npm run build`)
-- Análisis SonarCloud
-- `npm audit`
+| Job | Qué hace |
+|-----|----------|
+| `backend` | `npm test` (Node 20, `SKIP_INTEGRATION=1`) |
+| `frontend` | `npm run build` |
+| `sonarcloud` | Análisis estático SonarCloud |
+| `dependency-audit` | `npm audit --audit-level=high` |
 
-Configuración: [docs/SONARCLOUD.md](docs/SONARCLOUD.md)
+Configuración: [.github/workflows/ci.yml](.github/workflows/ci.yml) · [docs/SONARCLOUD.md](docs/SONARCLOUD.md)
 
 ---
 
-## Documentación
+## Reporte de calidad de software
+
+Carpeta [Reporte-Calidad-Software/](Reporte-Calidad-Software/) con análisis FURPS+, OWASP Top 10, SonarCloud, Cypress, JMeter y plan de mejoras.
+
+| Documento | Contenido |
+|-----------|-----------|
+| [README](Reporte-Calidad-Software/README.md) | Índice del reporte |
+| `05_Evaluacion_FURPS+.md` | Funcionalidad, usabilidad, rendimiento… |
+| `06_Evaluacion_OWASP.md` | Seguridad web |
+| `07_Analisis_SonarQube.md` | Calidad de código |
+| `11_Plan_Mejoras.md` | Acciones correctivas |
+
+---
+
+## Documentación adicional
 
 | Documento | Contenido |
 |-----------|-----------|
@@ -426,6 +619,18 @@ npm run test:e2e        # Cypress E2E
 npm run db:seed:pmv2    # Seed 25 lotes
 npm run metricas        # Métricas de rendimiento
 ```
+
+---
+
+## ML (evidencia universitaria)
+
+```bash
+cd ml
+pip install -r requirements.txt
+python train_model.py
+```
+
+Entrena `RandomForestClassifier` (Scikit-learn) sobre `data/dataset_cafe.csv`. Ver [ml/README.md](ml/README.md).
 
 ---
 
