@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ClipboardList, RefreshCw, Search, X } from 'lucide-react'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import Button from '../../components/ui/Button.jsx'
+import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
+import Pmv3ImprovementNotice from '../../components/common/Pmv3ImprovementNotice.jsx'
 import { getAuditoria, getAuditoriaResumen } from '../../services/api/index.js'
 import { useToast } from '../../hooks/useToast.js'
 
@@ -74,7 +76,7 @@ export default function AuditoriaPage() {
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <PageHeader title="Auditoría / Historial" subtitle="Seguimiento de acciones de administradores y clientes" icon={ClipboardList} />
+        <PageHeader title="Auditoría / Historial" subtitle="PMV3 — Tabla de acciones: usuario, módulo, fecha y detalle" icon={ClipboardList} badge="PMV3 · Auditoría" />
         <Button
           type="button"
           onClick={() => load(page, { silent: true, showToast: true })}
@@ -85,6 +87,12 @@ export default function AuditoriaPage() {
           Actualizar historial
         </Button>
       </div>
+
+      <Pmv3IntegrationBanner compact />
+
+      <Pmv3ImprovementNotice>
+        historial visible para control y seguimiento — tabla con usuario, acción, módulo, fecha y detalle. Total auditado: <strong>{resumen.totalAcciones}</strong> acciones.
+      </Pmv3ImprovementNotice>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((c) => (
@@ -159,27 +167,28 @@ export default function AuditoriaPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Fecha</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Usuario</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Rol</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Acción</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Módulo</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Descripción</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Ruta</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-cafe-700 dark:text-slate-300">Detalle</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-cafe-100 dark:divide-slate-700">
               {loading ? (
-                <tr><td colSpan="7" className="px-4 py-10 text-center text-cafe-500">Cargando auditoría...</td></tr>
+                <tr><td colSpan="5" className="px-4 py-10 text-center text-cafe-500">Cargando auditoría...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan="7" className="px-4 py-10 text-center text-cafe-500">No hay registros para los filtros aplicados.</td></tr>
+                <tr><td colSpan="5" className="px-4 py-10 text-center text-cafe-500">No hay registros para los filtros aplicados.</td></tr>
               ) : rows.map((r) => (
                 <tr key={r.id} className="hover:bg-cafe-50 dark:hover:bg-slate-800/50">
                   <td className="px-4 py-3 text-sm text-cafe-700 dark:text-slate-300 whitespace-nowrap">{formatFecha(r.fecha_creacion)}</td>
-                  <td className="px-4 py-3 text-sm text-cafe-900 dark:text-slate-100">{r.usuario_nombre || r.usuario}</td>
-                  <td className="px-4 py-3 text-sm capitalize text-cafe-700 dark:text-slate-300">{r.rol || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-cafe-900 dark:text-slate-100">
+                    {r.usuario_nombre || r.usuario}
+                    {r.rol && <span className="block text-xs text-cafe-500 capitalize">{r.rol}</span>}
+                  </td>
                   <td className="px-4 py-3 text-sm font-mono text-cafe-700 dark:text-slate-300">{r.accion}</td>
                   <td className="px-4 py-3 text-sm text-cafe-700 dark:text-slate-300">{r.modulo}</td>
-                  <td className="px-4 py-3 text-sm text-cafe-700 dark:text-slate-300 max-w-xs truncate" title={r.descripcion}>{r.descripcion || '—'}</td>
-                  <td className="px-4 py-3 text-sm font-mono text-cafe-600 dark:text-slate-400">{r.ruta || r.metodo || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-cafe-700 dark:text-slate-300 max-w-md" title={r.descripcion || r.ruta}>
+                    {r.descripcion || r.ruta || r.metodo || '—'}
+                  </td>
                 </tr>
               ))}
             </tbody>

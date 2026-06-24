@@ -15,6 +15,7 @@ const ModuloIAPage = lazy(() => import('../pages/ia/ModuloIAPage.jsx'))
 const ChatbotIAPage = lazy(() => import('../pages/ia/ChatbotIAPage.jsx'))
 const BaseDatosPage = lazy(() => import('../pages/sistema/BaseDatosPage.jsx'))
 const ReportesPage = lazy(() => import('../pages/reportes/ReportesPage.jsx'))
+const ResumenPMV3Page = lazy(() => import('../pages/reportes/ResumenPMV3Page.jsx'))
 const AuditoriaPage = lazy(() => import('../pages/sistema/AuditoriaPage.jsx'))
 const EvidenciasPMVPage = lazy(() => import('../pages/sistema/EvidenciasPMVPage.jsx'))
 const ArquitecturaPage = lazy(() => import('../pages/sistema/ArquitecturaPage.jsx'))
@@ -60,6 +61,7 @@ export default function AppRoutes() {
         <Route path="ia" element={<ModuloIAPage />} />
         <Route path="chatbot-ia" element={<ChatbotIAPage />} />
         <Route path="reportes" element={<ReportesPage />} />
+        <Route path="resumen-pmv3" element={<ResumenPMV3Page />} />
         <Route path="basedatos" element={<BaseDatosPage />} />
         <Route
           path="auditoria"

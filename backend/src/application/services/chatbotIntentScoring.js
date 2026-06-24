@@ -1,6 +1,8 @@
 /** Frases exactas (prioridad alta) */
 export const EXACT_INTENTS = [
   { intent: 'project_overview', any: ['que hace cafe sostenible ai', 'que hace cafe sostenible', 'que hace el sistema', 'resume el proyecto'] },
+  { intent: 'pmv3_mejoras', any: ['que mejoras incluye el pmv3', 'mejoras del pmv3', 'mejoras pmv3', 'que incluye pmv3'] },
+  { intent: 'pmv3_info', any: ['pmv3', 'que es pmv3', 'version pmv3', 'que incluye pmv3', 'mejoras pmv3'] },
   { intent: 'pmv1_modules', any: ['pmv1', 'incluye pmv1', 'modulos pmv1', 'que incluye pmv1'] },
   { intent: 'pmv2_info', any: ['pmv2', 'mejoras pmv2', 'que mejoras tiene pmv2'] },
   { intent: 'architecture_hexagonal', any: ['arquitectura hexagonal', 'hexagonal', 'arquitectura del proyecto'] },
@@ -48,6 +50,7 @@ function hasAny(clean, words) {
 /** Reglas simples: si coincide alguna palabra clave, suma puntos al intent */
 const KEYWORD_RULES = [
   { intent: 'sonarqube', pts: 8, any: ['sonar', 'sonarqube'] },
+  { intent: 'pmv3_info', pts: 8, any: ['pmv3', 'version integrada', 'pmv3 integra'] },
   { intent: 'pmv2_info', pts: 6, any: ['pmv2', 'mejoras pmv'] },
   { intent: 'pmv1_modules', pts: 6, any: ['pmv1'] },
   { intent: 'traceability', pts: 7, any: ['trazabilidad', 'seguimiento del cafe', 'seguimiento cafe'] },

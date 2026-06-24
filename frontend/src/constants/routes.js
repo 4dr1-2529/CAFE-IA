@@ -9,6 +9,7 @@ export const ROUTES = {
   CHATBOT_IA: '/chatbot-ia',
   BASE_DATOS: '/basedatos',
   REPORTES: '/reportes',
+  RESUMEN_PMV3: '/resumen-pmv3',
   AUDITORIA: '/auditoria',
   USUARIOS: '/usuarios',
   EVIDENCIAS: '/evidencias',

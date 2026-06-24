@@ -18,6 +18,8 @@ const PROJECT_KNOWLEDGE = {
     'SonarQube analiza la calidad del código (bugs, vulnerabilidades, deuda técnica y cobertura). En este proyecto se usa para validar estándares antes de entregas PMV.',
   pmv2:
     'PMV2 añade multiusuario ADMIN/CLIENTE, códigos automáticos de lote, dashboard por rol, reportes exportables, chatbot con datos reales y dataset de prueba ampliado.',
+  pmv3:
+    'PMV3 integra PMV1 y PMV2. Mejora el dashboard con KPIs visuales, la trazabilidad con línea de tiempo y porcentaje de avance, el control de calidad con indicadores y recomendaciones, el módulo IA/ML con predicción y probabilidad de riesgo, los reportes con pestaña Resumen PMV3, la auditoría con tabla detallada y el chatbot con consultas sobre producción, lotes, trazabilidad, calidad, reportes y auditoría.',
   adminCapabilities:
     'ADMIN controla todo: ve todos los clientes, productores, lotes, producción, trazabilidad, calidad, predicciones IA, reportes, auditoría global, base de datos y configuración del sistema.',
   clienteCapabilities:
@@ -41,6 +43,8 @@ function resolveKnowledgeIntent(intent, isAdmin) {
     project_purpose: 'Café Sostenible AI es una plataforma de trazabilidad e inteligencia para lotes de café sostenible. Ayuda a registrar operaciones, evaluar calidad, predecir riesgo con Machine Learning y generar reportes técnicos.',
     pmv1_modules: `Módulos operativos PMV1: ${PROJECT_KNOWLEDGE.pmv1Modules.join(', ')}.`,
     pmv2_info: PROJECT_KNOWLEDGE.pmv2,
+    pmv3_info: PROJECT_KNOWLEDGE.pmv3,
+    pmv3_mejoras: PROJECT_KNOWLEDGE.pmv3,
     architecture_general: PROJECT_KNOWLEDGE.architecture,
     architecture_hexagonal: PROJECT_KNOWLEDGE.architecture,
     backend_flow: PROJECT_KNOWLEDGE.backendFlow,

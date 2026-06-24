@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import KpiCard from '../../components/ui/KpiCard.jsx'
+import { PMV3_VERSION_CARDS } from '../../constants/pmv3Content.js'
 import { RAILWAY_API_URL, VERCEL_FRONTEND_URL } from '../../config/api.js'
 
 const RAILWAY_API = RAILWAY_API_URL
@@ -273,10 +274,39 @@ export default function EvidenciasPMVPage() {
   return (
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
-        badge="Evidencias · CAFE-IA"
+        badge="PMV3 · Evidencias"
         title="Evidencias del Producto Mínimo Viable"
-        subtitle="Funcionalidades reales verificadas en código, API Railway, MySQL y pruebas Cypress — separadas PMV1 (operaciones) y PMV2 (mejoras IA)"
+        subtitle="PMV1 gestión base · PMV2 IA y auditoría · PMV3 integración visual y mejoras — verificadas en código, API Railway, MySQL y Cypress"
       />
+
+      <section>
+        <h2 className="text-heading text-xl font-bold mb-4">Versiones PMV — Estado de integración</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          {PMV3_VERSION_CARDS.map((card) => (
+            <article key={card.id} className="card-panel overflow-hidden p-0 flex flex-col">
+              <div className={`bg-gradient-to-r ${card.color} p-5`}>
+                <h3 className="text-xl font-bold text-white">{card.titulo}</h3>
+                <p className="text-white/90 text-sm mt-1">{card.subtitulo}</p>
+              </div>
+              <div className="p-4 flex-1 flex flex-col">
+                <ul className="text-sm text-body space-y-1.5 flex-1">
+                  {card.items.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-600">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 text-sm font-bold">
+                    <CheckCircle className="w-4 h-4" /> Completado
+                  </span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="PMV1" value={pmv1Evidencias.length} unit="módulos" icon={Server} color="green" />

@@ -3,7 +3,7 @@ import { NavLink, useLocation, Outlet } from 'react-router-dom'
 import PageLoader from '../components/common/PageLoader.jsx'
 import {
   Coffee, LayoutDashboard, Package, Route, Award, Brain, Database, FileText,
-  Camera, Network, BookOpen, LogOut, Menu, Moon, Sun, Users, Sparkles, Bot, ClipboardList, UserCog,
+  Camera, Network, BookOpen, LogOut, Menu, Moon, Sun, Users, Sparkles, Bot, ClipboardList, UserCog, Layers,
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext.jsx'
 import { isAdminUser } from '../utils/role.js'
@@ -15,40 +15,57 @@ function displayName(user) {
 }
 
 function buildNavGroups(isAdmin) {
-  const operaciones = [
+  const gestion = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/productores', icon: Users, label: 'Productores' },
+    { path: '/usuarios', icon: UserCog, label: 'Usuarios', adminOnly: true },
+  ]
+
+  const operaciones = [
     { path: '/registro', icon: Package, label: 'Registro Producción' },
     { path: '/trazabilidad', icon: Route, label: 'Trazabilidad' },
     { path: '/calidad', icon: Award, label: 'Control Calidad' },
-    { path: '/ia', icon: Brain, label: 'Módulo IA' },
-    { path: '/reportes', icon: FileText, label: 'Reportes' },
-    { path: '/basedatos', icon: Database, label: 'Base de Datos' },
+    { path: '/basedatos', icon: Database, label: 'Base de Datos', adminOnly: true },
   ]
 
-  const mejoras = [{ path: '/chatbot-ia', icon: Bot, label: 'Chatbot IA' }]
-  if (isAdmin) {
-    mejoras.push({ path: '/auditoria', icon: ClipboardList, label: 'Auditoría / Historial' })
-  }
+  const inteligencia = [
+    { path: '/ia', icon: Brain, label: 'Módulo IA' },
+    { path: '/chatbot-ia', icon: Bot, label: 'Chatbot IA' },
+    { path: '/reportes', icon: FileText, label: 'Reportes' },
+    { path: '/resumen-pmv3', icon: Layers, label: 'Resumen PMV3', highlight: true },
+    { path: '/auditoria', icon: ClipboardList, label: 'Auditoría / Historial', adminOnly: true },
+  ]
 
-  const sistemaItems = []
-  if (isAdmin) {
-    sistemaItems.push(
-      { path: '/usuarios', icon: UserCog, label: 'Usuarios' },
-      { path: '/evidencias', icon: Camera, label: 'Evidencias PMV' },
-      { path: '/arquitectura', icon: Network, label: 'Arquitectura' },
-      { path: '/historias', icon: BookOpen, label: 'Historias Usuario' }
-    )
-  }
+  const evidencias = [
+    { path: '/evidencias', icon: Camera, label: 'Evidencias PMV', adminOnly: true },
+  ]
+
+  const sistema = [
+    { path: '/arquitectura', icon: Network, label: 'Arquitectura', adminOnly: true },
+    { path: '/historias', icon: BookOpen, label: 'Historias Usuario', adminOnly: true },
+  ]
+
+  const filterItems = (items) =>
+    items.filter((item) => !item.adminOnly || isAdmin)
 
   const groups = [
-    { label: 'PMV1 / Operaciones', items: operaciones },
-    { label: 'PMV2 / Mejoras', items: mejoras },
+    { label: 'Gestión', items: filterItems(gestion) },
+    { label: 'Operaciones', items: filterItems(operaciones) },
+    { label: 'Inteligencia', items: filterItems(inteligencia) },
   ]
-  if (sistemaItems.length > 0) {
-    groups.push({ label: 'Sistema', items: sistemaItems })
+
+  if (isAdmin) {
+    groups.push({ label: 'Evidencias', items: evidencias })
+    groups.push({ label: 'Sistema', items: filterItems(sistema) })
   }
+
   return groups
+}
+
+function isNavActive(pathname, itemPath) {
+  if (itemPath === '/resumen-pmv3') return pathname === '/resumen-pmv3'
+  if (itemPath === '/') return pathname === '/'
+  return pathname === itemPath || pathname.startsWith(`${itemPath}/`)
 }
 
 export default function Layout({ user, onLogout }) {
@@ -84,8 +101,8 @@ export default function Layout({ user, onLogout }) {
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight">Café Sostenible AI</h1>
-              <p className="text-amber-300/90 text-xs font-medium flex items-center gap-1 mt-0.5">
-                <Sparkles className="w-3 h-3" /> PMV2 · MySQL
+              <p className="text-amber-300 text-xs font-bold flex items-center gap-1 mt-0.5 tracking-wide">
+                <Sparkles className="w-3 h-3" /> PMV3 · Integrado
               </p>
             </div>
           </div>
@@ -100,7 +117,7 @@ export default function Layout({ user, onLogout }) {
               <ul className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon
-                  const isActive = location.pathname === item.path
+                  const isActive = isNavActive(location.pathname, item.path)
                   return (
                     <li key={item.path}>
                       <NavLink
@@ -110,11 +127,16 @@ export default function Layout({ user, onLogout }) {
                           ${
                             isActive
                               ? 'bg-amber-500 text-cafe-900 font-semibold shadow-md scale-[1.02]'
-                              : 'text-cafe-100/90 hover:bg-white/10 hover:text-white hover:translate-x-0.5'
+                              : item.highlight
+                                ? 'text-amber-200 hover:bg-amber-500/20 hover:text-amber-100 border border-amber-500/30'
+                                : 'text-cafe-100/90 hover:bg-white/10 hover:text-white hover:translate-x-0.5'
                           }`}
                       >
                         <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                         <span>{item.label}</span>
+                        {item.highlight && !isActive && (
+                          <span className="ml-auto text-[9px] font-bold uppercase bg-amber-500/30 px-1.5 py-0.5 rounded">PMV3</span>
+                        )}
                       </NavLink>
                     </li>
                   )
@@ -168,8 +190,8 @@ export default function Layout({ user, onLogout }) {
               <Menu size={22} />
             </button>
             <div className="hidden sm:block">
-              <p className="text-xs text-muted font-medium">Plataforma PMV2</p>
-              <p className="text-sm font-semibold text-primary">Trazabilidad inteligente · Café sostenible</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">PMV3 · Integrado</p>
+              <p className="text-sm font-semibold text-primary">Gestión · Trazabilidad · Calidad · IA</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

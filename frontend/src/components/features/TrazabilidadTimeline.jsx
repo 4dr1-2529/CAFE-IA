@@ -22,9 +22,25 @@ export default function TrazabilidadTimeline({ etapas = [], productor, codigoLot
   }
 
   const sorted = [...etapas].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
+  const completadas = sorted.filter((e) => e.estado === 'Completado').length
+  const progreso = sorted.length ? Math.round((completadas / sorted.length) * 100) : 0
 
   return (
     <div className="space-y-4">
+      {sorted.length > 0 && (
+        <div className="mb-2">
+          <div className="flex justify-between text-xs text-cafe-600 dark:text-slate-400 mb-1">
+            <span>Progreso del lote · Etapas completadas: {completadas}</span>
+            <span className="font-semibold">{completadas}/{sorted.length} etapas · {progreso}% avance</span>
+          </div>
+          <div className="h-2 rounded-full bg-cafe-100 dark:bg-slate-700 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-500"
+              style={{ width: `${progreso}%` }}
+            />
+          </div>
+        </div>
+      )}
       {(productor || codigoLote) && (
         <div className="flex flex-wrap gap-3 text-sm">
           {codigoLote && (

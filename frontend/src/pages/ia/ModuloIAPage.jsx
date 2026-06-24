@@ -3,6 +3,8 @@ import { Brain, TrendingUp, AlertTriangle, Lightbulb, Coffee, Zap, Activity } fr
 import { getInfoModelo } from '../../services/ml.service.js'
 import { getLotes, getPredicciones, ejecutarPrediccionIA } from '../../services/api/index.js'
 import PageHeader from '../../components/ui/PageHeader.jsx'
+import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
+import Pmv3ImprovementNotice from '../../components/common/Pmv3ImprovementNotice.jsx'
 import { useToast } from '../../hooks/useToast.js'
 import { tituloLote } from '../../utils/loteDisplay.js'
 
@@ -98,10 +100,16 @@ export default function ModuloIA() {
   return (
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
-        badge="PMV2 · Machine Learning"
+        badge="PMV3 · Machine Learning integrado"
         title="Modelo Predictivo de Machine Learning"
-        subtitle="Analiza los datos del lote para estimar calidad, riesgo y recomendaciones del café."
+        subtitle="Predicción, probabilidad de riesgo, variables analizadas y recomendación por lote."
       />
+
+      <Pmv3IntegrationBanner compact />
+
+      <Pmv3ImprovementNotice>
+        predicción y recomendación basada en datos — variables analizadas, probabilidad de riesgo/calidad y explicación del modelo.
+      </Pmv3ImprovementNotice>
 
       {/* Info del Modelo */}
       {modeloInfo && (
@@ -135,9 +143,10 @@ export default function ModuloIA() {
             </div>
           </div>
           <div className="mt-4 bg-cafeVerde-50 border border-cafeVerde-200 rounded-lg p-4 text-sm text-cafe-800">
-            <p><strong>Modelo predictivo:</strong> Machine Learning que analiza variables del lote y estima calidad y riesgo.</p>
-            <p><strong>Variables:</strong> humedad, altitud, cantidad, variedad, proceso de secado, puntaje de calidad y estado del lote.</p>
-            <p><strong>Resultado:</strong> calidad estimada, nivel de riesgo (bajo / medio / alto), confianza estimada y recomendación.</p>
+            <p className="font-semibold text-cafe-900 mb-2">Explicación del modelo</p>
+            <p><strong>Modelo predictivo:</strong> Machine Learning heurístico que analiza variables del lote y estima calidad y riesgo.</p>
+            <p><strong>Variables de entrada:</strong> humedad, altitud, cantidad, variedad, proceso de secado, puntaje de calidad y estado del lote.</p>
+            <p><strong>Salida:</strong> calidad estimada, probabilidad de riesgo (%), confianza (%) y recomendación accionable.</p>
           </div>
         </div>
       )}
@@ -259,6 +268,26 @@ export default function ModuloIA() {
                     <p className="text-lg font-medium text-red-600 mt-1">Riesgo: {prediccion.porcentaje_riesgo}%</p>
                   )}
                   <p className="text-xs text-cafe-500 mt-2">Probabilidad de acierto · Motor v2.0</p>
+                </div>
+              </div>
+
+              {/* Variables de entrada usadas */}
+              <div className="bg-white border border-cafe-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-cafe-900 mb-3">Variables analizadas por el modelo</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                  {[
+                    { label: 'Humedad', value: prediccion.humedad != null ? `${prediccion.humedad}%` : '—' },
+                    { label: 'Temperatura', value: prediccion.temperatura != null ? `${prediccion.temperatura}°C` : '—' },
+                    { label: 'Altitud', value: prediccion.altitud != null ? `${prediccion.altitud} msnm` : '—' },
+                    { label: 'Variedad', value: prediccion.variedad_cafe || '—' },
+                    { label: 'Secado', value: prediccion.tipo_secado || '—' },
+                    { label: 'Probabilidad riesgo', value: prediccion.porcentaje_riesgo != null ? `${prediccion.porcentaje_riesgo}%` : '—' },
+                  ].map((v) => (
+                    <div key={v.label} className="bg-cafe-50 rounded-lg p-2">
+                      <p className="text-xs text-cafe-500">{v.label}</p>
+                      <p className="font-semibold text-cafe-900">{v.value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 

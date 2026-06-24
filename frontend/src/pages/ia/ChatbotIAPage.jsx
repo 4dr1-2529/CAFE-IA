@@ -115,8 +115,9 @@ export default function ChatbotIAPage() {
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
         title="Chatbot IA lógico"
-        subtitle={`Consultas por rol · ${totalQuestions} preguntas sugeridas en ${SUGGESTED_QUESTIONS.length} categorías`}
+        subtitle={`PMV3 — Consultas sobre producción, lotes, trazabilidad, calidad, reportes y auditoría · ${totalQuestions} preguntas sugeridas`}
         icon={Bot}
+        badge="PMV3 · Chatbot integrado"
       />
 
       <div className="card-panel">

@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react'
 import { Award, Save, CheckCircle, AlertCircle, Eye } from 'lucide-react'
 import { getLotes, getControlCalidad, createEvaluacion } from '../../services/api/index.js'
+import PageHeader from '../../components/ui/PageHeader.jsx'
+import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
+import Pmv3ImprovementNotice from '../../components/common/Pmv3ImprovementNotice.jsx'
+import { useToast } from '../../hooks/useToast.js'
 
 export default function ControlCalidad() {
+  const toast = useToast()
   const [lotes, setLotes] = useState([])
   const [evaluaciones, setEvaluaciones] = useState([])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(null)
+  const [errorMsg, setErrorMsg] = useState(null)
   const [showHistorial, setShowHistorial] = useState(false)
   const [formData, setFormData] = useState({
     loteId: '',
@@ -105,15 +111,13 @@ export default function ControlCalidad() {
     e.preventDefault()
     setLoading(true)
     setSuccess(null)
+    setErrorMsg(null)
 
     const loteIdNum = Number(formData.loteId)
     if (!loteIdNum || Number.isNaN(loteIdNum)) {
-      setSuccess({
-        evaluacion: null,
-        puntaje: 0,
-        calificacion: 'Error',
-        recomendacion: 'Seleccione un lote válido antes de guardar.',
-      })
+      const msg = 'Seleccione un lote válido antes de guardar.'
+      setErrorMsg(msg)
+      toast.error(msg)
       setLoading(false)
       return
     }
@@ -127,12 +131,9 @@ export default function ControlCalidad() {
 
       // Validar que estén en rango 1-10
       if ([aroma, acidez, cuerpo, sabor, balance].some(v => v < 1 || v > 10)) {
-        setSuccess({ 
-          evaluacion: null,
-          puntaje: 0,
-          calificacion: 'Error',
-          recomendacion: 'Los parámetros de cata deben estar entre 1 y 10.'
-        })
+        const msg = 'Los parámetros de cata deben estar entre 1 y 10.'
+        setErrorMsg(msg)
+        toast.error(msg)
         setLoading(false)
         return
       }
@@ -163,6 +164,7 @@ export default function ControlCalidad() {
         calificacion,
         recomendacion: getRecomendacion(calificacion)
       })
+      toast.success('Evaluación de calidad guardada correctamente.')
 
       await loadData()
       setShowHistorial(true)
@@ -181,13 +183,9 @@ export default function ControlCalidad() {
       }))
     } catch (err) {
       console.error('Error guardando evaluación', err)
-      const apiMessage = err?.message || err?.response?.data?.message
-      setSuccess({
-        evaluacion: null,
-        puntaje: 0,
-        calificacion: 'Error',
-        recomendacion: apiMessage || 'No se pudo guardar la evaluación. Intente de nuevo.'
-      })
+      const apiMessage = err?.message || err?.response?.data?.message || 'No se pudo guardar la evaluación. Intente de nuevo.'
+      setErrorMsg(apiMessage)
+      toast.error(apiMessage)
     } finally {
       setLoading(false)
     }
@@ -195,19 +193,39 @@ export default function ControlCalidad() {
 
   const puntaje = calcularPuntaje()
   const calificacion = getCalificacion(puntaje)
+  const promedioHistorial = evaluaciones.length
+    ? Math.round(evaluaciones.reduce((s, e) => s + (Number(e.puntaje_taza) || 0), 0) / evaluaciones.length * 100) / 100
+    : 0
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-            <Award className="w-6 h-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-cafe-900">Control de Calidad</h1>
-            <p className="text-cafe-600">Evaluación sensorial del café según protocolo Q Grader</p>
-          </div>
+      <PageHeader
+        badge="PMV3 · Control de calidad"
+        title="Control de Calidad"
+        subtitle="Evaluación sensorial Q Grader con indicadores, recomendaciones y validación de formulario."
+        icon={Award}
+      />
+
+      <Pmv3IntegrationBanner compact />
+
+      <Pmv3ImprovementNotice>
+        control de calidad con apoyo a la toma de decisiones — indicadores visuales, recomendación automática y validaciones claras.
+      </Pmv3ImprovementNotice>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-4 text-center">
+          <p className="text-2xl font-bold text-cafe-900">{evaluaciones.length}</p>
+          <p className="text-sm text-cafe-600">Evaluaciones realizadas</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-4 text-center">
+          <p className="text-2xl font-bold text-amber-600">{lotesPendientes.length}</p>
+          <p className="text-sm text-cafe-600">Lotes pendientes</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-cafe-100 p-4 text-center">
+          <p className={`text-2xl font-bold ${promedioHistorial >= 85 ? 'text-green-600' : promedioHistorial >= 70 ? 'text-yellow-600' : 'text-cafe-900'}`}>
+            {promedioHistorial || '—'}
+          </p>
+          <p className="text-sm text-cafe-600">Promedio puntaje</p>
         </div>
       </div>
 
@@ -337,8 +355,8 @@ export default function ControlCalidad() {
 
           {/* Preview del resultado */}
           <div className="bg-gradient-to-r from-purple-50 to-cafe-50 rounded-xl p-5 border border-purple-200">
-            <h3 className="font-semibold text-cafe-900 mb-3">Vista Previa</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <h3 className="font-semibold text-cafe-900 mb-3">Vista Previa · Indicadores PMV3</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <p className="text-sm text-cafe-600">Puntaje</p>
                 <p className="text-3xl font-bold text-cafe-900">{puntaje}</p>
@@ -354,7 +372,11 @@ export default function ControlCalidad() {
               </div>
               <div className="text-center">
                 <p className="text-sm text-cafe-600">Estado</p>
-                <p className="text-lg font-semibold text-cafe-900">{formData.loteId ? 'Listo para guardar' : 'Sin lote'}</p>
+                <p className="text-lg font-semibold text-cafe-900">{formData.loteId ? getEstado(calificacion) : 'Sin lote'}</p>
+              </div>
+              <div className="text-center md:col-span-1 col-span-2">
+                <p className="text-sm text-cafe-600">Recomendación</p>
+                <p className="text-xs text-cafe-700 mt-1">{formData.loteId ? getRecomendacion(calificacion) : 'Seleccione un lote'}</p>
               </div>
             </div>
           </div>
@@ -380,6 +402,18 @@ export default function ControlCalidad() {
             </button>
           </div>
         </form>
+
+        {errorMsg && (
+          <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-red-800">Error al guardar</h3>
+                <p className="text-sm text-red-700 mt-1">{errorMsg}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Resultado */}
         {success && (

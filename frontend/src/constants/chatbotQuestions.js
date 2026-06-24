@@ -8,6 +8,8 @@ export const CHATBOT_CATEGORIES_ADMIN = [
       '¿Cuál es el resumen global del sistema?',
       '¿Qué incluye PMV1?',
       '¿Qué mejoras tiene PMV2?',
+      '¿Qué es PMV3 y qué integra?',
+      '¿Qué mejoras incluye el PMV3?',
       '¿Cuál es la arquitectura del proyecto?',
       '¿Qué tecnologías usa el stack?',
       '¿Qué módulos tiene el sistema?',
@@ -70,6 +72,18 @@ export const CHATBOT_CATEGORIES_ADMIN = [
     ],
   },
   {
+    category: 'PMV3 · Integración',
+    questions: [
+      '¿Qué mejoras incluye el PMV3?',
+      '¿Qué es PMV3 y qué integra?',
+      '¿Qué mejoras incluye el PMV3?',
+      '¿Cuál es el resumen global del sistema?',
+      '¿Cuántos lotes tengo pendientes?',
+      '¿Qué reportes puedo generar?',
+      '¿Cuántas acciones hay en auditoría?',
+    ],
+  },
+  {
     category: 'Administración',
     questions: [
       '¿Qué puede hacer el ADMIN?',
@@ -98,6 +112,8 @@ export const CHATBOT_CATEGORIES_CLIENTE = [
       '¿Qué hace el sistema?',
       '¿Qué incluye PMV1?',
       '¿Qué mejoras tiene PMV2?',
+      '¿Qué es PMV3 y qué integra?',
+      '¿Qué mejoras incluye el PMV3?',
       '¿Qué puede hacer mi rol CLIENTE?',
       '¿Cómo funciona la trazabilidad?',
       '¿Cómo funciona el módulo IA?',
@@ -152,6 +168,17 @@ export const CHATBOT_CATEGORIES_CLIENTE = [
       '¿Qué reportes puedo generar?',
       '¿Cómo veo mis reportes?',
       '¿Cuántos reportes he generado?',
+    ],
+  },
+  {
+    category: 'PMV3 · Mi cuenta',
+    questions: [
+      '¿Qué mejoras incluye el PMV3?',
+      '¿Qué es PMV3 y qué integra?',
+      '¿Qué mejoras incluye el PMV3?',
+      '¿Qué lotes tengo pendientes?',
+      '¿Cómo veo mis reportes?',
+      '¿Cómo contacto al administrador?',
     ],
   },
   {

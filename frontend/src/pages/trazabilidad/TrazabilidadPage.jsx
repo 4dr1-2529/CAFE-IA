@@ -4,6 +4,8 @@ import { getLotes, getTrazabilidad } from '../../services/api/index.js'
 import LoteQrPanel from '../../components/features/LoteQrPanel.jsx'
 import TrazabilidadTimeline from '../../components/features/TrazabilidadTimeline.jsx'
 import PageHeader from '../../components/ui/PageHeader.jsx'
+import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
+import Pmv3ImprovementNotice from '../../components/common/Pmv3ImprovementNotice.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { tituloLote, subtituloLote, parseLoteCodigo, tituloLoteFromRecord } from '../../utils/loteDisplay.js'
 
@@ -86,10 +88,16 @@ export default function Trazabilidad() {
   return (
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
-        badge="PMV2 · Trazabilidad"
+        badge="PMV3 · Línea de tiempo"
         title="Trazabilidad del café"
-        subtitle="Consulta el historial por lote. El código interno se muestra solo como referencia técnica."
+        subtitle="Consulta el historial por lote con línea de tiempo visual y progreso por etapas."
       />
+
+      <Pmv3IntegrationBanner compact />
+
+      <Pmv3ImprovementNotice>
+        trazabilidad visual del proceso cafetalero — línea de tiempo, porcentaje de avance y etapas completadas por lote.
+      </Pmv3ImprovementNotice>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-cafe-100 dark:border-slate-700 p-4">
         <div className="relative">

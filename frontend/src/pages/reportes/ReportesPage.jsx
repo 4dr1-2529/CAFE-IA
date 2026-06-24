@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FileText, Download, Package, Award, Route, Brain, Calendar, RefreshCw } from 'lucide-react'
+import { FileText, Download, Package, Award, Route, Brain, Calendar, RefreshCw, Layers } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { tituloLote, parseLoteCodigo } from '../../utils/loteDisplay.js'
@@ -8,11 +8,14 @@ import { normalizeReportePayload } from '../../utils/reportes.js'
 import { getReporteProduccion, getReporteCalidad, getReportePredicciones, getReporteTrazabilidad, downloadReporte } from '../../services/api/index.js'
 import ChartEmpty from '../../components/ui/ChartEmpty.jsx'
 import PageLoader from '../../components/common/PageLoader.jsx'
+import PageHeader from '../../components/ui/PageHeader.jsx'
+import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
+import { PMV3_IMPROVEMENTS_TABLE, PMV3_VERSION_CARDS } from '../../constants/pmv3Content.js'
 import { chartAxisTick, chartGridStroke, chartTooltipStyle } from '../../utils/chartTheme.js'
 
 const CHART_COLORS = ['#b8895a', '#5c8a6b', '#7c9eb2', '#c4a574', '#8b6914']
 
-export default function Reportes() {
+export default function Reportes({ pmv3Only = false }) {
   const { user } = useAuth()
   const isAdmin = isAdminUser(user)
   const [reportScope, setReportScope] = useState('personal')
@@ -21,7 +24,7 @@ export default function Reportes() {
   const [reporteCalidad, setReporteCalidad] = useState({})
   const [reportePredicciones, setReportePredicciones] = useState({})
   const [reporteTrazabilidad, setReporteTrazabilidad] = useState({})
-  const [activeReport, setActiveReport] = useState('produccion')
+  const [activeReport, setActiveReport] = useState(pmv3Only ? 'pmv3' : 'pmv3')
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
@@ -125,6 +128,7 @@ export default function Reportes() {
   }, [loadData])
 
   const reports = [
+    { id: 'pmv3', label: 'Resumen PMV3', icon: Layers },
     { id: 'produccion', label: 'Producción', icon: Package },
     { id: 'calidad', label: 'Calidad', icon: Award },
     { id: 'trazabilidad', label: 'Trazabilidad', icon: Route },
@@ -150,32 +154,27 @@ export default function Reportes() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Header */}
-      <div className="card-panel !p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-            <FileText className="w-6 h-6 text-green-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-cafe-900 dark:text-slate-100">
-              {isAdmin ? 'Reportes Generales del Sistema' : 'Mis Reportes'}
-            </h1>
-            <p className="text-cafe-600 dark:text-slate-400">
-              {isAdmin
-                ? 'Se muestran datos globales de todos los clientes.'
-                : 'Solo se muestran tus productores, lotes y resultados.'}
-            </p>
-            {reportScope && (
-              <p className="text-xs text-cafe-500 dark:text-slate-500 mt-1">
-                Alcance: {reportScope === 'global' ? 'GLOBAL' : 'PERSONAL'}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        badge="PMV3 · Reportes integrados"
+        title={pmv3Only ? 'Resumen PMV3' : isAdmin ? 'Reportes Generales del Sistema' : 'Mis Reportes'}
+        subtitle={pmv3Only
+          ? 'Vista consolidada: PMV1 implementado · PMV2 implementado · PMV3 integrado'
+          : isAdmin
+            ? 'Datos globales de todos los clientes · exportación PDF/Excel · resumen PMV3 consolidado'
+            : 'Tus productores, lotes y resultados · exportación PDF/Excel'}
+        icon={pmv3Only ? Layers : FileText}
+      />
 
-      {/* Selector de reporte */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {reportScope && (
+        <p className="text-xs text-cafe-500 dark:text-slate-500 -mt-4">
+          Alcance: {reportScope === 'global' ? 'GLOBAL' : 'PERSONAL'}
+        </p>
+      )}
+
+      <Pmv3IntegrationBanner compact />
+
+      {!pmv3Only && (
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {reports.map(report => {
           const Icon = report.icon
           return (
@@ -204,6 +203,7 @@ export default function Reportes() {
           )
         })}
       </div>
+      )}
 
       {/* Contenido del reporte */}
       <div className="card-panel !p-6">
@@ -213,10 +213,110 @@ export default function Reportes() {
           </h2>
           <div className="flex gap-2">
             <button onClick={loadData} className="flex items-center gap-2 bg-cafe-100 text-cafe-700 font-semibold py-2 px-4 rounded-lg hover:bg-cafe-200 transition-all"><RefreshCw className="w-4 h-4" />Actualizar</button>
-            <button disabled={exporting} onClick={() => generarReporte(activeReport, 'pdf')} className="flex items-center gap-2 bg-green-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-800 border border-green-800 shadow-sm transition-all disabled:opacity-50 dark:bg-green-600 dark:hover:bg-green-500"><Download className="w-4 h-4" />PDF</button>
-            <button disabled={exporting} onClick={() => generarReporte(activeReport, 'excel')} className="flex items-center gap-2 bg-cafe-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-cafe-900 border border-cafe-900 shadow-sm transition-all disabled:opacity-50 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border-slate-500"><Download className="w-4 h-4" />Excel</button>
+            {activeReport !== 'pmv3' && (
+              <>
+                <button disabled={exporting} onClick={() => generarReporte(activeReport, 'pdf')} className="flex items-center gap-2 bg-green-700 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-800 border border-green-800 shadow-sm transition-all disabled:opacity-50 dark:bg-green-600 dark:hover:bg-green-500"><Download className="w-4 h-4" />PDF</button>
+                <button disabled={exporting} onClick={() => generarReporte(activeReport, 'excel')} className="flex items-center gap-2 bg-cafe-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-cafe-900 border border-cafe-900 shadow-sm transition-all disabled:opacity-50 dark:bg-slate-700 dark:hover:bg-slate-600 dark:border-slate-500"><Download className="w-4 h-4" />Excel</button>
+              </>
+            )}
           </div>
         </div>
+
+        {/* Resumen PMV3 */}
+        {(activeReport === 'pmv3' || pmv3Only) && (
+          <div className="space-y-6">
+            <Pmv3IntegrationBanner />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {PMV3_VERSION_CARDS.map((card) => (
+                <div key={card.id} className={`rounded-xl border border-cafe-200 dark:border-slate-600 overflow-hidden`}>
+                  <div className={`bg-gradient-to-r ${card.color} px-4 py-3`}>
+                    <h3 className="font-bold text-white text-lg">{card.titulo}</h3>
+                    <p className="text-white/90 text-sm">{card.subtitulo}</p>
+                  </div>
+                  <div className="p-4 bg-white dark:bg-slate-900">
+                    <ul className="text-sm text-cafe-700 dark:text-slate-300 space-y-1 mb-3">
+                      {card.items.map((item) => (
+                        <li key={item}>· {item}</li>
+                      ))}
+                    </ul>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 text-xs font-semibold">
+                      Estado: Completado
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/30 dark:to-slate-900 rounded-lg p-4 text-center border border-amber-200 dark:border-amber-800">
+                <p className="text-3xl font-bold text-cafe-900 dark:text-slate-100">{stats?.totalLotes ?? 0}</p>
+                <p className="text-sm text-cafe-600 dark:text-slate-400">Lotes totales</p>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-slate-900 rounded-lg p-4 text-center border border-emerald-200 dark:border-emerald-800">
+                <p className="text-3xl font-bold text-emerald-700">{stats?.produccionTotal ?? 0}</p>
+                <p className="text-sm text-cafe-600 dark:text-slate-400">Kg producidos</p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/30 dark:to-slate-900 rounded-lg p-4 text-center border border-purple-200 dark:border-purple-800">
+                <p className="text-3xl font-bold text-purple-700">{stats?.calidadPromedio ?? 0}</p>
+                <p className="text-sm text-cafe-600 dark:text-slate-400">Calidad promedio</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-slate-900 rounded-lg p-4 text-center border border-blue-200 dark:border-blue-800">
+                <p className="text-3xl font-bold text-blue-700">{stats?.totalPredicciones ?? 0}</p>
+                <p className="text-sm text-cafe-600 dark:text-slate-400">Predicciones IA</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="border border-cafe-100 dark:border-slate-600 rounded-xl p-4">
+                <h3 className="font-semibold text-cafe-900 dark:text-slate-100 mb-3">PMV1 · Operaciones</h3>
+                <ul className="space-y-2 text-sm text-cafe-700 dark:text-slate-300">
+                  <li>Productores: <strong>{stats?.totalProductores ?? 0}</strong></li>
+                  <li>Lotes con trazabilidad: <strong>{(stats?.trazaPie?.[0]?.value) ?? 0}</strong></li>
+                  <li>Calidad alta/media/baja: <strong>{stats?.porCalidad?.alta ?? 0}</strong> / <strong>{stats?.porCalidad?.media ?? 0}</strong> / <strong>{stats?.porCalidad?.baja ?? 0}</strong></li>
+                </ul>
+              </div>
+              <div className="border border-amber-200 dark:border-amber-800 rounded-xl p-4 bg-amber-50/50 dark:bg-amber-950/20">
+                <h3 className="font-semibold text-cafe-900 dark:text-slate-100 mb-3">PMV2 · Inteligencia</h3>
+                <ul className="space-y-2 text-sm text-cafe-700 dark:text-slate-300">
+                  <li>Predicciones IA: <strong>{stats?.totalPredicciones ?? 0}</strong> (confianza prom. {stats?.resumenPredicciones?.promedio_confianza ?? 0}%)</li>
+                  <li>Lotes con IA: <strong>{(stats?.iaPie?.[0]?.value) ?? 0}</strong></li>
+                  <li>Etapas trazabilidad: pendientes <strong>{stats?.resumenTrazabilidad?.lotes_pendientes ?? 0}</strong>, comercializados <strong>{stats?.resumenTrazabilidad?.lotes_comercializados ?? 0}</strong></li>
+                </ul>
+              </div>
+            </div>
+            <p className="text-sm text-cafe-600 dark:text-slate-400 text-center">
+              PMV3 consolida KPIs de PMV1 y PMV2 en una vista única. Use las pestañas Producción, Calidad, Trazabilidad e IA para exportar reportes detallados.
+            </p>
+
+            <div className="overflow-x-auto rounded-xl border border-cafe-200 dark:border-slate-600">
+              <h3 className="font-bold text-cafe-900 dark:text-white p-4 border-b border-cafe-100 dark:border-slate-700">
+                Tabla de mejoras PMV3
+              </h3>
+              <table className="w-full text-sm">
+                <thead className="bg-cafe-50 dark:bg-slate-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold">Módulo</th>
+                    <th className="px-4 py-3 text-left font-semibold">Mejora</th>
+                    <th className="px-4 py-3 text-left font-semibold">Evidencia</th>
+                    <th className="px-4 py-3 text-left font-semibold">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-cafe-100 dark:divide-slate-700">
+                  {PMV3_IMPROVEMENTS_TABLE.map((row) => (
+                    <tr key={row.modulo} className="hover:bg-cafe-50 dark:hover:bg-slate-800/50">
+                      <td className="px-4 py-3 font-medium text-cafe-900 dark:text-slate-100">{row.modulo}</td>
+                      <td className="px-4 py-3 text-cafe-700 dark:text-slate-300">{row.mejora}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-cafe-600 dark:text-slate-400">{row.evidencia}</td>
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 text-xs font-semibold">
+                          {row.estado}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Reporte de Producción */}
         {activeReport === 'produccion' && (

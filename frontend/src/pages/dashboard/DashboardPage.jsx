@@ -34,6 +34,9 @@ import { chartAxisTick, chartGridStroke, chartTooltipStyle } from '../../utils/c
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import KpiCard from '../../components/ui/KpiCard.jsx'
 import { KpiSkeleton } from '../../components/ui/Skeleton.jsx'
+import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
+import { PMV3_MAIN_BANNER, PMV3_DASHBOARD_IMPROVEMENTS } from '../../constants/pmv3Content.js'
+import { CheckCircle2 } from 'lucide-react'
 
 const COLORS = {
   alta: '#22c55e',
@@ -184,15 +187,21 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fadeIn">
       <PageHeader
-        badge="PMV2 · Dashboard analítico"
+        badge="PMV3 · Dashboard integrado"
         title={isAdmin ? 'Dashboard General del Sistema' : 'Mi Dashboard de Producción'}
-        subtitle={`${isAdmin ? `Vista global · ${c.totalClientes ?? 0} clientes` : 'Mi producción'} — ${new Date().toLocaleDateString('es-PE', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })}`}
+        subtitle={`${isAdmin ? `Vista global · ${c.totalClientes ?? 0} clientes` : 'Mi producción'} — KPIs en tiempo real desde MySQL`}
       />
+
+      <div className="rounded-xl border-2 border-amber-400/60 bg-gradient-to-r from-amber-100 via-white to-emerald-100 dark:from-amber-950/50 dark:via-slate-900 dark:to-emerald-950/40 p-5 shadow-sm">
+        <p className="text-lg font-bold text-cafe-900 dark:text-white text-center md:text-left">
+          {PMV3_MAIN_BANNER}
+        </p>
+        <p className="text-sm text-cafe-600 dark:text-slate-400 mt-2 text-center md:text-left">
+          Versión unificada que integra operaciones PMV1 e inteligencia PMV2 con indicadores visuales mejorados.
+        </p>
+      </div>
+
+      <Pmv3IntegrationBanner compact />
 
       {!hasData && (
         <EmptyState message="No hay registros disponibles todavía." />
@@ -206,6 +215,40 @@ export default function Dashboard() {
         >
           Actualizar datos
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <KpiCard
+          label="Productores registrados"
+          value={isAdmin ? (c.totalProductores || 0) : (c.misProductores || 0)}
+          icon={Users}
+          color="amber"
+        />
+        <KpiCard
+          label="Lotes trazables"
+          value={isAdmin ? (c.lotesConTrazabilidad || 0) : (c.misLotesConTrazabilidad || 0)}
+          icon={Activity}
+          color="green"
+        />
+        <KpiCard
+          label="Evaluaciones de calidad"
+          value={isAdmin ? (c.evaluacionesCalidad || 0) : (c.misEvaluacionesCalidad || 0)}
+          icon={Award}
+          color="purple"
+        />
+        <KpiCard
+          label="Predicciones IA"
+          value={isAdmin ? (c.prediccionesIA || 0) : (c.misPrediccionesIA || 0)}
+          icon={Brain}
+          color="blue"
+        />
+        <KpiCard
+          label="Acciones auditadas"
+          value={isAdmin ? (c.accionesAuditoria || 0) : '—'}
+          icon={ClipboardList}
+          color="amber"
+          trend={isAdmin ? 'Solo ADMIN' : 'Consulta al admin'}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -611,6 +654,26 @@ export default function Dashboard() {
           />
         </div>
       )}
+
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-amber-200 dark:border-amber-800 p-6">
+        <h3 className="text-lg font-bold text-cafe-900 dark:text-white mb-4 flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-amber-600" />
+          Mejoras implementadas en PMV3
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {PMV3_DASHBOARD_IMPROVEMENTS.map((item) => (
+            <div key={item.titulo} className="rounded-lg border border-cafe-100 dark:border-slate-700 p-4 bg-cafe-50/50 dark:bg-slate-800/50">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-cafe-900 dark:text-slate-100 text-sm">{item.titulo}</p>
+                  <p className="text-xs text-cafe-600 dark:text-slate-400 mt-1">{item.desc}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
