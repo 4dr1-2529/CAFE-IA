@@ -25,9 +25,9 @@ Sin `SONAR_TOKEN`, el job `sonarcloud` en CI fallará; el resto de jobs (backend
 | `backend/tests` | Tests unitarios e integración |
 | `testing/cypress/e2e` | Pruebas E2E (como tests) |
 
-Excluido: `node_modules`, `dist`, videos Cypress, scripts SQL, carpeta `ml/`, documentación (`Plan-de-Pruebas/`, `Reporte-Calidad-Software/`, `docs/`).
+Excluido del análisis (`.sonarignore` + `sonar.exclusions`): `node_modules`, `dist`, videos Cypress, scripts SQL, carpeta `ml/`, documentación (`Plan-de-Pruebas/`, `Reporte-Calidad-Software/`, `docs/`).
 
-La detección de duplicación (CPD) también excluye esas carpetas y archivos `.md`, para que la métrica refleje solo código de aplicación en `frontend/src` y `backend/src`.
+La detección de duplicación (CPD) también excluye esas carpetas, archivos `.md` y las copias intencionadas de `inputValidation.js` entre frontend y backend (cada servicio se despliega por separado en Vercel/Railway).
 
 ## CI
 

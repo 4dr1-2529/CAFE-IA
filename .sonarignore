@@ -1,0 +1,18 @@
+# Evidencias y documentación — no son código de aplicación
+Plan-de-Pruebas/**
+Reporte-Calidad-Software/**
+docs/**
+
+# Artefactos de build y dependencias
+**/node_modules/**
+**/dist/**
+**/build/**
+**/coverage/**
+
+# ML, scripts SQL y evidencias Cypress
+ml/**
+**/*.sql
+backend/scripts/**
+testing/cypress/videos/**
+testing/cypress/screenshots/**
+testing/cypress/evidencias/**

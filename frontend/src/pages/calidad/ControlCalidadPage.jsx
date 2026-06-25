@@ -133,15 +133,6 @@ export default function ControlCalidad() {
       const dulzor = Number(formData.dulzor)
       const balance = Number(formData.balance)
 
-      // Validar que estén en rango 1-10
-      if ([aroma, acidez, cuerpo, sabor, dulzor, balance].some(v => v < 1 || v > 10)) {
-        const msg = 'Los parámetros de cata deben estar entre 1 y 10.'
-        setErrorMsg(msg)
-        toast.error(msg)
-        setLoading(false)
-        return
-      }
-
       const puntaje = calcularPuntaje()
       const calificacion = getCalificacion(puntaje)
 
