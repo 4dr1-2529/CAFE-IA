@@ -5,6 +5,7 @@ import PageHeader from '../../components/ui/PageHeader.jsx'
 import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
 import Pmv3ImprovementNotice from '../../components/common/Pmv3ImprovementNotice.jsx'
 import { useToast } from '../../hooks/useToast.js'
+import { validateCalidadForm } from '../../utils/validation.js'
 
 export default function ControlCalidad() {
   const toast = useToast()
@@ -144,15 +145,27 @@ export default function ControlCalidad() {
       const puntaje = calcularPuntaje()
       const calificacion = getCalificacion(puntaje)
 
-      const evaluacionGuardada = await createEvaluacion({
+      const payload = {
         lote_id: loteIdNum,
+        aroma,
+        acidez,
+        cuerpo,
+        sabor,
+        dulzor,
+        balance,
+      }
+      const { valid, errors } = validateCalidadForm(payload)
+      if (!valid) {
+        const msg = Object.values(errors)[0] || 'Revise los parámetros de cata (1-10).'
+        setErrorMsg(msg)
+        toast.error(msg)
+        setLoading(false)
+        return
+      }
+
+      const evaluacionGuardada = await createEvaluacion({
+        ...payload,
         lote_codigo: formData.loteCodigo,
-        aroma: aroma,
-        acidez: acidez,
-        cuerpo: cuerpo,
-        sabor: sabor,
-        dulzor: dulzor,
-        balance: balance,
         defectos: Number(formData.defectos) || 0,
         observaciones: formData.observaciones,
         evaluador: formData.evaluador,

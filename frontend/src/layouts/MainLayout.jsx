@@ -1,6 +1,5 @@
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
 import { NavLink, useLocation, Outlet } from 'react-router-dom'
-import PageLoader from '../components/common/PageLoader.jsx'
 import {
   Coffee, LayoutDashboard, Package, Route, Award, Brain, Database, FileText,
   Camera, Network, BookOpen, LogOut, Menu, Moon, Sun, Users, Sparkles, Bot, ClipboardList, UserCog, Layers,
@@ -210,9 +209,7 @@ export default function Layout({ user, onLogout }) {
 
         <main className="flex-1 p-4 lg:p-8 overflow-auto">
           <div key={location.pathname} className="page-enter">
-            <Suspense fallback={<PageLoader />}>
-              <Outlet />
-            </Suspense>
+            <Outlet />
           </div>
         </main>
       </div>

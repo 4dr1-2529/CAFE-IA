@@ -2,7 +2,7 @@ import { Component } from 'react'
 import PropTypes from 'prop-types'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
-import { isChunkLoadError } from '../../utils/lazyWithRetry.js'
+import { isChunkLoadError } from '../../utils/deployGuard.js'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -20,11 +20,14 @@ class ErrorBoundary extends Component {
       errorInfo: errorInfo
     })
     console.error('ErrorBoundary capturó un error:', error, errorInfo)
+    if (isChunkLoadError(error)) {
+      globalThis.location.reload()
+    }
   }
 
   handleRetry = () => {
     if (isChunkLoadError(this.state.error)) {
-      window.location.reload()
+      globalThis.location.reload()
       return
     }
     this.setState({ hasError: false, error: null, errorInfo: null })
