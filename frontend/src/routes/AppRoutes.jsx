@@ -4,23 +4,21 @@ import MainLayout from '../layouts/MainLayout.jsx'
 import LoginPage from '../pages/auth/LoginPage.jsx'
 import { ROUTES } from '../constants/routes.js'
 import AdminRoute from '../components/auth/AdminRoute.jsx'
-import { lazyWithRetry } from '../utils/lazyWithRetry.js'
-
-const DashboardPage = lazyWithRetry(() => import('../pages/dashboard/DashboardPage.jsx'))
-const ProductoresPage = lazyWithRetry(() => import('../pages/productores/ProductoresPage.jsx'))
-const RegistroProduccionPage = lazyWithRetry(() => import('../pages/produccion/RegistroProduccionPage.jsx'))
-const TrazabilidadPage = lazyWithRetry(() => import('../pages/trazabilidad/TrazabilidadPage.jsx'))
-const ControlCalidadPage = lazyWithRetry(() => import('../pages/calidad/ControlCalidadPage.jsx'))
-const ModuloIAPage = lazyWithRetry(() => import('../pages/ia/ModuloIAPage.jsx'))
-const ChatbotIAPage = lazyWithRetry(() => import('../pages/ia/ChatbotIAPage.jsx'))
-const BaseDatosPage = lazyWithRetry(() => import('../pages/sistema/BaseDatosPage.jsx'))
-const ReportesPage = lazyWithRetry(() => import('../pages/reportes/ReportesPage.jsx'))
-const ResumenPMV3Page = lazyWithRetry(() => import('../pages/reportes/ResumenPMV3Page.jsx'))
-const AuditoriaPage = lazyWithRetry(() => import('../pages/sistema/AuditoriaPage.jsx'))
-const EvidenciasPMVPage = lazyWithRetry(() => import('../pages/sistema/EvidenciasPMVPage.jsx'))
-const ArquitecturaPage = lazyWithRetry(() => import('../pages/sistema/ArquitecturaPage.jsx'))
-const HistoriasUsuarioPage = lazyWithRetry(() => import('../pages/sistema/HistoriasUsuarioPage.jsx'))
-const UsuariosPage = lazyWithRetry(() => import('../pages/sistema/UsuariosPage.jsx'))
+import DashboardPage from '../pages/dashboard/DashboardPage.jsx'
+import ProductoresPage from '../pages/productores/ProductoresPage.jsx'
+import RegistroProduccionPage from '../pages/produccion/RegistroProduccionPage.jsx'
+import TrazabilidadPage from '../pages/trazabilidad/TrazabilidadPage.jsx'
+import ControlCalidadPage from '../pages/calidad/ControlCalidadPage.jsx'
+import ModuloIAPage from '../pages/ia/ModuloIAPage.jsx'
+import ChatbotIAPage from '../pages/ia/ChatbotIAPage.jsx'
+import BaseDatosPage from '../pages/sistema/BaseDatosPage.jsx'
+import ReportesPage from '../pages/reportes/ReportesPage.jsx'
+import ResumenPMV3Page from '../pages/reportes/ResumenPMV3Page.jsx'
+import AuditoriaPage from '../pages/sistema/AuditoriaPage.jsx'
+import EvidenciasPMVPage from '../pages/sistema/EvidenciasPMVPage.jsx'
+import ArquitecturaPage from '../pages/sistema/ArquitecturaPage.jsx'
+import HistoriasUsuarioPage from '../pages/sistema/HistoriasUsuarioPage.jsx'
+import UsuariosPage from '../pages/sistema/UsuariosPage.jsx'
 
 function ProtectedShell() {
   const { isAuthenticated, user, logout, loading } = useAuth()
