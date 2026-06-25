@@ -1,26 +1,26 @@
-import { lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import MainLayout from '../layouts/MainLayout.jsx'
 import LoginPage from '../pages/auth/LoginPage.jsx'
 import { ROUTES } from '../constants/routes.js'
 import AdminRoute from '../components/auth/AdminRoute.jsx'
+import { lazyWithRetry } from '../utils/lazyWithRetry.js'
 
-const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage.jsx'))
-const ProductoresPage = lazy(() => import('../pages/productores/ProductoresPage.jsx'))
-const RegistroProduccionPage = lazy(() => import('../pages/produccion/RegistroProduccionPage.jsx'))
-const TrazabilidadPage = lazy(() => import('../pages/trazabilidad/TrazabilidadPage.jsx'))
-const ControlCalidadPage = lazy(() => import('../pages/calidad/ControlCalidadPage.jsx'))
-const ModuloIAPage = lazy(() => import('../pages/ia/ModuloIAPage.jsx'))
-const ChatbotIAPage = lazy(() => import('../pages/ia/ChatbotIAPage.jsx'))
-const BaseDatosPage = lazy(() => import('../pages/sistema/BaseDatosPage.jsx'))
-const ReportesPage = lazy(() => import('../pages/reportes/ReportesPage.jsx'))
-const ResumenPMV3Page = lazy(() => import('../pages/reportes/ResumenPMV3Page.jsx'))
-const AuditoriaPage = lazy(() => import('../pages/sistema/AuditoriaPage.jsx'))
-const EvidenciasPMVPage = lazy(() => import('../pages/sistema/EvidenciasPMVPage.jsx'))
-const ArquitecturaPage = lazy(() => import('../pages/sistema/ArquitecturaPage.jsx'))
-const HistoriasUsuarioPage = lazy(() => import('../pages/sistema/HistoriasUsuarioPage.jsx'))
-const UsuariosPage = lazy(() => import('../pages/sistema/UsuariosPage.jsx'))
+const DashboardPage = lazyWithRetry(() => import('../pages/dashboard/DashboardPage.jsx'))
+const ProductoresPage = lazyWithRetry(() => import('../pages/productores/ProductoresPage.jsx'))
+const RegistroProduccionPage = lazyWithRetry(() => import('../pages/produccion/RegistroProduccionPage.jsx'))
+const TrazabilidadPage = lazyWithRetry(() => import('../pages/trazabilidad/TrazabilidadPage.jsx'))
+const ControlCalidadPage = lazyWithRetry(() => import('../pages/calidad/ControlCalidadPage.jsx'))
+const ModuloIAPage = lazyWithRetry(() => import('../pages/ia/ModuloIAPage.jsx'))
+const ChatbotIAPage = lazyWithRetry(() => import('../pages/ia/ChatbotIAPage.jsx'))
+const BaseDatosPage = lazyWithRetry(() => import('../pages/sistema/BaseDatosPage.jsx'))
+const ReportesPage = lazyWithRetry(() => import('../pages/reportes/ReportesPage.jsx'))
+const ResumenPMV3Page = lazyWithRetry(() => import('../pages/reportes/ResumenPMV3Page.jsx'))
+const AuditoriaPage = lazyWithRetry(() => import('../pages/sistema/AuditoriaPage.jsx'))
+const EvidenciasPMVPage = lazyWithRetry(() => import('../pages/sistema/EvidenciasPMVPage.jsx'))
+const ArquitecturaPage = lazyWithRetry(() => import('../pages/sistema/ArquitecturaPage.jsx'))
+const HistoriasUsuarioPage = lazyWithRetry(() => import('../pages/sistema/HistoriasUsuarioPage.jsx'))
+const UsuariosPage = lazyWithRetry(() => import('../pages/sistema/UsuariosPage.jsx'))
 
 function ProtectedShell() {
   const { isAuthenticated, user, logout, loading } = useAuth()

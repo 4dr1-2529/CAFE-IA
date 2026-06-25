@@ -2,6 +2,8 @@ import { Component } from 'react'
 import PropTypes from 'prop-types'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
+import { isChunkLoadError } from '../../utils/lazyWithRetry.js'
+
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props)
@@ -21,6 +23,10 @@ class ErrorBoundary extends Component {
   }
 
   handleRetry = () => {
+    if (isChunkLoadError(this.state.error)) {
+      window.location.reload()
+      return
+    }
     this.setState({ hasError: false, error: null, errorInfo: null })
   }
 
@@ -34,7 +40,9 @@ class ErrorBoundary extends Component {
             </div>
             <h1 className="text-2xl font-bold text-cafe-900 mb-4">Error en componente</h1>
             <p className="text-cafe-600 mb-6">
-              Ha ocurrido un error en este componente. Revisa la consola para más detalles.
+              {isChunkLoadError(this.state.error)
+                ? 'Hay una versión nueva de la aplicación. Pulse reintentar para recargar la página.'
+                : 'Ha ocurrido un error en este componente. Revisa la consola para más detalles.'}
             </p>
             <button
               type="button"

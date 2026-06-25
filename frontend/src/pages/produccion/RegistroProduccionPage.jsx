@@ -206,6 +206,7 @@ export default function RegistroProduccion() {
       try {
         await createProduccion({
           lote_id: lotePk,
+          cantidad_kg: cantidadKg,
           humedad: hm,
           temperatura: temp,
           altitud: alt,
