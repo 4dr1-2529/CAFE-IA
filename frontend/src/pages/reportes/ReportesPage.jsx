@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { FileText, Download, Package, Award, Route, Brain, Calendar, RefreshCw, Layers } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -24,7 +24,7 @@ export default function Reportes({ pmv3Only = false }) {
   const [reporteCalidad, setReporteCalidad] = useState({})
   const [reportePredicciones, setReportePredicciones] = useState({})
   const [reporteTrazabilidad, setReporteTrazabilidad] = useState({})
-  const [activeReport, setActiveReport] = useState(pmv3Only ? 'pmv3' : 'pmv3')
+  const [activeReport, setActiveReport] = useState('pmv3')
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
@@ -136,6 +136,12 @@ export default function Reportes({ pmv3Only = false }) {
   ]
 
   const [exporting, setExporting] = useState(false)
+
+  const calidadPieData = useMemo(() => [
+    { name: 'Alta', value: stats?.porCalidad?.alta ?? 0, color: '#22c55e' },
+    { name: 'Media', value: stats?.porCalidad?.media ?? 0, color: '#f59e0b' },
+    { name: 'Baja', value: stats?.porCalidad?.baja ?? 0, color: '#ef4444' },
+  ], [stats?.porCalidad])
 
   const generarReporte = async (tipo, formato = 'pdf') => {
     setExporting(true)
@@ -643,11 +649,7 @@ export default function Reportes({ pmv3Only = false }) {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={[
-                      { name: 'Alta', value: stats?.porCalidad.alta, color: '#22c55e' },
-                      { name: 'Media', value: stats?.porCalidad.media, color: '#f59e0b' },
-                      { name: 'Baja', value: stats?.porCalidad.baja, color: '#ef4444' }
-                    ]}
+                    data={calidadPieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -656,11 +658,7 @@ export default function Reportes({ pmv3Only = false }) {
                     dataKey="value"
                     label
                   >
-                    {[
-                      { name: 'Alta', value: stats?.porCalidad.alta, color: '#22c55e' },
-                      { name: 'Media', value: stats?.porCalidad.media, color: '#f59e0b' },
-                      { name: 'Baja', value: stats?.porCalidad.baja, color: '#ef4444' }
-                    ].map((entry, index) => (
+                    {calidadPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
