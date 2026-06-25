@@ -6,7 +6,8 @@ import { tituloLote, parseLoteCodigo } from '../../utils/loteDisplay.js'
 import { isAdminUser } from '../../utils/role.js'
 import { normalizeReportePayload } from '../../utils/reportes.js'
 import { getReporteProduccion, getReporteCalidad, getReportePredicciones, getReporteTrazabilidad, downloadReporte } from '../../services/api/index.js'
-import ChartEmpty from '../../components/ui/ChartEmpty.jsx'
+import { countCalidadFromEvaluaciones } from '../../utils/calidadBuckets.js'
+import ComparisonPiePanel from '../../components/charts/ComparisonPiePanel.jsx'
 import PageLoader from '../../components/common/PageLoader.jsx'
 import PageHeader from '../../components/ui/PageHeader.jsx'
 import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
@@ -57,13 +58,7 @@ export default function Reportes({ pmv3Only = false }) {
           pred?.resumen?.total ??
           (Array.isArray(pred?.predicciones) ? pred.predicciones.length : 0)
       )
-      const porCalidadMap = { alta: 0, media: 0, baja: 0 }
-      ;(calidad?.evaluaciones || []).forEach((e) => {
-        const q = (e.calidad_final || '').toLowerCase()
-        if (q.includes('excel') || q.includes('alta')) porCalidadMap.alta++
-        else if (q.includes('buen') || q.includes('acept') || q.includes('medi')) porCalidadMap.media++
-        else porCalidadMap.baja++
-      })
+      const porCalidadMap = countCalidadFromEvaluaciones(calidad?.evaluaciones)
       const porMesChart = (prod?.porMes || []).map((r) => ({
         mes: r.mes,
         kg: Number(r.kg) || 0,
@@ -396,50 +391,18 @@ export default function Reportes({ pmv3Only = false }) {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="border border-cafe-100 dark:border-slate-600 rounded-xl p-4 bg-white dark:bg-slate-900/30">
-                <h3 className="font-semibold text-cafe-900 dark:text-slate-100 mb-3">
-                  {isAdmin ? 'Lotes con / sin trazabilidad' : 'Mis lotes con / sin trazabilidad'}
-                </h3>
-                {(stats?.trazaPie || []).length === 0 ? (
-                  <ChartEmpty message="No hay datos suficientes para comparar trazabilidad." />
-                ) : (
-                  <div className="h-64 chart-container">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={stats.trazaPie} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                          {stats.trazaPie.map((e, i) => (
-                            <Cell key={e.name} fill={e.color || CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-              <div className="border border-cafe-100 dark:border-slate-600 rounded-xl p-4 bg-white dark:bg-slate-900/30">
-                <h3 className="font-semibold text-cafe-900 dark:text-slate-100 mb-3">
-                  {isAdmin ? 'Lotes con / sin IA' : 'Mis lotes con / sin IA'}
-                </h3>
-                {(stats?.iaPie || []).length === 0 ? (
-                  <ChartEmpty message="No hay datos suficientes para comparar predicciones IA." />
-                ) : (
-                  <div className="h-64 chart-container">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={stats.iaPie} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                          {stats.iaPie.map((e, i) => (
-                            <Cell key={e.name} fill={e.color || CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
+              <ComparisonPiePanel
+                title={isAdmin ? 'Lotes con / sin trazabilidad' : 'Mis lotes con / sin trazabilidad'}
+                data={stats?.trazaPie}
+                emptyMessage="No hay datos suficientes para comparar trazabilidad."
+                colors={CHART_COLORS}
+              />
+              <ComparisonPiePanel
+                title={isAdmin ? 'Lotes con / sin IA' : 'Mis lotes con / sin IA'}
+                data={stats?.iaPie}
+                emptyMessage="No hay datos suficientes para comparar predicciones IA."
+                colors={CHART_COLORS}
+              />
             </div>
 
             {isAdmin && (stats?.porClienteChart || []).length > 0 && (

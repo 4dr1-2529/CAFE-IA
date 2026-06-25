@@ -37,6 +37,8 @@ El workflow `.github/workflows/ci.yml` ejecuta en cada push/PR a `main`, `master
 2. Build frontend  
 3. **SonarCloud** (requiere los dos anteriores + `SONAR_TOKEN`)
 
+El job SonarCloud fuerza en CI el alcance del análisis (`sonar.sources=frontend/src,backend/src`) y excluye documentación (`Plan-de-Pruebas/`, `Reporte-Calidad-Software/`, `docs/`) para que la duplicación refleje solo código de aplicación.
+
 ## Ver resultados
 
 - Dashboard: `https://sonarcloud.io/project/overview?id=4dr1-2529_CAFE-IA`

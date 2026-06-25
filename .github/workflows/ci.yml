@@ -54,6 +54,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.sources=frontend/src,backend/src
+            -Dsonar.tests=backend/tests,testing/cypress/e2e
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**,**/testing/cypress/videos/**,**/testing/cypress/screenshots/**,**/testing/cypress/evidencias/**,**/ml/**,**/*.sql,**/backend/scripts/**,Plan-de-Pruebas/**,Reporte-Calidad-Software/**,docs/**,shared/**
+            -Dsonar.cpd.exclusions=Plan-de-Pruebas/**,Reporte-Calidad-Software/**,docs/**,**/*.md,**/*.properties
 
   dependency-audit:
     name: npm audit (dependencias)

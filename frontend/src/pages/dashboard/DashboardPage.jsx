@@ -44,17 +44,7 @@ const COLORS = {
   baja: '#ef4444',
 }
 
-function mapPorCalidad(distribucion = []) {
-  const porCalidad = { alta: 0, media: 0, baja: 0 }
-  distribucion.forEach((d) => {
-    const key = (d.calidad_final || '').toLowerCase()
-    const n = Number(d.cantidad) || 0
-    if (key.includes('excel') || key.includes('alta')) porCalidad.alta += n
-    else if (key.includes('acept') || key.includes('buen') || key.includes('medi')) porCalidad.media += n
-    else porCalidad.baja += n
-  })
-  return porCalidad
-}
+import { sumCalidadFromDistribucion } from '../../utils/calidadBuckets.js'
 
 function EmptyState({ message }) {
   return (
@@ -126,7 +116,7 @@ export default function Dashboard() {
   }, [user?.id, user?.rol])
 
   const porCalidad = useMemo(
-    () => mapPorCalidad(dash.graficas?.distribucionCalidad),
+    () => sumCalidadFromDistribucion(dash.graficas?.distribucionCalidad),
     [dash.graficas]
   )
 
