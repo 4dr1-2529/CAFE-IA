@@ -21,6 +21,7 @@ export default function ControlCalidad() {
     acidez: 5.0,
     cuerpo: 5.0,
     sabor: 5.0,
+    dulzor: 5.0,
     balance: 5.0,
     defectos: 0,
     observaciones: '',
@@ -43,7 +44,7 @@ export default function ControlCalidad() {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    const numericFields = ['aroma', 'acidez', 'cuerpo', 'sabor', 'balance', 'defectos']
+    const numericFields = ['aroma', 'acidez', 'cuerpo', 'sabor', 'dulzor', 'balance', 'defectos']
     setFormData(prev => ({ ...prev, [name]: numericFields.includes(name) ? Number(value) : value }))
   }
 
@@ -70,11 +71,12 @@ export default function ControlCalidad() {
     const acidez = Number(formData.acidez) || 0
     const cuerpo = Number(formData.cuerpo) || 0
     const sabor = Number(formData.sabor) || 0
+    const dulzor = Number(formData.dulzor) || 0
     const balance = Number(formData.balance) || 0
     const defectos = Number(formData.defectos) || 0
-    
-    const suma = aroma + acidez + cuerpo + sabor + balance
-    let puntaje = (suma / 50) * 100 - defectos
+
+    const suma = aroma + acidez + cuerpo + sabor + dulzor + balance
+    let puntaje = Math.round((suma / 6) * 10) - defectos
     puntaje = Math.max(0, Math.min(100, puntaje))
     return Math.round(puntaje * 100) / 100
   }
@@ -127,10 +129,11 @@ export default function ControlCalidad() {
       const acidez = Number(formData.acidez)
       const cuerpo = Number(formData.cuerpo)
       const sabor = Number(formData.sabor)
+      const dulzor = Number(formData.dulzor)
       const balance = Number(formData.balance)
 
       // Validar que estén en rango 1-10
-      if ([aroma, acidez, cuerpo, sabor, balance].some(v => v < 1 || v > 10)) {
+      if ([aroma, acidez, cuerpo, sabor, dulzor, balance].some(v => v < 1 || v > 10)) {
         const msg = 'Los parámetros de cata deben estar entre 1 y 10.'
         setErrorMsg(msg)
         toast.error(msg)
@@ -148,6 +151,7 @@ export default function ControlCalidad() {
         acidez: acidez,
         cuerpo: cuerpo,
         sabor: sabor,
+        dulzor: dulzor,
         balance: balance,
         defectos: Number(formData.defectos) || 0,
         observaciones: formData.observaciones,
@@ -177,6 +181,7 @@ export default function ControlCalidad() {
         acidez: 5.0,
         cuerpo: 5.0,
         sabor: 5.0,
+        dulzor: 5.0,
         balance: 5.0,
         defectos: 0,
         observaciones: ''
@@ -305,8 +310,8 @@ export default function ControlCalidad() {
           <div className="bg-cafe-50 rounded-xl p-5 border border-cafe-200">
             <h3 className="font-semibold text-cafe-900 mb-4">Parámetros de Cata (1-10, con decimales)</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {['aroma', 'acidez', 'cuerpo', 'sabor', 'balance'].map(param => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+              {['aroma', 'acidez', 'cuerpo', 'sabor', 'dulzor', 'balance'].map(param => (
                 <div key={param}>
                   <label className="block text-sm font-medium text-cafe-700 mb-2 capitalize">{param}</label>
                   <input
