@@ -1,0 +1,3 @@
+﻿Evidencia ICACIT - archivo canonico:
+frontend/src/routes/AppRoutes.jsx
+(No copiar codigo aqui; evita duplicacion en SonarCloud.)

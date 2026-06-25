@@ -1,0 +1,3 @@
+﻿Evidencia ICACIT - archivo canonico:
+backend/src/interfaces/http/routes/index.js
+(No copiar codigo aqui; evita duplicacion en SonarCloud.)

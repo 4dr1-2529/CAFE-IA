@@ -3,16 +3,19 @@ Plan-de-Pruebas/**
 Reporte-Calidad-Software/**
 docs/**
 
+# Scripts de utilidad, métricas y generadores (no runtime)
+backend/scripts/**
+testing/metricas/**
+testing/cypress/videos/**
+testing/cypress/screenshots/**
+testing/cypress/evidencias/**
+
 # Artefactos de build y dependencias
 **/node_modules/**
 **/dist/**
 **/build/**
 **/coverage/**
 
-# ML, scripts SQL y evidencias Cypress
+# ML y SQL
 ml/**
 **/*.sql
-backend/scripts/**
-testing/cypress/videos/**
-testing/cypress/screenshots/**
-testing/cypress/evidencias/**

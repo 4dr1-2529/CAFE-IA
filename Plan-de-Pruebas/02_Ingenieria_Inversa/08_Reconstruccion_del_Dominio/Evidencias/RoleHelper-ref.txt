@@ -1,0 +1,3 @@
+﻿Evidencia ICACIT - archivo canonico:
+backend/src/shared/RoleHelper.js
+(No copiar codigo aqui; evita duplicacion en SonarCloud.)

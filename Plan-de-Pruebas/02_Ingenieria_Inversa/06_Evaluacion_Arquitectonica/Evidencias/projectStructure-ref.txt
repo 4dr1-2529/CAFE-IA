@@ -1,0 +1,3 @@
+﻿Evidencia ICACIT - archivo canonico:
+frontend/src/constants/projectStructure.js
+(No copiar codigo aqui; evita duplicacion en SonarCloud.)

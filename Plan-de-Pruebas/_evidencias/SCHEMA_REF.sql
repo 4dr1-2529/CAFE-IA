@@ -1,0 +1,3 @@
+-- Referencia ICACIT — schema canónico (no duplicar en cada carpeta de evidencias).
+-- Ver: backend/sql/schema.sql
+-- Migraciones: backend/sql/migrations/

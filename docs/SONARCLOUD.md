@@ -25,9 +25,19 @@ Sin `SONAR_TOKEN`, el job `sonarcloud` en CI fallará; el resto de jobs (backend
 | `backend/tests` | Tests unitarios e integración |
 | `testing/cypress/e2e` | Pruebas E2E (como tests) |
 
-Excluido del análisis (`.sonarignore` + `sonar.exclusions`): `node_modules`, `dist`, videos Cypress, scripts SQL, carpeta `ml/`, documentación (`Plan-de-Pruebas/`, `Reporte-Calidad-Software/`, `docs/`).
+Excluido del análisis (`.sonarignore` + `sonar.exclusions`): `Plan-de-Pruebas/`, `Reporte-Calidad-Software/`, `docs/`, `backend/scripts/`, `testing/metricas/`, SQL, `ml/`, artefactos de build.
 
-La detección de duplicación (CPD) también excluye esas carpetas, archivos `.md` y las copias intencionadas de `inputValidation.js` entre frontend y backend (cada servicio se despliega por separado en Vercel/Railway).
+La detección de duplicación (CPD) también excluye esas carpetas, archivos `.md`/`.txt` y copias intencionadas entre servicios.
+
+## Ajustes en SonarCloud (UI, una vez)
+
+En [Project Settings](https://sonarcloud.io/project/configuration?id=4dr1-2529_CAFE-IA):
+
+1. **Analysis Method** → desactivar *Automatic Analysis* (el análisis oficial es el job CI).
+2. **New Code** → definición: *Reference branch* = `main`.
+3. **Analysis Scope** → no ampliar fuentes más allá de `frontend/src` y `backend/src` (el CI ya lo fuerza).
+
+Tras el próximo push, las métricas *New Lines* y *Duplications* deben reflejar solo código de aplicación.
 
 ## CI
 
