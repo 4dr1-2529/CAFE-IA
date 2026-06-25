@@ -1,7 +1,15 @@
 module.exports = {
   env: { browser: true, es2022: true },
-  extends: ['eslint:recommended'],
+  extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
+  plugins: ['react', 'react-hooks'],
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module', ecmaFeatures: { jsx: true } },
   settings: { react: { version: 'detect' } },
-  rules: { 'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }] }
+  globals: {
+    __APP_VERSION__: 'readonly',
+  },
+  rules: {
+    'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off',
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+  },
 }

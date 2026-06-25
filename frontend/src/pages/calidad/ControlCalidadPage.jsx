@@ -68,42 +68,42 @@ export default function ControlCalidad() {
   }
 
   const calcularPuntaje = () => {
-    const aroma = Number(formData.aroma) || 0
-    const acidez = Number(formData.acidez) || 0
-    const cuerpo = Number(formData.cuerpo) || 0
-    const sabor = Number(formData.sabor) || 0
-    const dulzor = Number(formData.dulzor) || 0
-    const balance = Number(formData.balance) || 0
-    const defectos = Number(formData.defectos) || 0
-
-    const suma = aroma + acidez + cuerpo + sabor + dulzor + balance
-    let puntaje = Math.round((suma / 6) * 10) - defectos
-    puntaje = Math.max(0, Math.min(100, puntaje))
-    return Math.round(puntaje * 100) / 100
+    const attrs = ['aroma', 'acidez', 'cuerpo', 'sabor', 'dulzor', 'balance'].map(
+      (k) => Number(formData[k]) || 0
+    )
+    return Math.round((attrs.reduce((a, v) => a + v, 0) / 6) * 10)
   }
 
   const getCalificacion = (puntaje) => {
-    if (puntaje >= 85) return 'Alta'
-    if (puntaje >= 70) return 'Media'
-    return 'Baja'
+    if (puntaje >= 85) return 'Excelente'
+    if (puntaje >= 75) return 'Buena'
+    if (puntaje >= 65) return 'Aceptable'
+    return 'Regular'
   }
 
   const getEstado = (calificacion) => {
     switch (calificacion) {
-      case 'Alta': return 'Aprobado'
-      case 'Media': return 'Observado'
-      case 'Baja': return 'Rechazado'
-      default: return 'Pendiente'
+      case 'Excelente':
+      case 'Buena':
+        return 'Aprobado'
+      case 'Aceptable':
+        return 'Observado'
+      case 'Regular':
+        return 'Rechazado'
+      default:
+        return 'Pendiente'
     }
   }
 
   const getRecomendacion = (calificacion) => {
     switch (calificacion) {
-      case 'Alta':
+      case 'Excelente':
         return 'Lote de excelente calidad. Recomendado para mercados premium y exportación.'
-      case 'Media':
+      case 'Buena':
+        return 'Buena calidad en taza. Apto para mercados selectos y mezclas premium.'
+      case 'Aceptable':
         return 'Calidad aceptable. Recomendado para mercados locales con ajustes menores.'
-      case 'Baja':
+      case 'Regular':
         return 'Calidad insuficiente. Se recomienda reprocesar o destinar a usos alternativos.'
       default:
         return 'Evaluación pendiente.'
@@ -157,20 +157,19 @@ export default function ControlCalidad() {
       const evaluacionGuardada = await createEvaluacion({
         ...payload,
         lote_codigo: formData.loteCodigo,
-        defectos: Number(formData.defectos) || 0,
         observaciones: formData.observaciones,
         evaluador: formData.evaluador,
-        puntaje: puntaje,
-        calidad_final: calificacion,
-        estado: getEstado(calificacion),
-        fecha_evaluacion: new Date().toISOString().split('T')[0]
+        fecha_evaluacion: new Date().toISOString().split('T')[0],
       })
+
+      const puntajeFinal = Number(evaluacionGuardada?.puntaje_taza ?? puntaje)
+      const calificacionFinal = evaluacionGuardada?.calidad_final || calificacion
 
       setSuccess({
         evaluacion: evaluacionGuardada,
-        puntaje,
-        calificacion,
-        recomendacion: getRecomendacion(calificacion)
+        puntaje: puntajeFinal,
+        calificacion: calificacionFinal,
+        recomendacion: getRecomendacion(calificacionFinal),
       })
       toast.success('Evaluación de calidad guardada correctamente.')
 
@@ -373,8 +372,8 @@ export default function ControlCalidad() {
               <div className="text-center">
                 <p className="text-sm text-cafe-600">Calidad</p>
                 <p className={`text-3xl font-bold ${
-                  calificacion === 'Alta' ? 'text-green-600' :
-                  calificacion === 'Media' ? 'text-yellow-600' : 'text-red-600'
+                  calificacion === 'Excelente' || calificacion === 'Buena' ? 'text-green-600' :
+                  calificacion === 'Aceptable' ? 'text-yellow-600' : 'text-red-600'
                 }`}>
                   {calificacion}
                 </p>
@@ -438,8 +437,8 @@ export default function ControlCalidad() {
                   </div>
                   <div className="bg-white rounded-lg p-3 border border-green-200 text-center">
                     <p className={`text-2xl font-bold ${
-                      success.calificacion === 'Alta' ? 'text-green-600' :
-                      success.calificacion === 'Media' ? 'text-yellow-600' : 'text-red-600'
+                      success.calificacion === 'Excelente' || success.calificacion === 'Buena' ? 'text-green-600' :
+                      success.calificacion === 'Aceptable' ? 'text-yellow-600' : 'text-red-600'
                     }`}>
                       {success.calificacion}
                     </p>

@@ -11,6 +11,8 @@ const VARIEDAD_MAP = {
 const SECADO_MAP = {
   Natural: 'NAT',
   Lavado: 'LAV',
+  Wash: 'LAV',
+  'Semi-Wash': 'HON',
   Honey: 'HON',
 }
 

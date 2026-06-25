@@ -64,7 +64,7 @@ export default function AuditoriaPage() {
 
   useEffect(() => {
     load(1)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [load])
 
   const cards = [
     { label: 'Total acciones', value: resumen.totalAcciones },

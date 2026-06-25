@@ -10,6 +10,7 @@ import { countCalidadFromEvaluaciones } from '../../utils/calidadBuckets.js'
 import ComparisonPiePanel from '../../components/charts/ComparisonPiePanel.jsx'
 import PageLoader from '../../components/common/PageLoader.jsx'
 import PageHeader from '../../components/ui/PageHeader.jsx'
+import ChartEmpty from '../../components/ui/ChartEmpty.jsx'
 import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
 import { PMV3_IMPROVEMENTS_TABLE, PMV3_VERSION_CARDS } from '../../constants/pmv3Content.js'
 import { chartAxisTick, chartGridStroke, chartTooltipStyle } from '../../utils/chartTheme.js'
@@ -21,7 +22,6 @@ export default function Reportes({ pmv3Only = false }) {
   const isAdmin = isAdminUser(user)
   const [reportScope, setReportScope] = useState('personal')
   const [stats, setStats] = useState(null)
-  const [reporteProduccion, setReporteProduccion] = useState({})
   const [reporteCalidad, setReporteCalidad] = useState({})
   const [reportePredicciones, setReportePredicciones] = useState({})
   const [reporteTrazabilidad, setReporteTrazabilidad] = useState({})
@@ -48,7 +48,6 @@ export default function Reportes({ pmv3Only = false }) {
       const traz = trazWrap.data
 
       setReportScope(prodWrap.scope)
-      setReporteProduccion(prod || {})
       setReporteCalidad(calidad || {})
       setReportePredicciones(pred || {})
       setReporteTrazabilidad(traz || {})

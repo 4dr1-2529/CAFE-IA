@@ -55,7 +55,7 @@ class ErrorBoundary extends Component {
               <RefreshCw className="w-4 h-4" />
               Reintentar
             </button>
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
               <details className="mt-6 text-left">
                 <summary className="cursor-pointer text-sm text-cafe-500 hover:text-cafe-700">
                   Detalles técnicos

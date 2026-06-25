@@ -58,12 +58,7 @@ export function createApp() {
     res.json({
       ok: true,
       revision: 'mysql-hexagonal-v2.6.1-usuarios-limit',
-      port: env.port,
-      pid: process.pid,
-      database: env.db.database,
-      dbHost: env.db.host,
-      railway: Boolean(env.db.railway),
-      routes: ['GET /api/dashboard', 'GET /api/usuarios', 'GET /api/auth/usuarios'],
+      environment: env.nodeEnv,
     })
   })
 

@@ -15,6 +15,18 @@ export function numberRange(value, min, max, label) {
   return null
 }
 
+export function strictPositive(value, label) {
+  const n = Number(value)
+  if (Number.isNaN(n) || n <= 0) return `${label} debe ser mayor a 0`
+  return null
+}
+
+export function nonNegative(value, label) {
+  const n = Number(value)
+  if (Number.isNaN(n) || n < 0) return `${label} debe ser un número válido`
+  return null
+}
+
 export function email(value) {
   if (!value) return null
   if (!isValidEmail(value)) return 'Correo electrónico no válido'
@@ -49,6 +61,20 @@ export function validateLoteForm(data) {
     temperatura: [numberRange(data.temperatura, 10, 35, 'Temperatura (°C)')],
     altitud: [numberRange(data.altitud, 800, 2800, 'Altitud')],
     tipo_secado: [required(data.tipo_secado, 'Tipo de secado')],
+  })
+}
+
+/** Validación alineada con el backend (evita 400 en API). */
+export function validateLoteApiForm(data) {
+  return runRules({
+    productor_id: [required(data.productor_id, 'Productor')],
+    variedad_cafe: [required(data.variedad_cafe, 'Variedad')],
+    fecha_cosecha: [required(data.fecha_cosecha, 'Fecha de cosecha')],
+    tipo_secado: [required(data.tipo_secado, 'Tipo de secado')],
+    cantidad_kg: [strictPositive(data.cantidad_kg, 'Cantidad (kg)')],
+    humedad: [nonNegative(data.humedad, 'Humedad (%)')],
+    temperatura: [nonNegative(data.temperatura, 'Temperatura (°C)')],
+    altitud: [nonNegative(data.altitud, 'Altitud')],
   })
 }
 

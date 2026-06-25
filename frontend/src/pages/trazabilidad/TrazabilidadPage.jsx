@@ -7,7 +7,7 @@ import PageHeader from '../../components/ui/PageHeader.jsx'
 import Pmv3IntegrationBanner from '../../components/common/Pmv3IntegrationBanner.jsx'
 import Pmv3ImprovementNotice from '../../components/common/Pmv3ImprovementNotice.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { tituloLote, subtituloLote, parseLoteCodigo, tituloLoteFromRecord } from '../../utils/loteDisplay.js'
+import { subtituloLote, parseLoteCodigo, tituloLoteFromRecord } from '../../utils/loteDisplay.js'
 
 const estadoIconMap = {
   Producción: '🌱',

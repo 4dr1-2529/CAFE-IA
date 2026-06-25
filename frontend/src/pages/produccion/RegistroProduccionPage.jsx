@@ -10,6 +10,7 @@ import {
 import { useAuth } from '../../context/AuthContext.jsx'
 import { isAdminUser } from '../../utils/role.js'
 import { parseLoteCodigo } from '../../utils/loteDisplay.js'
+import { validateLoteApiForm } from '../../utils/validation.js'
 
 export default function RegistroProduccion() {
   const { user } = useAuth()
@@ -178,9 +179,6 @@ export default function RegistroProduccion() {
       const hm = parseFloat(String(formData.humedad).replace(',', '.'))
       const temp = parseFloat(String(formData.temperatura).replace(',', '.'))
       const alt = parseFloat(String(formData.altitud).replace(',', '.'))
-      if (!Number.isFinite(cantidadKg) || cantidadKg <= 0 || !Number.isFinite(hm) || !Number.isFinite(temp) || !Number.isFinite(alt)) {
-        throw new Error('Las cantidades y mediciones deben ser números válidos.')
-      }
 
       const payload = {
         productor_id: formData.productorId,
@@ -197,12 +195,21 @@ export default function RegistroProduccion() {
         payload.responsable_user_id = Number(formData.responsableUserId)
       }
 
+      const { valid, errors } = validateLoteApiForm(payload)
+      if (!valid) {
+        const msg = Object.values(errors)[0] || 'Revise los datos del lote.'
+        setFeedback({ type: 'warn', message: msg })
+        setLoading(false)
+        return
+      }
+
       const nuevoLote = await createLote(payload)
       const lotePk = Number(nuevoLote?.id ?? nuevoLote?.ID)
       if (!lotePk) {
         throw new Error('No se pudo registrar el lote')
       }
 
+      let produccionOk = true
       try {
         await createProduccion({
           lote_id: lotePk,
@@ -214,17 +221,19 @@ export default function RegistroProduccion() {
           fecha_registro: formData.fecha,
         })
       } catch (prodErr) {
-        console.warn('createProduccion omitido o falló — el lote ya está guardado:', prodErr?.message || prodErr)
+        produccionOk = false
+        console.warn('createProduccion falló — el lote ya está guardado:', prodErr?.message || prodErr)
       }
 
       setFeedback({
-        type: 'ok',
-        message: 'Lote registrado exitosamente',
+        type: produccionOk ? 'ok' : 'warn',
+        message: produccionOk
+          ? 'Lote registrado exitosamente'
+          : 'Lote guardado, pero falló el registro de producción. Revise en trazabilidad o contacte al administrador.',
         lote: nuevoLote.codigo_lote,
       })
 
-      const uid = isAdmin && formData.responsableUserId ? formData.responsableUserId : user?.id
-      if (uid) await loadPreviewCode(uid)
+      setPreview(null)
 
       setFormData(prev => ({
         ...prev,
@@ -383,7 +392,7 @@ export default function RegistroProduccion() {
               placeholder="Cantidad en kilogramos"
               className="w-full px-4 py-3 border border-cafe-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
               required
-              min="0"
+              min="0.1"
               step="0.1"
             />
           </div>
@@ -472,9 +481,8 @@ export default function RegistroProduccion() {
                 required
               >
                 <option value="Natural">Natural</option>
+                <option value="Lavado">Lavado</option>
                 <option value="Honey">Honey</option>
-                <option value="Wash">Wash (Lavado)</option>
-                <option value="Semi-Wash">Semi-Wash</option>
               </select>
             </div>
           </div>
