@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Coffee, Eye, EyeOff } from 'lucide-react'
 import Input from '../../components/ui/Input.jsx'
 import Button from '../../components/ui/Button.jsx'
+import { warmBackend } from '../../services/api/client.js'
 
 const showDemoCreds = import.meta.env.VITE_SHOW_DEMO_CREDENTIALS === 'true'
 
@@ -11,6 +12,13 @@ export default function LoginPage({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [warming, setWarming] = useState(true)
+
+  useEffect(() => {
+    warmBackend()
+    const timer = setTimeout(() => setWarming(false), 4000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -55,6 +63,12 @@ export default function LoginPage({ onLogin }) {
 
         <div className="login-card bg-card/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/20 dark:border-slate-600">
           <h2 className="text-2xl font-bold text-primary mb-6 text-center">Iniciar sesión</h2>
+
+          {warming && (
+            <p className="text-center text-sm text-muted mb-4 animate-pulse">
+              Conectando con el servidor…
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>

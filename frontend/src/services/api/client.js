@@ -2,7 +2,8 @@
 import { STORAGE_KEYS } from '../../constants/storage.js'
 
 const DEFAULT_BASE_URLS = getApiRequestBases()
-const TIMEOUT = 8000
+const TIMEOUT = 30000
+const TIMEOUT_RETRY = 45000
 
 const TOKEN_KEY = STORAGE_KEYS.TOKEN
 const SESSION_KEY = STORAGE_KEYS.SESSION
@@ -111,10 +112,11 @@ const request = async (path, options = {}) => {
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
 
+  const timeoutMs = options._slowRetry ? TIMEOUT_RETRY : TIMEOUT
   const errorMessages = []
   for (const baseUrl of DEFAULT_BASE_URLS) {
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT)
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
     try {
       const response = await fetch(`${baseUrl}${path}`, {
         headers,
@@ -151,10 +153,22 @@ const request = async (path, options = {}) => {
     } catch (error) {
       clearTimeout(timeoutId)
       if (error instanceof ApiError) throw error
-      errorMessages.push(error.name === 'AbortError' ? `Timeout ${baseUrl}` : `Sin conexión ${baseUrl}`)
+      const isTimeout = error.name === 'AbortError'
+      errorMessages.push(
+        isTimeout
+          ? `Timeout (${Math.round(timeoutMs / 1000)}s) ${baseUrl}`
+          : `Sin conexión ${baseUrl}`
+      )
     }
   }
-  throw new ApiError(`No se pudo conectar al backend. ${errorMessages.join(' / ')}`, 'NETWORK')
+  if (!options._slowRetry && errorMessages.some((m) => m.startsWith('Timeout'))) {
+    return request(path, { ...options, _slowRetry: true })
+  }
+  throw new ApiError(
+    'No se pudo conectar al backend. Railway puede estar iniciando — espere unos segundos e intente de nuevo. ' +
+      errorMessages.join(' / '),
+    'NETWORK'
+  )
 }
 
 const safeGetArray = async (path, { throwOnError = false } = {}) => {
@@ -171,6 +185,19 @@ const safeGetArray = async (path, { throwOnError = false } = {}) => {
 }
 
 const safeAction = async (path, options) => request(path, options)
+
+/** Despierta Railway en frío antes del login (no bloquea la UI). */
+export const warmBackend = () => {
+  const bases = getApiRequestBases()
+  const timeoutMs = TIMEOUT_RETRY
+  bases.forEach((baseUrl) => {
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), timeoutMs)
+    fetch(`${baseUrl}/health`, { signal: controller.signal })
+      .catch(() => {})
+      .finally(() => clearTimeout(id))
+  })
+}
 
 // Auth
 export const loginApi = async (email, password) => {

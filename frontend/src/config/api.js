@@ -24,15 +24,18 @@ if (import.meta.env.PROD) {
   console.info('[API] Producción — backend:', API_URL)
 }
 
-/** Prefijo para fetch JSON (client.js). */
+/** Prefijo para fetch JSON (client.js). Producción: proxy /api en Vercel (mismo origen). */
 export function getApiRequestBases() {
   if (import.meta.env.DEV) return ['/api']
+  if (typeof globalThis.window !== 'undefined') {
+    return [`${globalThis.location.origin}/api`, `${API_URL}/api`]
+  }
   return [`${API_URL}/api`]
 }
 
-/** Origen absoluto para descargas (PDF/Excel). */
+/** Origen para descargas y peticiones absolutas. */
 export function getApiOrigin() {
-  if (import.meta.env.DEV && typeof globalThis.window !== 'undefined') {
+  if (typeof globalThis.window !== 'undefined') {
     return globalThis.location.origin
   }
   return API_URL
