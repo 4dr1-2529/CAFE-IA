@@ -17,9 +17,52 @@ class ApiError extends Error {
 }
 
 let unauthorizedHandler = null
+let refreshInFlight = null
 
 export function setUnauthorizedHandler(fn) {
   unauthorizedHandler = typeof fn === 'function' ? fn : null
+}
+
+async function refreshAccessToken() {
+  if (refreshInFlight) return refreshInFlight
+  const refreshToken = localStorage.getItem(REFRESH_KEY)
+  if (!refreshToken) {
+    throw new ApiError('Sesión expirada. Inicie sesión nuevamente.', 401)
+  }
+  refreshInFlight = (async () => {
+    const bases = DEFAULT_BASE_URLS.length ? DEFAULT_BASE_URLS : []
+    let lastError = null
+    for (const baseUrl of bases) {
+      try {
+        const response = await fetch(`${baseUrl}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        })
+        const data = parseJsonSafe(await response.text())
+        if (!response.ok) {
+          throw new ApiError(data?.message || 'No se pudo renovar la sesión', response.status)
+        }
+        const payload = unwrapApiPayload(data)
+        if (payload?.accessToken) setToken(payload.accessToken)
+        if (payload?.user) localStorage.setItem(SESSION_KEY, JSON.stringify(payload.user))
+        return payload.accessToken
+      } catch (err) {
+        lastError = err
+      }
+    }
+    throw lastError || new ApiError('No se pudo renovar la sesión', 401)
+  })()
+  try {
+    return await refreshInFlight
+  } finally {
+    refreshInFlight = null
+  }
+}
+
+function clearSession() {
+  clearAuth()
+  unauthorizedHandler?.()
 }
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY)
@@ -81,9 +124,22 @@ const request = async (path, options = {}) => {
       clearTimeout(timeoutId)
       const data = parseJsonSafe(await response.text())
 
+      if (
+        response.status === 401 &&
+        path !== '/auth/login' &&
+        path !== '/auth/refresh' &&
+        !options._authRetry
+      ) {
+        try {
+          await refreshAccessToken()
+          return request(path, { ...options, _authRetry: true })
+        } catch {
+          clearSession()
+        }
+      }
+
       if (response.status === 401 && path !== '/auth/login') {
-        clearAuth()
-        unauthorizedHandler?.()
+        clearSession()
       }
 
       if (!response.ok) {
@@ -216,9 +272,13 @@ export const downloadReporte = async (tipo, formato = 'pdf') => {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (res.status === 401) {
-    clearAuth()
-    unauthorizedHandler?.()
-    throw new ApiError('Sesión expirada. Inicie sesión nuevamente.', 401)
+    try {
+      await refreshAccessToken()
+      return downloadReporte(tipo, formato)
+    } catch {
+      clearSession()
+      throw new ApiError('Sesión expirada. Inicie sesión nuevamente.', 401)
+    }
   }
   if (!res.ok) {
     const errBody = parseJsonSafe(await res.text())

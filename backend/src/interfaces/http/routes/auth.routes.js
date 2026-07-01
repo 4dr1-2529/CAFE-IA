@@ -30,6 +30,16 @@ router.post(
 )
 
 router.post(
+  '/refresh',
+  asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body || {}
+    if (!refreshToken) return sendError(res, 400, 'refreshToken requerido')
+    const result = await AuthService.refresh(refreshToken)
+    res.json({ ok: true, ...result })
+  })
+)
+
+router.post(
   '/logout',
   authenticate,
   asyncHandler(async (req, res) => {

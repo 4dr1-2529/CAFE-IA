@@ -24,13 +24,8 @@ export class AuthService {
     }
 
     const nombre = `${user.nombres || ''} ${user.apellidos || ''}`.trim()
-    const rol = ['admin', 'cliente'].includes(user.rol_codigo)
-      ? user.rol_codigo
-      : ['supervisor', 'productor', 'usuario'].includes(user.rol_codigo)
-        ? 'cliente'
-        : user.rol_codigo
-    const payload = { sub: user.id, email: user.email, rol, nombre }
-    const accessToken = jwt.sign(payload, env.jwt.secret, { expiresIn: env.jwt.expiresIn })
+    const { user: userPayload, jwtPayload } = AuthService.buildUserPayload(user)
+    const accessToken = jwt.sign(jwtPayload, env.jwt.secret, { expiresIn: env.jwt.expiresIn })
     const refreshToken = crypto.randomBytes(40).toString('hex')
     const refreshHash = crypto.createHash('sha256').update(refreshToken).digest('hex')
     const expira = new Date()
@@ -45,7 +40,7 @@ export class AuthService {
       usuarioId: user.id,
       usuarioNombre: nombre,
       usuarioEmail: user.email,
-      rol,
+      rol: jwtPayload.rol,
       accion: 'LOGIN',
       modulo: 'auth',
       descripcion: `${nombre || user.email} inició sesión`,
@@ -61,16 +56,7 @@ export class AuthService {
     })
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        nombres: user.nombres,
-        apellidos: user.apellidos,
-        rol,
-        rolNombre: rol === 'admin' ? 'Administrador' : 'Cliente',
-        nombre,
-        productor_id: user.productor_id
-      },
+      user: userPayload,
       accessToken,
       refreshToken,
       expiresIn: env.jwt.expiresIn
@@ -111,6 +97,52 @@ export class AuthService {
       entidad: 'sesiones',
       resultado: 'exito',
     })
+  }
+
+  static normalizeRol(codigo) {
+    if (['admin', 'cliente'].includes(codigo)) return codigo
+    if (['supervisor', 'productor', 'usuario'].includes(codigo)) return 'cliente'
+    return codigo
+  }
+
+  static buildUserPayload(userRow) {
+    const rol = AuthService.normalizeRol(userRow.rol_codigo)
+    const nombre = `${userRow.nombres || ''} ${userRow.apellidos || ''}`.trim()
+    return {
+      user: {
+        id: userRow.id ?? userRow.usuario_id,
+        email: userRow.email,
+        nombres: userRow.nombres,
+        apellidos: userRow.apellidos,
+        rol,
+        rolNombre: rol === 'admin' ? 'Administrador' : 'Cliente',
+        nombre: nombre || userRow.email,
+        productor_id: userRow.productor_id ?? null,
+      },
+      jwtPayload: { sub: userRow.id ?? userRow.usuario_id, email: userRow.email, rol, nombre },
+    }
+  }
+
+  static async refresh(refreshToken) {
+    if (!refreshToken) {
+      throw Object.assign(new Error('Sesión expirada. Inicie sesión nuevamente.'), { status: 401 })
+    }
+    const hash = crypto.createHash('sha256').update(refreshToken).digest('hex')
+    const row = await queryOne(
+      `SELECT s.usuario_id, u.id, u.email, u.nombres, u.apellidos, u.activo, u.productor_id, r.codigo AS rol_codigo
+       FROM sesiones s
+       JOIN usuarios u ON u.id = s.usuario_id AND u.deleted_at IS NULL
+       JOIN roles r ON u.rol_id = r.id
+       WHERE s.refresh_token_hash = ? AND s.revocado = 0 AND s.expira_en > NOW()
+       LIMIT 1`,
+      [hash]
+    )
+    if (!row || !row.activo) {
+      throw Object.assign(new Error('Sesión expirada. Inicie sesión nuevamente.'), { status: 401 })
+    }
+    const { user, jwtPayload } = AuthService.buildUserPayload(row)
+    const accessToken = jwt.sign(jwtPayload, env.jwt.secret, { expiresIn: env.jwt.expiresIn })
+    return { user, accessToken, expiresIn: env.jwt.expiresIn }
   }
 
   static verifyToken(token) {
