@@ -79,6 +79,79 @@ Detalle de mejoras PMV3: **[PMV3_MEJORAS.md](PMV3_MEJORAS.md)**
 
 ---
 
+## Herramientas utilizadas por PMV
+
+Resumen de tecnologías y herramientas empleadas en cada versión del producto. La evidencia detallada está en [Evidencias PMV](https://cafe-ia-inky.vercel.app/evidencias) (app), [testing/pruebas-funcionales-pmv/](testing/pruebas-funcionales-pmv/) y [Reporte-Calidad-Software/](Reporte-Calidad-Software/).
+
+### PMV1 — Operaciones core
+
+| Categoría | Herramientas | Uso en PMV1 |
+|-----------|--------------|-------------|
+| **IDE / desarrollo** | **Cursor**, **VS Code**, **Git**, **GitHub** | Edición del monorepo, control de versiones y colaboración |
+| **Backend** | **Node.js 20**, **Express 4**, **mysql2** | API REST, pool MySQL, arquitectura inicial |
+| **Frontend** | **React 18**, **Vite 5**, **Tailwind CSS 3**, **React Router 6** | SPA, rutas, estilos utility-first |
+| **Base de datos** | **MySQL 8**, **XAMPP** (local), `schema.sql`, `seeds.sql`, `migrate.js` | 39 tablas, migración y datos demo |
+| **Autenticación** | **jsonwebtoken**, **bcryptjs** | Login JWT, hash de contraseñas |
+| **UI / gráficos** | **Lucide React**, **Recharts** | Iconografía y dashboard analítico |
+| **Módulos** | Login, Usuarios, Productores, Producción, Trazabilidad, Calidad, Dashboard, Reportes, Base de datos | HU01–HU09 |
+| **Pruebas funcionales** | **Cypress 13** — specs `PF-01` … `PF-09` | Login, dashboard, productores, producción, trazabilidad, reportes |
+| **Pruebas backend** | **Node.js test runner**, **supertest** — `health.test.js`, `calidad.service.test.js`, `integration.test.js` | Health, puntaje calidad, integración API |
+| **Documentación** | `README.md`, `docs/DOCUMENTACION_TECNICA.md`, `docs/ESQUEMA_RELACIONAL.md` | Arquitectura, API y modelo de datos |
+
+### PMV2 — Inteligencia y multiusuario
+
+| Categoría | Herramientas | Uso en PMV2 |
+|-----------|--------------|-------------|
+| **Arquitectura** | **Hexagonal** (domain → application → infrastructure → interfaces) | Refactor de rutas monolíticas a capas |
+| **Seguridad** | **helmet**, **express-rate-limit**, **cors**, **RBAC** (`readGuard`, `writeGuard`, `adminGuard`) | Hardening HTTP y roles `admin` / `cliente` |
+| **IA en producción** | **PredictionEngine.js** v2 (Node.js, heurística) | Predicción de calidad, riesgo %, alertas y recomendaciones |
+| **ML (evidencia académica)** | **Python 3.10+**, **Scikit-learn** (`ml/train_model.py`, `RandomForestClassifier`) | Entrenamiento offline; la API usa el motor JS |
+| **Chatbot** | **ChatbotService**, **chatbotIntentScoring.js**, **chatbotIntentHandlers.js** | Intents sobre datos MySQL y conocimiento del sistema |
+| **Auditoría** | **ActionLogService**, **AuditoriaService**, tabla `auditoria_logs` | Historial de acciones (solo admin) |
+| **Reportes exportables** | **pdfkit**, **exceljs** | Export PDF/Excel vía `/api/reportes/export` |
+| **Validación** | `application/validators/`, `frontend/src/utils/validation.js` | DTOs backend y formularios frontend |
+| **Datos demo** | Scripts `seed-pmv2.js`, `seedMultiusuarioPMV2.js`, `SEED_PMV2_FORCE` | 5 productores × 5 lotes = 25 lotes con trazabilidad y calidad |
+| **Pruebas funcionales** | **Cypress** — `PF-08` (IA), `PF-10` (chatbot), `PF-11` (roles RBAC) | Módulo IA, chatbot y permisos admin/cliente |
+| **Pruebas unitarias** | `prediction.test.js`, `validators.test.js`, `api.errors.test.js` | Motor IA, validadores y errores HTTP |
+| **CI inicial** | **GitHub Actions** (`.github/workflows/ci.yml`) | Tests backend y build frontend |
+
+### PMV3 — Integración visual y calidad
+
+| Categoría | Herramientas | Uso en PMV3 |
+|-----------|--------------|-------------|
+| **Integración UI** | `pmv3Content.js`, `MainLayout.jsx`, `Pmv3IntegrationBanner`, `Pmv3ImprovementNotice`, `TrazabilidadTimeline` | Banner PMV3, KPIs, timeline con % avance, Resumen PMV3 |
+| **Vistas PMV3** | `ResumenPMV3Page`, `DashboardPage`, `ControlCalidadPage`, `ModuloIAPage`, `AuditoriaPage`, `EvidenciasPMVPage` | Consolidación PMV1 + PMV2 en una UX unificada |
+| **Conexión producción** | **Vercel** (proxy `/api` → Railway), **Railway** (API + MySQL), `warmBackend`, timeouts 30–45 s | Evita timeouts por cold start y CORS directo |
+| **Despliegue** | **Vercel** (SPA), **Railway** (backend), `vercel.json`, `deployGuard.js` | Frontend `cafe-ia-inky.vercel.app` + API en Railway |
+| **Calidad estática** | **SonarCloud**, `sonar-project.properties`, `.sonarignore` | Análisis de duplicación, bugs y smells en CI |
+| **Pruebas E2E** | **Cypress 13** — 11 specs `PF-01` … `PF-11` | Flujos completos admin/cliente documentados en `last-run.json` |
+| **Rendimiento** | **Apache JMeter** (`testing/metricas/jmeter/`) | Carga 500 requests a `/api/health` |
+| **Evaluación académica** | **Plan-de-Pruebas/** (FURPS+, OWASP, ingeniería inversa, **ICACIT**), **Reporte-Calidad-Software/** | Auditorías y trazabilidad documental PMV1/2/3 |
+| **Métricas ágiles** | `testing/metricas-agiles/`, `docs/EDT_SCRUM_GANTT.md` | HU01–HU12 completadas, avance WBS ~92 % |
+| **Lint / estilo** | **ESLint**, **Prettier** | Calidad de código frontend en desarrollo y CI |
+| **Auditoría dependencias** | **npm audit** (GitHub Actions) | Vulnerabilidades high en backend y frontend |
+
+### Resumen comparativo
+
+| Herramienta | PMV1 | PMV2 | PMV3 |
+|-------------|:----:|:----:|:----:|
+| React + Vite + Tailwind | ✅ | ✅ | ✅ |
+| Node.js + Express + MySQL | ✅ | ✅ | ✅ |
+| JWT + bcrypt | ✅ | ✅ | ✅ |
+| Arquitectura hexagonal | — | ✅ | ✅ |
+| PredictionEngine v2 | — | ✅ | ✅ |
+| Chatbot + Auditoría | — | ✅ | ✅ |
+| PDF/Excel (pdfkit, exceljs) | — | ✅ | ✅ |
+| Cypress E2E | ✅ (PF-01–09) | ✅ (+ PF-08,10,11) | ✅ (11 specs) |
+| Python / Scikit-learn (`ml/`) | — | ✅ | ✅ |
+| SonarCloud + GitHub Actions | — | ✅ | ✅ |
+| Railway + Vercel | — | parcial | ✅ |
+| Proxy `/api` Vercel → Railway | — | — | ✅ |
+| JMeter + Plan ICACIT | — | — | ✅ |
+| Resumen PMV3 + KPIs integrados | — | — | ✅ |
+
+---
+
 ## Módulos y rutas de la aplicación
 
 ### Navegación (sidebar PMV3)
@@ -136,7 +209,7 @@ Detalle de mejoras PMV3: **[PMV3_MEJORAS.md](PMV3_MEJORAS.md)**
 | UI | **React 18** | Componentes, hooks, Context API |
 | Build | **Vite 5** | Dev server (puerto 5174), HMR |
 | Estilos | **Tailwind CSS 3** | Utility-first, modo oscuro |
-| Routing | **React Router 6** | SPA, lazy loading |
+| Routing | **React Router 6** | SPA, imports estáticos (bundle único) |
 | Gráficos | **Recharts** | Dashboard analítico |
 | Iconos | **Lucide React** | UI consistente |
 | QR | **react-qr-code** | Códigos QR por lote |
@@ -170,19 +243,19 @@ Detalle de mejoras PMV3: **[PMV3_MEJORAS.md](PMV3_MEJORAS.md)**
 ### Vista general
 
 ```text
-┌─────────────┐     HTTPS + JWT      ┌──────────────────┐     mysql2 pool     ┌─────────────┐
-│   Vercel    │  ──────────────────► │  Railway API     │  ─────────────────► │  Railway    │
-│  React SPA  │  ◄────────────────── │  Express :8080   │  ◄───────────────── │  MySQL 8    │
-│  (frontend) │     JSON REST        │  (backend)       │     SQL / 39 tablas │             │
-└─────────────┘                      └──────────────────┘                     └─────────────┘
+┌─────────────┐   /api (proxy Vercel)   ┌──────────────────┐     mysql2 pool     ┌─────────────┐
+│   Vercel    │  ─────────────────────► │  Railway API     │  ─────────────────► │  Railway    │
+│  React SPA  │  ◄─────────────────── │  Express :8080   │  ◄───────────────── │  MySQL 8    │
+│  (frontend) │     JSON REST         │  (backend)       │     SQL / 39 tablas │             │
+└─────────────┘                       └──────────────────┘                     └─────────────┘
 ```
 
 ### Flujo de una petición (ejemplo: listar lotes)
 
 ```text
 1. Usuario abre /trazabilidad en el navegador
-2. React Router carga TrazabilidadPage (lazy)
-3. La página llama a api.get('/lotes') vía services/api/client.js
+2. React Router carga TrazabilidadPage
+3. La página llama a api.get('/lotes') vía services/api/client.js (mismo origen `/api` en producción)
 4. El cliente añade header Authorization: Bearer <JWT>
 5. Express recibe GET /api/lotes
 6. Middleware auth.js valida el token
@@ -508,13 +581,14 @@ CORS_ORIGINS=https://cafe-ia-inky.vercel.app
 | Build Command | `npm run build` |
 | Output | `dist` |
 
-**Variable de entorno:**
+**Variables de entorno:**
 
 ```env
 VITE_API_URL=https://cafe-sostenible-api-production-03ad.up.railway.app
+VITE_SHOW_DEMO_CREDENTIALS=true
 ```
 
-Ya configurada en `frontend/vercel.json` para builds automáticos.
+El frontend usa primero el proxy `/api` del mismo origen (configurado en `vercel.json`); `VITE_API_URL` es fallback directo a Railway.
 
 ### URLs de producción
 
@@ -558,6 +632,8 @@ Configuración: [.github/workflows/ci.yml](.github/workflows/ci.yml) · [docs/SO
 |-----------|-----------|
 | [PMV3_MEJORAS.md](PMV3_MEJORAS.md) | Objetivo, mejoras, rutas, cómo probar, evidencias visuales |
 | [docs/PMV2.md](docs/PMV2.md) | Evolución PMV1 → PMV2 |
+| [testing/pruebas-funcionales-pmv/README.md](testing/pruebas-funcionales-pmv/README.md) | Pruebas PF-01…PF-21 y herramientas por caso |
+| [testing/metricas-agiles/README.md](testing/metricas-agiles/README.md) | Métricas HU01–HU12 por PMV |
 | [docs/DOCUMENTACION_TECNICA.md](docs/DOCUMENTACION_TECNICA.md) | Arquitectura, API, JWT |
 | [docs/ESTRUCTURA_PROYECTO.md](docs/ESTRUCTURA_PROYECTO.md) | Árbol de carpetas detallado |
 | [docs/MATRIZ_PRUEBAS_HU.md](docs/MATRIZ_PRUEBAS_HU.md) | Historias de usuario y pruebas |
