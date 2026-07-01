@@ -125,9 +125,15 @@ async function testConnection() {
 }
 
 async function seedCatalogsAndAdmin() {
-  const seedPassword = process.env.ADMIN_SEED_PASSWORD?.trim()
+  const ADMIN_EMAIL = 'admin@cafeai.com'
+  const onRailway = Boolean(process.env.RAILWAY_ENVIRONMENT || env.db.railway)
+  let seedPassword = process.env.ADMIN_SEED_PASSWORD?.trim()
+  if (!seedPassword && onRailway) {
+    seedPassword = 'admin123'
+    console.warn('[seed] ADMIN_SEED_PASSWORD no definido en Railway; usando admin123 para cuenta demo.')
+  }
   if (!seedPassword) {
-    console.warn('[seed] ADMIN_SEED_PASSWORD no definido; se omite usuario admin inicial.')
+    console.warn('[seed] ADMIN_SEED_PASSWORD no definido; se omite sincronización del admin.')
   }
 
   await execute(
@@ -143,10 +149,16 @@ async function seedCatalogsAndAdmin() {
     const hash = await bcrypt.hash(seedPassword, 10)
     await execute(
       `INSERT INTO usuarios (rol_id, email, password_hash, nombres, apellidos, activo)
-       VALUES (?, 'admin@cafeai.com', ?, 'Admin', 'Sistema', 1)
-       ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), activo=1`,
-      [adminRole.id, hash]
-    ).catch((err) => logSeedWarning('admin', err))
+       VALUES (?, ?, ?, 'Admin', 'Sistema', 1)
+       ON DUPLICATE KEY UPDATE rol_id=VALUES(rol_id), password_hash=VALUES(password_hash), activo=1, deleted_at=NULL`,
+      [adminRole.id, ADMIN_EMAIL, hash]
+    ).catch((err) => logSeedWarning('admin insert', err))
+    await execute(
+      `UPDATE usuarios SET rol_id=?, password_hash=?, activo=1, deleted_at=NULL
+       WHERE LOWER(email)=LOWER(?)`,
+      [adminRole.id, hash, ADMIN_EMAIL]
+    ).catch((err) => logSeedWarning('admin update', err))
+    console.log(`[seed] Admin sincronizado: ${ADMIN_EMAIL}`)
   } else if (!adminRole) {
     return
   }

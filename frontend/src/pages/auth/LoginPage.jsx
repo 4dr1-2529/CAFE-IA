@@ -19,9 +19,9 @@ export default function LoginPage({ onLogin }) {
     try {
       const emailNorm = email.trim().toLowerCase()
       const passwordNorm = password.trim()
-      const ok = await onLogin(emailNorm, passwordNorm)
-      if (!ok) {
-        setError('Credenciales inválidas. Use admin@cafeai.com y la contraseña configurada en el servidor (por defecto admin123).')
+      const result = await onLogin(emailNorm, passwordNorm)
+      if (!result?.ok) {
+        setError(result?.message || 'Credenciales inválidas. Use admin@cafeai.com / admin123')
       }
     } catch {
       setError('No se pudo conectar al servidor. Verifique que MySQL y el backend estén activos.')

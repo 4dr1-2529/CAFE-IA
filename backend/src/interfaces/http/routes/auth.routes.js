@@ -5,8 +5,28 @@ import { authenticate } from '../middleware/auth.js'
 import { asyncHandler } from '../../../shared/asyncHandler.js'
 import { env } from '../../../config/env.js'
 import { sendError } from '../../../shared/apiResponse.js'
+import { queryOne } from '../../../infrastructure/database/pool.js'
 
 const router = Router()
+
+router.get(
+  '/status',
+  asyncHandler(async (_req, res) => {
+    const admin = await queryOne(
+      `SELECT id, activo, deleted_at FROM usuarios WHERE LOWER(email)=LOWER(?) LIMIT 1`,
+      ['admin@cafeai.com']
+    )
+    res.json({
+      ok: true,
+      data: {
+        adminExists: Boolean(admin),
+        adminActive: Boolean(admin?.activo) && admin?.deleted_at == null,
+        seedPasswordConfigured: Boolean(process.env.ADMIN_SEED_PASSWORD?.trim()),
+        environment: env.nodeEnv,
+      },
+    })
+  })
+)
 
 router.post(
   '/login',

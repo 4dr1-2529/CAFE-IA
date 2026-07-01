@@ -60,13 +60,16 @@ export function AuthProvider({ children }) {
     try {
       const data = await loginApi(email, password)
       const u = data.user
-      if (!u) return false
+      if (!u) return { ok: false, message: 'Respuesta de login incompleta.' }
       const merged = sessionUserFromMe(u, u)
       setUser(merged)
       localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(merged))
-      return true
-    } catch {
-      return false
+      return { ok: true }
+    } catch (err) {
+      return {
+        ok: false,
+        message: err?.message || 'Credenciales inválidas. Verifique correo y contraseña.',
+      }
     }
   }, [])
 
