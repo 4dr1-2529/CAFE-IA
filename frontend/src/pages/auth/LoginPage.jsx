@@ -17,9 +17,11 @@ export default function LoginPage({ onLogin }) {
     setError('')
     setLoading(true)
     try {
-      const ok = await onLogin(email, password)
+      const emailNorm = email.trim().toLowerCase()
+      const passwordNorm = password.trim()
+      const ok = await onLogin(emailNorm, passwordNorm)
       if (!ok) {
-        setError('Credenciales inválidas. Verifique su correo y contraseña.')
+        setError('Credenciales inválidas. Use admin@cafeai.com y la contraseña configurada en el servidor (por defecto admin123).')
       }
     } catch {
       setError('No se pudo conectar al servidor. Verifique que MySQL y el backend estén activos.')
@@ -118,9 +120,14 @@ export default function LoginPage({ onLogin }) {
           </form>
 
           {showDemoCreds && (
-            <p className="mt-4 text-center text-xs text-muted border-t border-card pt-4">
-              Solo desarrollo: use las credenciales configuradas por el administrador del entorno.
-            </p>
+            <div className="mt-4 text-center text-xs text-muted border-t border-card pt-4 space-y-1">
+              <p className="font-medium text-cafe-700 dark:text-slate-300">Acceso administrador (demo)</p>
+              <p>
+                <span className="font-mono">admin@cafeai.com</span>
+                {' · '}
+                <span className="font-mono">admin123</span>
+              </p>
+            </div>
           )}
         </div>
 

@@ -34,11 +34,13 @@
     }
   ],
   "env": {
-    "VITE_API_URL": "https://cafe-sostenible-api-production-03ad.up.railway.app"
+    "VITE_API_URL": "https://cafe-sostenible-api-production-03ad.up.railway.app",
+    "VITE_SHOW_DEMO_CREDENTIALS": "true"
   },
   "build": {
     "env": {
-      "VITE_API_URL": "https://cafe-sostenible-api-production-03ad.up.railway.app"
+      "VITE_API_URL": "https://cafe-sostenible-api-production-03ad.up.railway.app",
+      "VITE_SHOW_DEMO_CREDENTIALS": "true"
     }
   }
 }
